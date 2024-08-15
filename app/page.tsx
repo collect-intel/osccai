@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
 async function createSurvey() {
   "use server";
-  const survey = await prisma.survey.create({
+  await prisma.survey.create({
     data: {
       title: "New Survey",
       instructions: "Please complete this survey",
     },
   });
+  revalidatePath("/");
 }
 
 export default async function Home() {
