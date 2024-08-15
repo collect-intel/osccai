@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Survey {
+  uid String @id @default(cuid())
+  createdAt DateTime @default(now())
+  deleted Boolean @default(false)
+
+  title String
+  instructions String
+
+  statements Statement[]
+}
+
+model Statement {
+  uid String @id @default(cuid())
+  createdAt DateTime @default(now())
+  deleted Boolean @default(false)
+
+  text String
+
+  survey Survey @relation(fields: [surveyId], references: [uid])
+  surveyId String
+
+  votes Vote[]
+}
+
+model Vote {
+  uid String @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  voteKind String  // agree, disagree, or pass
+  statement Statement @relation(fields: [statementId], references: [uid])
+  statementId String
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
