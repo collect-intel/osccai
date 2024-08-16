@@ -30,7 +30,7 @@ model Vote {
   uid String @id @default(cuid())
   createdAt DateTime @default(now())
 
-  // TODO: change to value
+  // TODO: change to "value"
   voteKind String  // agree, disagree, or pass
   statement Statement @relation(fields: [statementId], references: [uid])
   statementId String
