@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import Form from "@/lib/components/Form";
+import Link from "next/link";
 
 export default async function Home() {
   const surveys = await prisma.survey.findMany();
@@ -12,7 +13,9 @@ export default async function Home() {
         <ul>
           {surveys.map((survey) => (
             <li key={survey.uid}>
-              <h2>{survey.title}</h2>
+              <h2>
+                <Link href={`/${survey.uid}`}>{survey.title}</Link>
+              </h2>
               <p>{survey.instructions}</p>
             </li>
           ))}

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import createSurvey from "@/lib/createSurvey";
+import { createSurvey } from "@/lib/actions";
 
 export default function Form() {
   const [title, setTitle] = useState("");
