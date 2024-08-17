@@ -19,9 +19,25 @@ Open-Source CCAI is a tool that enables anyone to train an AI model based on a c
 
 ## Components
 
-- 📄Constitution Maker
+- 📄Constitution Creator
 - 💪Model Trainer (from a Constitution)
 - 📚Constitution Library
+
+## Overview
+
+Project / Tool: **Open-Source CCAI** **[OS CCAI]** consists of
+* **Collective Constitution Creator**
+* **(Model Training) **
+* **Collective Constitution Library**
+
+**Creators** use the **Collective Constitution Creator** platform to generate **Constitutions** from collective input gathered in a **Poll**.
+
+Using this tool creates a new **Poll** that collects **Statements**.
+
+**Participants** interact with the Poll to **Vote** on others’ Statements.
+
+Votes take the form of **Agree, Disagree, **or **Pass**. Participants can also **Flag** a Statement for removal (inappropriate/off-topic).
+
 
 ## Contributing
 
