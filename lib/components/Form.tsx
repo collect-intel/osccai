@@ -2,14 +2,17 @@
 import { useState } from "react";
 import { createPoll } from "@/lib/actions";
 
+const creatorId = "TODO: creatorId";
+
 export default function Form() {
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
+  const [urlSlug, setUrlSlug] = useState("");
 
   return (
     <form
       action={async () => {
-        await createPoll(title, instructions);
+        await createPoll(title, instructions, urlSlug, creatorId);
         setTitle("");
         setInstructions("");
       }}

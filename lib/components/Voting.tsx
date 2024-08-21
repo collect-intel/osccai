@@ -2,14 +2,17 @@
 import { useState } from "react";
 
 import { Statement, Vote } from "@prisma/client";
-import { submitStatement, submitVote, type VoteType } from "../actions";
+import { submitStatement, submitVote } from "../actions";
+import type { VoteValue } from "@prisma/client";
 
-function VoteButtons({ onClick }: { onClick: (vote: VoteType) => void }) {
+const participantId = "TODO: participantId";
+
+function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
   return (
     <div className="flex flex-row gap-2">
-      <button onClick={() => onClick("agree")}>Agree</button>
-      <button onClick={() => onClick("disagree")}>Disagree</button>
-      <button onClick={() => onClick("pass")}>Pass</button>
+      <button onClick={() => onClick("AGREE")}>Agree</button>
+      <button onClick={() => onClick("DISAGREE")}>Disagree</button>
+      <button onClick={() => onClick("PASS")}>Pass</button>
     </div>
   );
 }
@@ -34,7 +37,7 @@ export default function Voting({
         {statements[currentStatementIx].text}
         <VoteButtons
           onClick={async (vote) => {
-            submitVote(statements[currentStatementIx].uid, vote);
+            submitVote(statements[currentStatementIx].uid, vote, participantId);
             setCurrentStatementIx(currentStatementIx + 1);
           }}
         />
@@ -52,7 +55,7 @@ export default function Voting({
         />
         <button
           onClick={async () => {
-            await submitStatement(pollId, statementText);
+            await submitStatement(pollId, statementText, participantId);
             setStatementText("");
           }}
         >
