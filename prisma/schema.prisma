@@ -17,6 +17,7 @@ model Participant {
 
   statements Statement[]
   votes      Vote[]
+  flags      Flag[]
 }
 
 model Poll {
@@ -46,6 +47,17 @@ model Statement {
   pollId String
 
   votes Vote[]
+  flags Flag[]
+}
+
+model Flag {
+  uid           String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  participant   Participant @relation(fields: [participantId], references: [uid])
+  participantId String
+
+  statement   Statement @relation(fields: [statementId], references: [uid])
+  statementId String
 }
 
 enum VoteValue {
