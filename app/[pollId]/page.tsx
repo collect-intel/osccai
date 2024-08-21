@@ -1,4 +1,5 @@
 import Voting from "@/lib/components/Voting";
+import EditPoll from "@/lib/components/EditPoll";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 
@@ -8,9 +9,9 @@ export default async function pollPage({
   params: { pollId: string };
 }) {
   const poll = await prisma.poll.findUnique({
-    where: { uid: params.pollId },
+    where: { urlSlug: params.pollId },
   });
-  if (!poll) return notFound();
+  if (!poll || poll.deleted) return notFound();
 
   const statements = await prisma.statement.findMany({
     where: { pollId: poll.uid },
@@ -19,11 +20,13 @@ export default async function pollPage({
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
   });
 
-  return (
+  return poll.published ? (
     <div className="flex flex-col">
       <h1>{poll.title}</h1>
-      <p>{poll.instructions}</p>
+      <p>{poll.description}</p>
       <Voting statements={statements} votes={votes} pollId={poll.uid} />
     </div>
+  ) : (
+    <EditPoll poll={poll} />
   );
 }
