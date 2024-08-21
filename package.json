@@ -1,0 +1,33 @@
+{
+  "name": "osccai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:local": "dotenv -e .envs/local/.env -- next dev",
+    "dev:prod": "dotenv -e .envs/prod/.env -- next dev",
+    "build": "prisma generate && next build",
+    "build:local": "dotenv -e .envs/local/.env -- prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:local": "dotenv -e .envs/local/.env -- prisma",
+    "prisma:prod": "dotenv -e .envs/prod/.env -- prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "5.18.0",
+    "next": "14.2.5",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "dotenv-cli": "^7.4.2",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8",
+    "prisma": "^5.18.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
