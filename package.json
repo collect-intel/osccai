@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
+    "dev:local": "dotenv -e .envs/local/.env -- next dev",
+    "dev:prod": "dotenv -e .envs/prod/.env -- next dev",
+    "build:local": "dotenv -e .envs/local/.env -- prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma": "dotenv -e .env -- prisma"
+    "prisma:local": "dotenv -e .envs/local/.env -- prisma",
+    "prisma:prod": "dotenv -e .envs/prod/.env -- prisma"
   },
   "dependencies": {
     "@prisma/client": "5.18.0",
