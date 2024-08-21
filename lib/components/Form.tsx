@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { createSurvey } from "@/lib/actions";
+import { createPoll } from "@/lib/actions";
 
 export default function Form() {
   const [title, setTitle] = useState("");
@@ -9,7 +9,7 @@ export default function Form() {
   return (
     <form
       action={async () => {
-        await createSurvey(title, instructions);
+        await createPoll(title, instructions);
         setTitle("");
         setInstructions("");
       }}
@@ -18,17 +18,17 @@ export default function Form() {
       <input
         type="text"
         name="title"
-        placeholder="Survey Title"
+        placeholder="Poll Title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
       <textarea
         name="instructions"
-        placeholder="Survey Instructions"
+        placeholder="Poll Instructions"
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
-      <button type="submit">Create New Survey</button>
+      <button type="submit">Create New Poll</button>
     </form>
   );
 }

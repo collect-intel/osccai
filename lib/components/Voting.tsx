@@ -17,11 +17,11 @@ function VoteButtons({ onClick }: { onClick: (vote: VoteType) => void }) {
 export default function Voting({
   statements,
   votes,
-  surveyId,
+  pollId,
 }: {
   statements: Statement[];
   votes: Vote[];
-  surveyId: string;
+  pollId: string;
 }) {
   const [currentStatementIx, setCurrentStatementIx] = useState(0);
   const [statementText, setStatementText] = useState("");
@@ -52,7 +52,7 @@ export default function Voting({
         />
         <button
           onClick={async () => {
-            await submitStatement(surveyId, statementText);
+            await submitStatement(pollId, statementText);
             setStatementText("");
           }}
         >

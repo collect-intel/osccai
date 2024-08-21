@@ -2,24 +2,24 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 
-export async function createSurvey(title: string, instructions: string) {
-  await prisma.survey.create({
+export async function createPoll(title: string, instructions: string) {
+  await prisma.poll.create({
     data: { title, instructions },
   });
   revalidatePath("/");
 }
 
-export async function submitStatement(surveyId: string, text: string) {
+export async function submitStatement(pollId: string, text: string) {
   await prisma.statement.create({
-    data: { surveyId, text },
+    data: { pollId, text },
   });
-  revalidatePath(`/survey/${surveyId}`);
+  revalidatePath(`/poll/${pollId}`);
 }
 
-export type VoteType = "agree" | "disagree" | "pass";
+export type VoteType = "AGREE" | "DISAGREE" | "PASS";
 
-export async function submitVote(statementId: string, value: VoteType) {
+export async function submitVote(statementId: string, voteValue: VoteType) {
   await prisma.vote.create({
-    data: { statementId, voteKind: value },
+    data: { statementId, voteValue },
   });
 }

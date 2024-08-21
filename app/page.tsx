@@ -3,20 +3,20 @@ import Form from "@/lib/components/Form";
 import Link from "next/link";
 
 export default async function Home() {
-  const surveys = await prisma.survey.findMany();
+  const polls = await prisma.poll.findMany();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm flex flex-col">
         <h1 className="text-lg">OSCCAI</h1>
-        {surveys.length === 0 && <p>No surveys found</p>}
+        {polls.length === 0 && <p>No polls found</p>}
         <ul>
-          {surveys.map((survey) => (
-            <li key={survey.uid}>
+          {polls.map((poll) => (
+            <li key={poll.uid}>
               <h2>
-                <Link href={`/${survey.uid}`}>{survey.title}</Link>
+                <Link href={`/${poll.uid}`}>{poll.title}</Link>
               </h2>
-              <p>{survey.instructions}</p>
+              <p>{poll.instructions}</p>
             </li>
           ))}
         </ul>

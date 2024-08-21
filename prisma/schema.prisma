@@ -2,37 +2,66 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Survey {
+model PollCreator {
   uid String @id @default(cuid())
-  createdAt DateTime @default(now())
-  deleted Boolean @default(false)
 
-  title String
+  name        String
+  email       String
+
+  polls Poll[]
+}
+
+model Participant {
+  uid         String  @id @default(cuid())
+  phoneNumber String?
+
+  statements Statement[]
+  votes      Vote[]
+}
+
+model Poll {
+  uid       String      @id @default(cuid())
+  createdAt DateTime    @default(now())
+  deleted   Boolean     @default(false)
+  creator   PollCreator @relation(fields: [creatorId], references: [uid])
+  creatorId String
+
+  title        String
   instructions String
+  urlSlug      String
 
   statements Statement[]
 }
 
 model Statement {
-  uid String @id @default(cuid())
-  createdAt DateTime @default(now())
-  deleted Boolean @default(false)
+  uid           String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  deleted       Boolean     @default(false)
+  participant   Participant @relation(fields: [participantId], references: [uid])
+  participantId String
 
   text String
 
-  survey Survey @relation(fields: [surveyId], references: [uid])
-  surveyId String
+  poll   Poll   @relation(fields: [pollId], references: [uid])
+  pollId String
 
   votes Vote[]
 }
 
-model Vote {
-  uid String @id @default(cuid())
-  createdAt DateTime @default(now())
+enum VoteValue {
+  AGREE
+  DISAGREE
+  PASS
+}
 
-  // TODO: change to "value"
-  voteKind String  // agree, disagree, or pass
-  statement Statement @relation(fields: [statementId], references: [uid])
+model Vote {
+  uid           String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  participant   Participant @relation(fields: [participantId], references: [uid])
+  participantId String
+
+  voteValue   VoteValue
+  statement   Statement @relation(fields: [statementId], references: [uid])
   statementId String
 }
 

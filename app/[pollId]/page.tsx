@@ -2,18 +2,18 @@ import Voting from "@/lib/components/Voting";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 
-export default async function SurveyPage({
+export default async function pollPage({
   params,
 }: {
-  params: { surveyId: string };
+  params: { pollId: string };
 }) {
-  const survey = await prisma.survey.findUnique({
-    where: { uid: params.surveyId },
+  const poll = await prisma.poll.findUnique({
+    where: { uid: params.pollId },
   });
-  if (!survey) return notFound();
+  if (!poll) return notFound();
 
   const statements = await prisma.statement.findMany({
-    where: { surveyId: survey.uid },
+    where: { pollId: poll.uid },
   });
   const votes = await prisma.vote.findMany({
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
@@ -21,9 +21,9 @@ export default async function SurveyPage({
 
   return (
     <div className="flex flex-col">
-      <h1>{survey.title}</h1>
-      <p>{survey.instructions}</p>
-      <Voting statements={statements} votes={votes} surveyId={survey.uid} />
+      <h1>{poll.title}</h1>
+      <p>{poll.instructions}</p>
+      <Voting statements={statements} votes={votes} pollId={poll.uid} />
     </div>
   );
 }
