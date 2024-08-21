@@ -22,7 +22,7 @@ export default async function Home() {
               <h2>
                 <Link href={`/${poll.uid}`}>{poll.title}</Link>
               </h2>
-              <p>{poll.instructions}</p>
+              <p>{poll.description}</p>
             </li>
           ))}
         </ul> */}
