@@ -1,15 +1,21 @@
 import { prisma } from "@/lib/db";
 import Form from "@/lib/components/Form";
 import Link from "next/link";
+import PageTitle from "@/lib/components/PageTitle";
+import Button from "@/lib/components/Button";
 
 export default async function Home() {
-  const polls = await prisma.poll.findMany();
+  //const polls = await prisma.poll.findMany();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm flex flex-col">
-        <h1 className="text-lg">OSCCAI</h1>
-        {polls.length === 0 && <p>No polls found</p>}
+    <main >
+   <div className="flex justify-between items-center">
+
+        <PageTitle title="Polls" />
+
+        <Button title="New poll" />
+   </div>
+        {/* {polls.length === 0 && <p>No polls found</p>}
         <ul>
           {polls.map((poll) => (
             <li key={poll.uid}>
@@ -19,11 +25,11 @@ export default async function Home() {
               <p>{poll.instructions}</p>
             </li>
           ))}
-        </ul>
-        <div className="mt-2">
+        </ul> */}
+        <div className="mt-2 max-w-72 mx-auto">
           <Form />
         </div>
-      </div>
+      
     </main>
   );
 }
