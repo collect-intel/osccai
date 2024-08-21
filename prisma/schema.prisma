@@ -5,8 +5,8 @@ generator client {
 model PollCreator {
   uid String @id @default(cuid())
 
-  name        String
-  email       String
+  name  String
+  email String
 
   polls Poll[]
 }
@@ -21,15 +21,18 @@ model Participant {
 }
 
 model Poll {
-  uid       String      @id @default(cuid())
-  createdAt DateTime    @default(now())
-  deleted   Boolean     @default(false)
-  creator   PollCreator @relation(fields: [creatorId], references: [uid])
-  creatorId String
+  uid                        String      @id @default(cuid())
+  createdAt                  DateTime    @default(now())
+  deleted                    Boolean     @default(false)
+  creator                    PollCreator @relation(fields: [creatorId], references: [uid])
+  creatorId                  String
+  published                  Boolean
+  requireSMS                 Boolean     @default(true)
+  allowParticipantStatements Boolean     @default(true)
 
-  title        String
-  instructions String
-  urlSlug      String
+  title       String @default("")
+  description String @default("")
+  urlSlug     String @unique
 
   statements Statement[]
 }
