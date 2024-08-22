@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const emailLoginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string(), // .min(8),
 });
 
 type EmailLoginData = z.infer<typeof emailLoginSchema>;
