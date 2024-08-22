@@ -65,7 +65,6 @@ export async function createPoll() {
     console.error("createPoll error", error);
     redirect("/error");
   }
-  console.log("user.id", user.id);
   const urlSlug = createId();
   await prisma.poll.create({
     data: { urlSlug, creatorId: user.id, published: false },
@@ -97,7 +96,6 @@ async function separateStatements(
   statementsStr: string,
   temperature = defaultTemperature,
 ): Promise<string[]> {
-  console.log(statementsStr);
   const message = await anthropic.messages.create({
     max_tokens,
     system: systemPrompt,
@@ -107,7 +105,6 @@ async function separateStatements(
     model,
     temperature,
   });
-  console.log(message);
 
   if (message.content.length !== 1) {
     console.warn(
@@ -119,7 +116,6 @@ async function separateStatements(
     if (content.type === "tool_use") {
       const { name, input } = content;
       const json = input as JSON;
-      console.log("json", json);
       if (name === "refusal") {
         const { reason } = json as any as { reason: string };
         console.log("Refusal reason:", reason);
