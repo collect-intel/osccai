@@ -1,6 +1,7 @@
 "use client";
 
 import { createPoll } from "@/lib/actions";
+import Button from "./Button";
 
 const creatorId = "1";
 
@@ -10,7 +11,7 @@ export default function Form() {
       action={async () => void createPoll(creatorId)}
       className="flex flex-col"
     >
-      <button type="submit">Create New Poll</button>
+      <Button type="submit" title="New poll" />
     </form>
   );
 }
