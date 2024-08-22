@@ -20,6 +20,7 @@ function parseFormData(formData: FormData): EmailLoginData {
   });
 
   if (!parseResult.success) {
+    console.error(parseResult.error);
     redirect("/error");
   }
 
