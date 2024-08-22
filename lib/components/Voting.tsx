@@ -5,8 +5,6 @@ import { Statement, Vote } from "@prisma/client";
 import { submitStatement, submitVote } from "../actions";
 import type { VoteValue } from "@prisma/client";
 
-const participantId = "TODO: participantId";
-
 function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
   return (
     <div className="flex flex-row gap-2">
@@ -37,7 +35,7 @@ export default function Voting({
         {statements[currentStatementIx].text}
         <VoteButtons
           onClick={async (vote) => {
-            submitVote(statements[currentStatementIx].uid, vote, participantId);
+            submitVote(statements[currentStatementIx].uid, vote);
             setCurrentStatementIx(currentStatementIx + 1);
           }}
         />
@@ -55,7 +53,7 @@ export default function Voting({
         />
         <button
           onClick={async () => {
-            await submitStatement(pollId, statementText, participantId);
+            await submitStatement(pollId, statementText);
             setStatementText("");
           }}
         >

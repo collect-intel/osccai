@@ -7,8 +7,8 @@ import { prisma } from "@/lib/db";
 import type { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
 import { redirect } from "next/navigation";
+import { createClient } from "./supabase/server";
 
-const participantId = "TODO: participantId";
 const max_tokens = 2048;
 const model = "claude-3-5-sonnet-20240620";
 const defaultTemperature = 0.5;
@@ -51,13 +51,24 @@ const separateStatementsTool: Tool = {
   },
 };
 
-const separatedStatementsSchema = z.array(z.string());
-type SeparatedStatements = z.infer<typeof separatedStatementsSchema>;
+const separatedStatementsSchema = z.object({
+  statements: z.array(z.string()),
+});
 
-export async function createPoll(creatorId: string) {
+export async function createPoll() {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.error("createPoll error", error);
+    redirect("/error");
+  }
+  console.log("user.id", user.id);
   const urlSlug = createId();
   await prisma.poll.create({
-    data: { urlSlug, creatorId, published: false },
+    data: { urlSlug, creatorId: user.id, published: false },
   });
   revalidatePath("/");
   redirect(`/${urlSlug}`);
@@ -85,7 +96,7 @@ type Tool = (typeof anthropic.messages.create.arguments)["tools"][0];
 async function separateStatements(
   statementsStr: string,
   temperature = defaultTemperature,
-): Promise<SeparatedStatements> {
+): Promise<string[]> {
   console.log(statementsStr);
   const message = await anthropic.messages.create({
     max_tokens,
@@ -108,12 +119,13 @@ async function separateStatements(
     if (content.type === "tool_use") {
       const { name, input } = content;
       const json = input as JSON;
+      console.log("json", json);
       if (name === "refusal") {
         const { reason } = json as any as { reason: string };
         console.log("Refusal reason:", reason);
         return [];
       } else {
-        const statements = separatedStatementsSchema.parse(json);
+        const { statements } = separatedStatementsSchema.parse(json);
         return statements;
       }
     } else {
@@ -125,29 +137,41 @@ async function separateStatements(
   return [];
 }
 
+async function getParticipantId() {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.error("createPoll error", error);
+    redirect("/error");
+  }
+  return user.id;
+}
+
 export async function publishPoll(uid: string, statementsStr: string) {
-  const [] = await Promise.all([
-    // separateStatements(statementsStr),
+  const [separatedStatements, participantId] = await Promise.all([
+    separateStatements(statementsStr),
+    getParticipantId(),
     prisma.poll.update({
       where: { uid },
       data: { published: true },
     }),
   ]);
-  // console.log(separatedStatements);
-  // TODO: participantId
-  // await prisma.statement.createMany({
-  //   data: separatedStatements.map((text) => ({ pollId: uid, text, participantId })),
-  // });
+  await prisma.statement.createMany({
+    data: separatedStatements.map((text) => ({
+      pollId: uid,
+      text,
+      participantId,
+    })),
+  });
   revalidatePath(`/poll/${uid}`);
 }
 
-export async function submitStatement(
-  pollId: string,
-  text: string,
-  participantId: string,
-) {
+export async function submitStatement(pollId: string, text: string) {
   await prisma.statement.create({
-    data: { pollId, text, participantId },
+    data: { pollId, text, participantId: await getParticipantId() },
   });
   revalidatePath(`/poll/${pollId}`);
 }
@@ -156,17 +180,13 @@ export async function flagStatement(statementId: string) {
   await prisma.flag.create({
     data: {
       statementId,
-      participantId,
+      participantId: await getParticipantId(),
     },
   });
 }
 
-export async function submitVote(
-  statementId: string,
-  voteValue: VoteValue,
-  participantId: string,
-) {
+export async function submitVote(statementId: string, voteValue: VoteValue) {
   await prisma.vote.create({
-    data: { statementId, voteValue, participantId },
+    data: { statementId, voteValue, participantId: await getParticipantId() },
   });
 }
