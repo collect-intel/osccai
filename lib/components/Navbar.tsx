@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { createClient } from "@/lib/supabase/server";
+import { logout } from "@/app/login/actions";
+
 function NavbarLink({ href, text }: { href: string; text: string }) {
   return (
     <Link href={href} className="font-medium hover:font-bold">
@@ -8,7 +11,28 @@ function NavbarLink({ href, text }: { href: string; text: string }) {
   );
 }
 
-export default function Navbar() {
+function UserIcon() {
+  return (
+    <form>
+      <button formAction={logout}>
+        <img
+          src="/icon-placeholder.png"
+          className="w-8 h-8 rounded-full"
+          alt="User profile image"
+        />
+      </button>
+    </form>
+  );
+}
+
+export default async function Navbar() {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error(error);
+  }
+
   return (
     <nav className="text-sm p-4 border-b border-[#E0E0E0]">
       <div className="flex items-center justify-between 2xl:container 2xl:mx-auto">
@@ -25,7 +49,7 @@ export default function Navbar() {
         <div className="flex items-center gap-5">
           <NavbarLink href="/polls" text="Polls" />
           <NavbarLink href="/constitutions" text="Constitutions" />
-          <img src="/icon-placeholder.png" className="w-8 h-8 rounded-full" />
+          {data?.user ? <UserIcon /> : <Link href="/login">Log in</Link>}
         </div>
       </div>
     </nav>
