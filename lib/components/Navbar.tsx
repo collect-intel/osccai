@@ -13,7 +13,10 @@ export default function Navbar() {
     <nav className="text-sm p-4 border-b border-[#E0E0E0]">
       <div className="flex items-center justify-between 2xl:container 2xl:mx-auto">
         <div className="flex gap-10">
-          <Link href="/" className="font-mono font-bold text-black tracking-tight">
+          <Link
+            href="/"
+            className="font-mono font-bold text-black tracking-tight"
+          >
             COMMMUNITY MODELS
           </Link>
           <NavbarLink href="/about" text="About" />
