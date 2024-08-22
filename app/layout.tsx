@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={"text-[#121212]" + inter.className}>
+      <body className={"text-[#121212] " + inter.className}>
         <Navbar />
         <div className="max-w-4xl mt-10 mx-auto">{children}</div>
       </body>
