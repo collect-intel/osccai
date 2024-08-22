@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import Form from "@/lib/components/Form";
-import Link from "next/link";
 import PageTitle from "@/lib/components/PageTitle";
 import PollCard from "@/lib/components/PollCard";
 
