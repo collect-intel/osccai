@@ -2,6 +2,10 @@ import Voting from "@/lib/components/Voting";
 import EditPoll from "@/lib/components/EditPoll";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+import PageTitle from "@/lib/components/PageTitle";
+import StatementIcon from "@/lib/components/StatementIcon";
+import ParticipantIcon from "@/lib/components/ParticipantIcon";
+import IconCounter from "@/lib/components/IconCounter";
 
 export default async function pollPage({
   params,
@@ -22,8 +26,16 @@ export default async function pollPage({
 
   return poll.published ? (
     <div className="flex flex-col">
-      <h1>{poll.title}</h1>
-      <p>{poll.description}</p>
+      <PageTitle title={poll.title} />
+      <div className="flex gap-3 my-4">
+        <IconCounter count={votes.length ?? 0}>
+          <ParticipantIcon className="fill-none stroke-[#A4A4A4]" />
+        </IconCounter>
+        <IconCounter count={statements.length ?? 0}>
+          <StatementIcon className="fill-none stroke-[#A4A4A4]" />
+        </IconCounter>
+      </div>
+      <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>
       <Voting statements={statements} votes={votes} pollId={poll.uid} />
     </div>
   ) : (
