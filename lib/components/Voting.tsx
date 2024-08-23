@@ -29,7 +29,7 @@ function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
         className="flex items-center gap-1 text-xs text-[#A4A4A4] hover:text-gray-500 font-medium fill-none stroke-[#A4A4A4] hover:stroke-gray-500"
         onClick={() => onClick("PASS")}
       >
-        <QuestionIcon /> Skip, I'm not sure
+        <QuestionIcon /> Skip, I&apos;m not sure
       </button>
     </div>
   );

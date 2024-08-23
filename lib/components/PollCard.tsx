@@ -24,12 +24,14 @@ export default async function PollCard({ poll }: { poll: Poll }) {
         {poll.description}
       </div>
       <div className="flex gap-3 mb-6">
-        <IconCounter count={votes.length ?? 0}>
-          <ParticipantIcon className="fill-none stroke-[#A4A4A4]" />
-        </IconCounter>
-        <IconCounter count={statements.length ?? 0}>
-          <StatementIcon className="fill-none stroke-[#A4A4A4]" />
-        </IconCounter>
+        <IconCounter
+          count={votes.length ?? 0}
+          icon={<ParticipantIcon className="fill-none stroke-[#A4A4A4]" />}
+        />
+        <IconCounter
+          count={statements.length ?? 0}
+          icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
+        />
       </div>
       <div className="flex justify-center">
         <Button

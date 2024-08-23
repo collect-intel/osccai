@@ -28,12 +28,14 @@ export default async function pollPage({
     <div className="flex flex-col">
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
-        <IconCounter count={votes.length ?? 0}>
-          <ParticipantIcon className="fill-none stroke-[#A4A4A4]" />
-        </IconCounter>
-        <IconCounter count={statements.length ?? 0}>
-          <StatementIcon className="fill-none stroke-[#A4A4A4]" />
-        </IconCounter>
+        <IconCounter
+          count={votes.length ?? 0}
+          icon={<ParticipantIcon className="fill-none stroke-[#A4A4A4]" />}
+        />
+        <IconCounter
+          count={statements.length ?? 0}
+          icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
+        />
       </div>
       <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>
       <Voting statements={statements} votes={votes} pollId={poll.uid} />
