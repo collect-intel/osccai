@@ -32,7 +32,7 @@ model Poll {
 
   title       String @default("")
   description String @default("")
-  urlSlug     String @unique
+  urlSlug     String 
 
   statements Statement[]
 }
