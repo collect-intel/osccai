@@ -4,16 +4,18 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { VoteValue } from "@prisma/client";
+import type { Poll, VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
+import slugify from "slugify";
 
 const max_tokens = 2048;
 const model = "claude-3-5-sonnet-20240620";
 const defaultTemperature = 0.5;
 const systemPrompt = `Your goal is to separate the user's input into a list of statements. You should use one of the tools available to you to respond to the user: use "response_with_separated_statements" if you're able to accomplish the task, otherwise use "refusal" to tell the user why you're unable to complete the task.`;
 
+// According to the [CUID docs](https://github.com/paralleldrive/cuid2), there's a 50% chance of a collision after sqrt(36^(n-1) * 26) IDs, so this has a good chance of a collision after a few million IDs. We should check for collisions but we don't currently.
 const createId = initCuid({ length: 10 });
 
 const anthropic = new Anthropic({
@@ -57,6 +59,7 @@ const separatedStatementsSchema = z.object({
 
 export async function createPoll() {
   const supabase = createClient();
+  const uid = createId();
   const {
     data: { user },
     error,
@@ -65,12 +68,12 @@ export async function createPoll() {
     console.error("createPoll error", error);
     redirect("/error");
   }
-  const urlSlug = createId();
+  const urlSlug = "new";
   await prisma.poll.create({
-    data: { urlSlug, creatorId: user.id, published: false },
+    data: { uid, urlSlug, creatorId: user.id, published: false },
   });
   revalidatePath("/");
-  redirect(`/${urlSlug}`);
+  redirect(`/${uid}/${urlSlug}/create`);
 }
 
 export async function editPoll(
@@ -82,12 +85,19 @@ export async function editPoll(
     requireSMS?: boolean;
     allowParticipantStatements?: boolean;
   },
-) {
-  await prisma.poll.update({
+): Promise<Poll> {
+  const urlSlug = data.title
+    ? slugify(data.title || "", { lower: true })
+    : undefined;
+  const updatedPoll = await prisma.poll.update({
     where: { uid },
-    data,
+    data: {
+      ...data,
+      ...(urlSlug ? { urlSlug } : {}),
+    },
   });
-  revalidatePath(`/poll/${uid}`);
+  revalidatePath(`/${uid}`);
+  return updatedPoll;
 }
 
 type Tool = (typeof anthropic.messages.create.arguments)["tools"][0];
