@@ -34,7 +34,7 @@ export default function PollCreate({ poll }: { poll: any }) {
               title,
               description,
             });
-            router.push(`/${updatedPoll.uid}/${updatedPoll.urlSlug}/setings`);
+            router.push(`/${updatedPoll.uid}/${updatedPoll.urlSlug}/settings`);
           }}
         />
       </div>
