@@ -13,7 +13,7 @@ export default async function Page({ params }: { params: { pollId: string } }) {
   return (
     <div className="flex flex-col">
       <PageTitle title="New Poll" />
-      <ProgressBar step="statements" />
+      <ProgressBar step="statements" poll={poll} />
       <PollStatements poll={poll} />
     </div>
   );
