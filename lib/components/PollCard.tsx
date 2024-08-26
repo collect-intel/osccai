@@ -17,7 +17,10 @@ export default async function PollCard({ poll }: { poll: Poll }) {
 
   return (
     <div className="bg-[#FAFAFA] p-6 rounded w-[284px]">
-      <Link href={`/${poll.urlSlug}`} className="text-lg font-medium">
+      <Link
+        href={`/${poll.uid}/${poll.urlSlug}`}
+        className="text-lg font-medium"
+      >
         {poll.title}
       </Link>
       <div className="text-sm text-[#777777] my-6 pb-6 border-b border-[#E0E0E0]">

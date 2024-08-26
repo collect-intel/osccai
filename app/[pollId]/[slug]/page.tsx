@@ -17,7 +17,7 @@ export default async function pollPage({
   if (!poll || poll.deleted) return notFound();
 
   if (!poll.published) {
-    redirect(`/polls/${poll.uid}/create`);
+    redirect(`/${poll.uid}/${poll.urlSlug}/create`);
   }
 
   const statements = await prisma.statement.findMany({
