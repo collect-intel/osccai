@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import Form from "@/lib/components/Form";
+import NewPollForm from "@/lib/components/NewPollForm";
 import PageTitle from "@/lib/components/PageTitle";
 import PollCard from "@/lib/components/PollCard";
 
@@ -11,12 +11,12 @@ export default async function Home() {
       <div className="flex justify-between items-center mb-10">
         <PageTitle title="Polls" />
 
-        {polls.length > 0 && <Form />}
+        {polls.length > 0 && <NewPollForm />}
       </div>
       {polls.length === 0 && (
         <div className="flex flex-col justify-center items-center h-80">
           <p className="text-[#A4A4A4] font-medium mb-6">No polls found</p>
-          <Form />
+          <NewPollForm />
         </div>
       )}
       <ul className="grid grid-cols-3 gap-6">
