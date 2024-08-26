@@ -8,9 +8,9 @@ import Button from "@/lib/components/Button";
 import { Poll } from "@prisma/client";
 
 export default function PollSettings({ poll }: { poll: Poll }) {
-  const [requireSMS, setRequireSMS] = useState<boolean>(false);
+  const [requireSMS, setRequireSMS] = useState<boolean>(poll.requireSMS);
   const [allowParticipantStatements, setAllowParticipantStatements] =
-    useState<boolean>(false);
+    useState<boolean>(poll.allowParticipantStatements);
   const router = useRouter();
 
   return (

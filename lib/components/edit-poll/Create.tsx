@@ -8,8 +8,8 @@ import Textarea from "@/lib/components/Textarea";
 import Button from "@/lib/components/Button";
 
 export default function PollCreate({ poll }: { poll: any }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(poll.title);
+  const [description, setDescription] = useState(poll.description);
   const router = useRouter();
 
   return (
