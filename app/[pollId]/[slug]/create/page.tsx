@@ -9,10 +9,11 @@ export default async function Page({ params }: { params: { pollId: string } }) {
     where: { uid: params.pollId },
   });
   if (!poll || poll.deleted) return notFound();
+  const pageTitle = poll.published ? "Edit Poll" : "New Poll";
 
   return (
     <div className="flex flex-col">
-      <PageTitle title="New Poll" />
+      <PageTitle title={pageTitle} />
       <ProgressBar step="create" poll={poll} />
       <PollCreate poll={poll} />
     </div>
