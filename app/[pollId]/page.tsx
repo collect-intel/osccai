@@ -3,8 +3,8 @@ import EditPoll from "@/lib/components/EditPoll";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import PageTitle from "@/lib/components/PageTitle";
-import StatementIcon from "@/lib/components/StatementIcon";
-import ParticipantIcon from "@/lib/components/ParticipantIcon";
+import StatementIcon from "@/lib/components/icons/StatementIcon";
+import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import IconCounter from "@/lib/components/IconCounter";
 
 export default async function pollPage({

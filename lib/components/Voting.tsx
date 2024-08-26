@@ -4,12 +4,12 @@ import { useState } from "react";
 import { Statement, Vote } from "@prisma/client";
 import { submitStatement, submitVote } from "../actions";
 import type { VoteValue } from "@prisma/client";
-import StatementIcon from "./StatementIcon";
-import FlagIcon from "./FlagIcon";
-import QuestionIcon from "./QuestionIcon";
-import ThumbIcon from "./ThumbIcon";
+import StatementIcon from "./icons/StatementIcon";
+import FlagIcon from "./icons/FlagIcon";
+import QuestionIcon from "./icons/QuestionIcon";
+import ThumbIcon from "./icons/ThumbIcon";
 import Button from "./Button";
-import PlusIcon from "./PlusIcon";
+import PlusIcon from "./icons/PlusIcon";
 
 function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
   const buttonStyle =
@@ -91,7 +91,7 @@ export default function Voting({
         </div>
         <div>{currentStatement}</div>
       </div>
-      {/* Chris: I have left this here until we find it a suitable home */}
+      {/* TODO - Chris: I have left this here until we find it a suitable home */}
       <div className="flex flex-col mt-6">
         <h2 className="text-lg">Add New Statement</h2>
         <textarea

@@ -2,7 +2,7 @@
 
 import { createPoll } from "@/lib/actions";
 import Button from "./Button";
-import PlusIcon from "./PlusIcon";
+import PlusIcon from "./icons/PlusIcon";
 
 export default function Form() {
   return (

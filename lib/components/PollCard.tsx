@@ -2,10 +2,10 @@ import { Poll } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import Button from "./Button";
 import Link from "next/link";
-import StatementIcon from "./StatementIcon";
-import ConstitutionIcon from "./ConstitutionIcon";
+import StatementIcon from "./icons/StatementIcon";
+import ConstitutionIcon from "./icons/ConstitutionIcon";
 import IconCounter from "./IconCounter";
-import ParticipantIcon from "./ParticipantIcon";
+import ParticipantIcon from "./icons/ParticipantIcon";
 
 export default async function PollCard({ poll }: { poll: Poll }) {
   const statements = await prisma.statement.findMany({
@@ -25,11 +25,11 @@ export default async function PollCard({ poll }: { poll: Poll }) {
       </div>
       <div className="flex gap-3 mb-6">
         <IconCounter
-          count={votes.length ?? 0}
+          count={votes.length}
           icon={<ParticipantIcon className="fill-none stroke-[#A4A4A4]" />}
         />
         <IconCounter
-          count={statements.length ?? 0}
+          count={statements.length}
           icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
         />
       </div>

@@ -18,7 +18,7 @@ export default function Button({
       className="flex items-center gap-2 bg-[#185849] hover:bg-[#0E352C] text-sm text-white font-medium p-2 rounded"
       disabled={disabled}
     >
-      {icon && icon}
+      {icon}
       {title}
     </button>
   );
