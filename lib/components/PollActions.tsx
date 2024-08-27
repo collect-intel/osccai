@@ -24,19 +24,16 @@ export default function PollActions({}) {
       });
   };
 
+  const buttonStyle =
+    "flex items-center gap-1.5 text-sm font-medium fill-none stroke-[#121212]";
+
   return (
     <div className="flex items-center gap-6 self-end">
-      <Link
-        href={pathname + "/create"}
-        className="flex items-center gap-1.5 text-sm font-medium fill-none stroke-[#121212]"
-      >
+      <Link href={pathname + "/create"} className={buttonStyle}>
         <EditIcon />
         Edit
       </Link>
-      <button
-        className="flex items-center gap-1.5 text-sm font-medium fill-none stroke-[#121212]"
-        onClick={copyUrlToClipboard}
-      >
+      <button className={buttonStyle} onClick={copyUrlToClipboard}>
         <ShareIcon />
         {copied ? "Copied" : "Share"}
       </button>
