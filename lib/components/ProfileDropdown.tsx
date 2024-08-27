@@ -6,6 +6,7 @@ import { logout } from "@/app/login/actions";
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  // Add isClicked state to keep the dropdown open when clicked, even if the mouse leaves the dropdown area.
   const [isClicked, setIsClicked] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
