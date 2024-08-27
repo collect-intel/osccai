@@ -15,8 +15,37 @@ export default async function PollCard({ poll }: { poll: Poll }) {
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
   });
 
+  function StatusIndicator({
+    isPublished,
+    isClosed,
+  }: {
+    isPublished: boolean;
+    isClosed: boolean;
+  }) {
+    let status, color;
+
+    if (isClosed) {
+      status = "Closed";
+      color = "text-[#A4A4A4]";
+    } else if (isPublished) {
+      status = "Live";
+      color = "text-[#008302]";
+    } else {
+      status = "Draft";
+      color = "text-[#F3CE99]";
+    }
+
+    return (
+      <div className="self-end flex items-center gap-1 text-xs text-[#A4A4A4] font-medium font-mono tracking-tighter">
+        <div className={`text-xl ${color}`}>&bull;</div>
+        {status}
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-[#FAFAFA] p-6 rounded w-[284px]">
+    <div className="flex flex-col bg-[#FAFAFA] p-6 rounded w-[284px]">
+      <StatusIndicator isPublished={poll.published} isClosed={false} />
       <Link
         href={`/${poll.uid}/${poll.urlSlug}`}
         className="text-lg font-medium"
@@ -40,7 +69,7 @@ export default async function PollCard({ poll }: { poll: Poll }) {
         <Button
           icon={<ConstitutionIcon className="fill-none stroke-white" />}
           title="Generate constitution"
-          disabled
+          disabled={!poll.published}
         />
       </div>
     </div>
