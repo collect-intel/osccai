@@ -33,9 +33,15 @@ export default async function Navbar() {
           <NavbarLink href="/explore" text="Explore" />
         </div>
         <div className="flex items-center gap-5">
-          <NavbarLink href="/polls" text="Polls" />
-          <NavbarLink href="/constitutions" text="Constitutions" />
-          {data?.user ? <ProfileDropdown /> : <Link href="/login">Log in</Link>}
+          {data?.user ? (
+            <>
+              <NavbarLink href="/" text="Polls" />
+              <NavbarLink href="/constitutions" text="Constitutions" />
+              <ProfileDropdown />
+            </>
+          ) : (
+            <NavbarLink href="/login" text="Log in" />
+          )}
         </div>
       </div>
     </nav>
