@@ -25,7 +25,7 @@ export default function PollStatements({
       : `Your poll already has ${existingStatementCount} statements. Add more?`;
 
   const pollPath = pollUrl(poll);
-
+  console.log("pollPath", pollPath);
   return (
     <>
       <Textarea
@@ -39,7 +39,7 @@ export default function PollStatements({
           title={poll.published ? "Update poll" : "Publish poll"}
           onClick={async () => {
             await publishPoll(poll.uid, statements);
-            router.push(`/${pollPath}`);
+            router.push(pollPath);
           }}
         />
       </div>
