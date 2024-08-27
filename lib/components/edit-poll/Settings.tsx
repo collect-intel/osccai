@@ -15,26 +15,29 @@ export default function PollSettings({ poll }: { poll: Poll }) {
 
   return (
     <>
+    <div className="flex flex-col gap-9">
+
       <Toggle
         enabled={requireSMS}
         setEnabled={setRequireSMS}
         label="Require participants to authenticate via SMS?"
         details={
           requireSMS
-            ? "Yes, require authentication"
-            : "No, don’t require authentication"
+          ? "Yes, require authentication"
+          : "No, don’t require authentication"
         }
-      />
+        />
       <Toggle
         enabled={allowParticipantStatements}
         setEnabled={setAllowParticipantStatements}
         label="Allow participants to contribute statements?"
         details={
           allowParticipantStatements
-            ? "Yes, allow contributions (participants must vote on 5 existing statements first)"
-            : "No, don’t allow contributions"
+          ? "Yes, allow contributions (participants must vote on 5 existing statements first)"
+          : "No, don’t allow contributions"
         }
-      />
+        />
+        </div>
       <div className="ml-auto mt-6">
         <Button
           title="Continue"

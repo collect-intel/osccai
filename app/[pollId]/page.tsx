@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 
 export default async function OldPage({
   params,

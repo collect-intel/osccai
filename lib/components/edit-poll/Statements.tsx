@@ -33,7 +33,7 @@ export default function PollStatements({
       />
       <div className="ml-auto mt-6">
         <Button
-          title="Publish poll"
+          title={poll.published ? "Update poll" : "Publish poll"}
           onClick={async () => {
             await publishPoll(poll.uid, statements);
             router.push(`/${poll.uid}/${poll.urlSlug}`);

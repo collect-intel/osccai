@@ -1,5 +1,6 @@
-import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+
+import { prisma } from "@/lib/db";
 import PageTitle from "@/lib/components/PageTitle";
 import ProgressBar from "@/lib/components/ProgressBar";
 import PollStatements from "@/lib/components/edit-poll/Statements";

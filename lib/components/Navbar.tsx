@@ -5,7 +5,7 @@ import { logout } from "@/app/login/actions";
 
 function NavbarLink({ href, text }: { href: string; text: string }) {
   return (
-    <Link href={href} className="font-medium hover:font-semibold">
+    <Link href={href} className="font-medium">
       {text}
     </Link>
   );

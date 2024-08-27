@@ -1,10 +1,12 @@
+import { notFound, redirect } from "next/navigation";
+
 import Voting from "@/lib/components/Voting";
 import { prisma } from "@/lib/db";
-import { notFound, redirect } from "next/navigation";
 import PageTitle from "@/lib/components/PageTitle";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import IconCounter from "@/lib/components/IconCounter";
+import PollActions from "@/lib/components/PollActions";
 
 export default async function pollPage({
   params,
@@ -29,6 +31,7 @@ export default async function pollPage({
 
   return (
     <div className="flex flex-col">
+      <PollActions />
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
         <IconCounter
