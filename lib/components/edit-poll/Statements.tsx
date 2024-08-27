@@ -25,7 +25,7 @@ export default function PollStatements({
       : `Your poll already has ${existingStatementCount} statements. Add more?`;
 
   const pollPath = pollUrl(poll);
-  
+
   return (
     <>
       <Textarea
