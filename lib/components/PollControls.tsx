@@ -1,27 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import EditIcon from "@/lib/components/icons/EditIcon";
 import ShareIcon from "@/lib/components/icons/ShareIcon";
+import { useCopyToClipboard } from "../useCopyToClipboard";
 
-export default function PollActions({}) {
+export default function PollControls() {
   const pathname = usePathname();
-  const [copied, setCopied] = useState(false);
+  const { copied, copyToClipboard } = useCopyToClipboard();
 
-  const copyUrlToClipboard = () => {
+  const handleShare = () => {
     const currentUrl = window.location.href;
-    navigator.clipboard
-      .writeText(currentUrl)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch((err) => {
-        console.error("Failed to copy URL: ", err);
-      });
+    copyToClipboard(currentUrl);
   };
 
   const buttonStyle =
@@ -33,7 +25,7 @@ export default function PollActions({}) {
         <EditIcon />
         Edit
       </Link>
-      <button className={buttonStyle} onClick={copyUrlToClipboard}>
+      <button className={buttonStyle} onClick={handleShare}>
         <ShareIcon />
         {copied ? "Copied" : "Share"}
       </button>

@@ -6,7 +6,7 @@ import PageTitle from "@/lib/components/PageTitle";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import IconCounter from "@/lib/components/IconCounter";
-import PollActions from "@/lib/components/PollActions";
+import PollControls from "@/lib/components/PollControls";
 
 export default async function pollPage({
   params,
@@ -31,7 +31,7 @@ export default async function pollPage({
 
   return (
     <div className="flex flex-col">
-      <PollActions />
+      <PollControls />
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
         <IconCounter
