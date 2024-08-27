@@ -15,7 +15,7 @@ export default function Button({
     <button
       onClick={onClick}
       type={type}
-      className="flex items-center gap-2 bg-[#185849] hover:bg-[#0E352C] text-sm text-white font-medium p-2 rounded"
+      className="flex items-center gap-2 bg-[#185849] hover:bg-[#0E352C] disabled:bg-[#E0E0E0] disabled:cursor-not-allowed text-sm text-white font-medium p-2 rounded"
       disabled={disabled}
     >
       {icon}

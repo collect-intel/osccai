@@ -1,27 +1,13 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
-import { logout } from "@/app/login/actions";
+import ProfileDropdown from "./ProfileDropdown";
 
 function NavbarLink({ href, text }: { href: string; text: string }) {
   return (
     <Link href={href} className="font-medium">
       {text}
     </Link>
-  );
-}
-
-function UserIcon() {
-  return (
-    <form>
-      <button formAction={logout}>
-        <img
-          src="/icon-placeholder.png"
-          className="w-8 h-8 rounded-full"
-          alt="User profile image"
-        />
-      </button>
-    </form>
   );
 }
 
@@ -47,9 +33,15 @@ export default async function Navbar() {
           <NavbarLink href="/explore" text="Explore" />
         </div>
         <div className="flex items-center gap-5">
-          <NavbarLink href="/polls" text="Polls" />
-          <NavbarLink href="/constitutions" text="Constitutions" />
-          {data?.user ? <UserIcon /> : <Link href="/login">Log in</Link>}
+          {data?.user ? (
+            <>
+              <NavbarLink href="/" text="Polls" />
+              <NavbarLink href="/constitutions" text="Constitutions" />
+              <ProfileDropdown />
+            </>
+          ) : (
+            <NavbarLink href="/login" text="Log in" />
+          )}
         </div>
       </div>
     </nav>
