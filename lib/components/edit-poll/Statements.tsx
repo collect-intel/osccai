@@ -7,6 +7,7 @@ import Textarea from "@/lib/components/Textarea";
 import Button from "@/lib/components/Button";
 import { publishPoll } from "@/lib/actions";
 import { Poll } from "@prisma/client";
+import { pollUrl } from "@/lib/links";
 
 export default function PollStatements({
   poll,
@@ -23,6 +24,8 @@ export default function PollStatements({
       ? "Statements are prompts for participants to respond to (by selecting ‘agree’, ‘disagree’, or ‘pass’). Enter at least 5 to start."
       : `Your poll already has ${existingStatementCount} statements. Add more?`;
 
+  const pollPath = pollUrl(poll);
+
   return (
     <>
       <Textarea
@@ -33,10 +36,10 @@ export default function PollStatements({
       />
       <div className="ml-auto mt-6">
         <Button
-          title="Publish poll"
+          title={poll.published ? "Update poll" : "Publish poll"}
           onClick={async () => {
             await publishPoll(poll.uid, statements);
-            router.push(`/${poll.uid}/${poll.urlSlug}`);
+            router.push(`/${pollPath}`);
           }}
         />
       </div>

@@ -6,6 +6,8 @@ import StatementIcon from "./icons/StatementIcon";
 import ConstitutionIcon from "./icons/ConstitutionIcon";
 import IconCounter from "./IconCounter";
 import ParticipantIcon from "./icons/ParticipantIcon";
+import PollCardControls from "./PollCardControls";
+import { isCreator } from "../isCreator";
 
 export default async function PollCard({ poll }: { poll: Poll }) {
   const statements = await prisma.statement.findMany({
@@ -43,6 +45,8 @@ export default async function PollCard({ poll }: { poll: Poll }) {
     );
   }
 
+  const isUserCreator = await isCreator(poll.creatorId);
+
   return (
     <div className="flex flex-col bg-[#FAFAFA] p-6 rounded w-[284px]">
       <StatusIndicator isPublished={poll.published} isClosed={false} />
@@ -55,15 +59,12 @@ export default async function PollCard({ poll }: { poll: Poll }) {
       <div className="text-sm text-[#777777] my-6 pb-6 border-b border-[#E0E0E0]">
         {poll.description}
       </div>
-      <div className="flex gap-3 mb-6">
-        <IconCounter
-          count={votes.length}
-          icon={<ParticipantIcon className="fill-none stroke-[#A4A4A4]" />}
-        />
-        <IconCounter
-          count={statements.length}
-          icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
-        />
+      <div className="flex justify-between items-center mb-6 fill-none stroke-[#A4A4A4]">
+        <div className="flex gap-3">
+          <IconCounter count={votes.length} icon={<ParticipantIcon />} />
+          <IconCounter count={statements.length} icon={<StatementIcon />} />
+        </div>
+        {isUserCreator && <PollCardControls poll={poll} />}
       </div>
       <div className="flex justify-center">
         <Button

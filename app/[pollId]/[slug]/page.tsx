@@ -1,10 +1,13 @@
-import Voting from "@/lib/components/Voting";
-import { prisma } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
+
+import { prisma } from "@/lib/db";
+import Voting from "@/lib/components/Voting";
 import PageTitle from "@/lib/components/PageTitle";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import IconCounter from "@/lib/components/IconCounter";
+import PollControls from "@/lib/components/PollControls";
+import { isCreator } from "@/lib/isCreator";
 
 export default async function pollPage({
   params,
@@ -27,8 +30,11 @@ export default async function pollPage({
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
   });
 
+  const isUserCreator = await isCreator(poll.creatorId);
+
   return (
     <div className="flex flex-col">
+      {isUserCreator && <PollControls />}
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
         <IconCounter
