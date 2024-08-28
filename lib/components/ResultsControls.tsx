@@ -11,8 +11,11 @@ import ConstitutionIcon from "./icons/ConstitutionIcon";
 import { pollUrl } from "../links";
 import { generateCsv } from "@/lib/actions";
 import { controlButtonStyle } from "./PollControls";
+import { useToast } from "../useToast";
+import Toast from "./Toast";
 
 export default function ResultsControls({ poll }: { poll: Poll }) {
+  const { isVisible, message, showToast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const pollPath = pollUrl(poll);
 
@@ -27,11 +30,9 @@ export default function ResultsControls({ poll }: { poll: Poll }) {
       a.setAttribute("href", url);
       a.setAttribute("download", `poll-${poll.urlSlug}.csv`);
       a.click();
-
-      // TODO: toast
     } catch (error) {
       console.error("Error downloading CSV:", error);
-      // TODO: sad toast
+      showToast("Error downloading CSV");
     } finally {
       setIsDownloading(false);
     }
@@ -43,10 +44,13 @@ export default function ResultsControls({ poll }: { poll: Poll }) {
         <ViewIcon />
         View poll
       </Link>
-      <button onClick={downloadCSV} className={controlButtonStyle}>
-        <CSVIcon />
-        {isDownloading ? "Downloading..." : "Download CSV"}
-      </button>
+      <div className="relative">
+        <Toast message={message} isVisible={isVisible} />
+        <button onClick={downloadCSV} className={controlButtonStyle}>
+          <CSVIcon />
+          {isDownloading ? "Downloading..." : "Download CSV"}
+        </button>
+      </div>
       <Button
         icon={<ConstitutionIcon className="fill-none stroke-white" />}
         title="Generate constitution"

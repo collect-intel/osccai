@@ -3,16 +3,13 @@
 import Link from "next/link";
 
 import { Poll } from "@prisma/client";
-import { useCopyToClipboard } from "@/lib/useCopyToClipboard";
+import { copyToClipboard } from "@/lib/copyToClipboard";
 import EditIcon from "./icons/EditIcon";
 import ShareIcon from "./icons/ShareIcon";
-import CheckIcon from "./icons/CheckIcon";
 import ResultsIcon from "./icons/ResultsIcon";
 import { pollUrl } from "../links";
 
 export default function PollCardControls({ poll }: { poll: Poll }) {
-  const { copied, copyToClipboard } = useCopyToClipboard();
-
   const pollPath = pollUrl(poll);
 
   const handleShare = () => {
@@ -29,7 +26,7 @@ export default function PollCardControls({ poll }: { poll: Poll }) {
         <ResultsIcon />
       </Link>
       <button onClick={handleShare}>
-        {copied ? <CheckIcon className="w-[14px]" /> : <ShareIcon />}
+        <ShareIcon />
       </button>
     </div>
   );

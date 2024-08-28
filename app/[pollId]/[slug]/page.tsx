@@ -9,6 +9,7 @@ import IconCounter from "@/lib/components/IconCounter";
 import PollControls from "@/lib/components/PollControls";
 import { isCreator } from "@/lib/isCreator";
 import { pollUrl } from "@/lib/links";
+import BannerShareLink from "@/lib/components/BannerShareLink";
 
 export default async function pollPage({
   params,
@@ -37,6 +38,7 @@ export default async function pollPage({
 
   return (
     <div className="flex flex-col">
+      <BannerShareLink />
       {isUserCreator && <PollControls poll={poll} />}
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
