@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { Poll } from "@prisma/client";
 import Button from "./Button";
 import CheckIcon from "./icons/CheckIcon";
 import CopyIcon from "./icons/CopyIcon";
@@ -10,12 +9,12 @@ import { copyToClipboard } from "@/lib/copyToClipboard";
 import { useToast } from "../useToast";
 import Toast from "./Toast";
 
-export default function BannerShareLink({ poll }: { poll: Poll }) {
+export default function BannerShareLink() {
   const searchParams = useSearchParams();
+  const { isVisible, message, showToast } = useToast();
 
   if (!searchParams.get("justPublished")) return null;
 
-  const { isVisible, message, showToast } = useToast();
 
   const handleShare = () => {
     const currentUrl = window.location.href;

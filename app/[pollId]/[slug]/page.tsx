@@ -38,7 +38,7 @@ export default async function pollPage({
 
   return (
     <div className="flex flex-col">
-      <BannerShareLink poll={poll} />
+      <BannerShareLink />
       {isUserCreator && <PollControls poll={poll} />}
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
