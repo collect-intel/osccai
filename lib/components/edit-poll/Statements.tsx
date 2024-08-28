@@ -26,6 +26,10 @@ export default function PollStatements({
 
   const pollPath = pollUrl(poll);
 
+  const redirectPath = poll.published
+    ? pollPath
+    : `${pollPath}?justPublished=true`;
+
   return (
     <>
       <Textarea
@@ -39,7 +43,7 @@ export default function PollStatements({
           title={poll.published ? "Update poll" : "Publish poll"}
           onClick={async () => {
             await publishPoll(poll.uid, statements);
-            router.push(pollPath);
+            router.push(redirectPath);
           }}
         />
       </div>
