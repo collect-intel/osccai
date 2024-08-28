@@ -1,15 +1,17 @@
 "use client";
 import { useState } from "react";
 
-import { Statement, Vote } from "@prisma/client";
-import { submitStatement, submitVote } from "../actions";
+import { Statement } from "@prisma/client";
 import type { VoteValue } from "@prisma/client";
+import { flagStatement, submitStatement, submitVote } from "../actions";
 import StatementIcon from "./icons/StatementIcon";
 import FlagIcon from "./icons/FlagIcon";
 import QuestionIcon from "./icons/QuestionIcon";
 import ThumbIcon from "./icons/ThumbIcon";
 import Button from "./Button";
 import PlusIcon from "./icons/PlusIcon";
+import { useToast } from "../useToast";
+import Toast from "./Toast";
 
 function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
   const buttonStyle =
@@ -37,15 +39,14 @@ function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
 
 export default function Voting({
   statements,
-  votes,
   pollId,
 }: {
   statements: Statement[];
-  votes: Vote[];
   pollId: string;
 }) {
   const [currentStatementIx, setCurrentStatementIx] = useState(0);
   const [statementText, setStatementText] = useState("");
+  const { isVisible, message, showToast } = useToast();
 
   const currentStatement =
     currentStatementIx >= statements.length ? (
@@ -66,8 +67,13 @@ export default function Voting({
 
   const currentStatementNumber = Math.min(
     currentStatementIx + 1,
-    statements.length,
+    statements.length
   );
+
+  const handleFlag = async (statementId: string) => {
+    await flagStatement(statementId);
+    showToast("Statement flagged");
+  };
 
   return (
     <>
@@ -85,9 +91,15 @@ export default function Voting({
             <StatementIcon className="fill-none stroke-[#A4A4A4]" />{" "}
             {currentStatementNumber} of {statements.length}
           </div>
-          <button onClick={() => console.log("Flag")}>
-            <FlagIcon className="fill-none stroke-[#A4A4A4] hover:stroke-gray-500" />
-          </button>
+          <div className="relative">
+            <Toast message={message} isVisible={isVisible} />
+            <button
+              className="hover:bg-[#F0F0F0] p-3 rounded stroke-[#A4A4A4] hover:stroke-[#121212]"
+              onClick={() => handleFlag(statements[currentStatementIx].uid)}
+            >
+              <FlagIcon className="fill-none" />
+            </button>
+          </div>
         </div>
         <div>{currentStatement}</div>
       </div>

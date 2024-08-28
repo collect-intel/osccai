@@ -52,7 +52,7 @@ export default async function pollPage({
         />
       </div>
       <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>
-      <Voting statements={statements} votes={votes} pollId={poll.uid} />
+      <Voting statements={statements} pollId={poll.uid} />
     </div>
   );
 }
