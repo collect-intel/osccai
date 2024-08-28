@@ -7,6 +7,7 @@ import { useCopyToClipboard } from "@/lib/useCopyToClipboard";
 import EditIcon from "./icons/EditIcon";
 import ShareIcon from "./icons/ShareIcon";
 import CheckIcon from "./icons/CheckIcon";
+import ResultsIcon from "./icons/ResultsIcon";
 import { pollUrl } from "../links";
 
 export default function PollCardControls({ poll }: { poll: Poll }) {
@@ -23,6 +24,9 @@ export default function PollCardControls({ poll }: { poll: Poll }) {
     <div className="flex items-center gap-4">
       <Link href={pollPath + "/create"}>
         <EditIcon />
+      </Link>
+      <Link href={pollPath + "/results"}>
+        <ResultsIcon />
       </Link>
       <button onClick={handleShare}>
         {copied ? <CheckIcon className="w-[14px]" /> : <ShareIcon />}

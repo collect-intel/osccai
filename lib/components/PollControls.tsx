@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
+import { Poll } from "@prisma/client";
 import EditIcon from "@/lib/components/icons/EditIcon";
 import ShareIcon from "@/lib/components/icons/ShareIcon";
-import { useCopyToClipboard } from "../useCopyToClipboard";
+import { useCopyToClipboard } from "@/lib/useCopyToClipboard";
+import ResultsIcon from "./icons/ResultsIcon";
+import { pollUrl } from "../links";
 
-export default function PollControls() {
-  const pathname = usePathname();
+export const controlButtonStyle =
+  "flex items-center gap-1.5 text-sm font-medium fill-none stroke-[#121212]";
+
+export default function PollControls({ poll }: { poll: Poll }) {
+  const pollPath = pollUrl(poll);
+
   const { copied, copyToClipboard } = useCopyToClipboard();
 
   const handleShare = () => {
@@ -16,16 +22,17 @@ export default function PollControls() {
     copyToClipboard(currentUrl);
   };
 
-  const buttonStyle =
-    "flex items-center gap-1.5 text-sm font-medium fill-none stroke-[#121212]";
-
   return (
     <div className="flex items-center gap-6 self-end">
-      <Link href={pathname + "/create"} className={buttonStyle}>
+      <Link href={pollPath + "/create"} className={controlButtonStyle}>
         <EditIcon />
         Edit
       </Link>
-      <button className={buttonStyle} onClick={handleShare}>
+      <Link href={pollPath + "/results"} className={controlButtonStyle}>
+        <ResultsIcon />
+        Results
+      </Link>
+      <button className={controlButtonStyle} onClick={handleShare}>
         <ShareIcon />
         {copied ? "Copied" : "Share"}
       </button>
