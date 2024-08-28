@@ -10,6 +10,7 @@ import QuestionIcon from "./icons/QuestionIcon";
 import ThumbIcon from "./icons/ThumbIcon";
 import Button from "./Button";
 import PlusIcon from "./icons/PlusIcon";
+import Modal from "./Modal";
 
 function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
   const buttonStyle =
@@ -46,6 +47,7 @@ export default function Voting({
 }) {
   const [currentStatementIx, setCurrentStatementIx] = useState(0);
   const [statementText, setStatementText] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const currentStatement =
     currentStatementIx >= statements.length ? (
@@ -66,7 +68,7 @@ export default function Voting({
 
   const currentStatementNumber = Math.min(
     currentStatementIx + 1,
-    statements.length,
+    statements.length
   );
 
   return (
@@ -74,7 +76,7 @@ export default function Voting({
       <div className="flex justify-between items-center text-lg font-semibold mb-6">
         <div>Vote on these statements</div>
         <Button
-          onClick={() => console.log("Contribute")}
+          onClick={() => setIsModalOpen(true)}
           title="Contribute a statement"
           icon={<PlusIcon className="stroke-white" />}
         />
@@ -91,22 +93,36 @@ export default function Voting({
         </div>
         <div>{currentStatement}</div>
       </div>
-      {/* TODO - Chris: I have left this here until we find it a suitable home */}
-      <div className="flex flex-col mt-6">
-        <h2 className="text-lg">Add New Statement</h2>
-        <textarea
-          value={statementText}
-          onChange={(e) => setStatementText(e.target.value)}
-        />
-        <button
-          onClick={async () => {
-            await submitStatement(pollId, statementText);
-            setStatementText("");
-          }}
-        >
-          Add
-        </button>
-      </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <div className="flex flex-col gap-5">
+          <h2 className="text-lg font-medium">
+            Contribute a statement for participants to vote on
+          </h2>
+          <textarea
+            value={statementText}
+            onChange={(e) => setStatementText(e.target.value)}
+            className="rounded-md min-h-48 min-w-[500px] border border-[#E0E0E0] ring-1 ring-inset ring-[#E0E0E0] placeholder:text-gray-400 focus:ring-inset focus:ring-[#185849] focus:border-[#185849]"
+          />
+          <div className="flex justify-end items-center gap-6">
+            <button
+              className="text-sm font-medium hover:bg-[#F0F0F0] p-2 rounded"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </button>
+
+            <Button
+              onClick={async () => {
+                await submitStatement(pollId, statementText);
+                setStatementText("");
+                setIsModalOpen(false);
+              }}
+              title="Add statement"
+              icon={<PlusIcon className="stroke-white" />}
+            />
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
