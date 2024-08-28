@@ -15,7 +15,6 @@ export default function BannerShareLink() {
 
   if (!searchParams.get("justPublished")) return null;
 
-
   const handleShare = () => {
     const currentUrl = window.location.href;
     copyToClipboard(currentUrl);
