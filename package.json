@@ -21,6 +21,7 @@
     "@supabase/supabase-js": "^2.45.1",
     "@tailwindcss/forms": "^0.5.7",
     "clsx": "^2.1.1",
+    "csv-stringify": "^6.5.1",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",

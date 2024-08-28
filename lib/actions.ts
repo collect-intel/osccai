@@ -4,11 +4,13 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { Poll, VoteValue } from "@prisma/client";
+import type { Poll, VoteValue as VoteValueType } from "@prisma/client";
+import { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import slugify from "slugify";
+import { stringify } from "csv-stringify/sync";
 
 const max_tokens = 2048;
 const model = "claude-3-5-sonnet-20240620";
@@ -191,8 +193,69 @@ export async function flagStatement(statementId: string) {
   });
 }
 
-export async function submitVote(statementId: string, voteValue: VoteValue) {
+export async function submitVote(
+  statementId: string,
+  voteValue: VoteValueType,
+) {
   await prisma.vote.create({
     data: { statementId, voteValue, participantId: await getParticipantId() },
   });
+}
+
+export async function generateCsv(pollId: string): Promise<string> {
+  const poll = await prisma.poll.findUnique({
+    where: { uid: pollId },
+    include: {
+      creator: true,
+      statements: {
+        include: {
+          participant: true,
+          votes: {
+            include: {
+              participant: true,
+            },
+          },
+          flags: {
+            include: {
+              participant: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!poll) {
+    throw new Error("Poll not found");
+  }
+
+  const csvData = poll.statements.map((statement) => {
+    const approvedVotes = statement.votes.filter(
+      (vote) => vote.voteValue === VoteValue.AGREE,
+    );
+    const disapprovedVotes = statement.votes.filter(
+      (vote) => vote.voteValue === VoteValue.DISAGREE,
+    );
+    const passedVotes = statement.votes.filter(
+      (vote) => vote.voteValue === VoteValue.PASS,
+    );
+
+    return {
+      "Creator uid": poll.creatorId,
+      Statement: statement.text,
+      "Statement uid": statement.uid,
+      "Participant uids vote Approved": approvedVotes
+        .map((vote) => vote.participantId)
+        .join(", "),
+      "Participant uids vote Disapproved": disapprovedVotes
+        .map((vote) => vote.participantId)
+        .join(", "),
+      "Participant uids vote Passed": passedVotes
+        .map((vote) => vote.participantId)
+        .join(", "),
+      "Count of Flags": statement.flags.length,
+    };
+  });
+
+  return stringify(csvData, { header: true });
 }

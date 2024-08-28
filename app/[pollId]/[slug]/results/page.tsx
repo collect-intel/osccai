@@ -1,21 +1,15 @@
 import { notFound, redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
-import Voting from "@/lib/components/Voting";
 import PageTitle from "@/lib/components/PageTitle";
-import StatementIcon from "@/lib/components/icons/StatementIcon";
-import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import IconCounter from "@/lib/components/IconCounter";
-import PollControls from "@/lib/components/PollControls";
+import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
+import StatementIcon from "@/lib/components/icons/StatementIcon";
 import { isCreator } from "@/lib/isCreator";
 import { pollUrl } from "@/lib/links";
-import BannerShareLink from "@/lib/components/BannerShareLink";
+import ResultsControls from "@/lib/components/ResultsControls";
 
-export default async function pollPage({
-  params,
-}: {
-  params: { pollId: string };
-}) {
+export default async function Page({ params }: { params: { pollId: string } }) {
   const poll = await prisma.poll.findUnique({
     where: { uid: params.pollId },
   });
@@ -23,8 +17,10 @@ export default async function pollPage({
 
   const pollPath = pollUrl(poll);
 
-  if (!poll.published) {
-    redirect(`${pollPath}/create`);
+  const isUserCreator = await isCreator(poll.creatorId);
+
+  if (!isUserCreator) {
+    redirect(pollPath);
   }
 
   const statements = await prisma.statement.findMany({
@@ -34,12 +30,9 @@ export default async function pollPage({
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
   });
 
-  const isUserCreator = await isCreator(poll.creatorId);
-
   return (
     <div className="flex flex-col">
-      <BannerShareLink />
-      {isUserCreator && <PollControls poll={poll} />}
+      <ResultsControls poll={poll} />
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
         <IconCounter
@@ -51,8 +44,6 @@ export default async function pollPage({
           icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
         />
       </div>
-      <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>
-      <Voting statements={statements} pollId={poll.uid} />
     </div>
   );
 }
