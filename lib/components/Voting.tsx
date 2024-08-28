@@ -68,7 +68,7 @@ export default function Voting({
 
   const currentStatementNumber = Math.min(
     currentStatementIx + 1,
-    statements.length
+    statements.length,
   );
 
   return (
