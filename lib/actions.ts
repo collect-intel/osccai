@@ -193,7 +193,10 @@ export async function flagStatement(statementId: string) {
   });
 }
 
-export async function submitVote(statementId: string, voteValue: VoteValueType) {
+export async function submitVote(
+  statementId: string,
+  voteValue: VoteValueType,
+) {
   await prisma.vote.create({
     data: { statementId, voteValue, participantId: await getParticipantId() },
   });
@@ -228,13 +231,13 @@ export async function generateCsv(pollId: string): Promise<string> {
 
   const csvData = poll.statements.map((statement) => {
     const approvedVotes = statement.votes.filter(
-      (vote) => vote.voteValue === VoteValue.AGREE
+      (vote) => vote.voteValue === VoteValue.AGREE,
     );
     const disapprovedVotes = statement.votes.filter(
-      (vote) => vote.voteValue === VoteValue.DISAGREE
+      (vote) => vote.voteValue === VoteValue.DISAGREE,
     );
     const passedVotes = statement.votes.filter(
-      (vote) => vote.voteValue === VoteValue.PASS
+      (vote) => vote.voteValue === VoteValue.PASS,
     );
 
     return {
