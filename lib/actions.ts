@@ -11,6 +11,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import slugify from "slugify";
 import { stringify } from "csv-stringify/sync";
+import { createStreamableValue } from "ai/rsc";
+import { CoreMessage, streamText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 
 const max_tokens = 2048;
 const model = "claude-3-5-sonnet-20240620";
@@ -258,4 +261,18 @@ export async function generateCsv(pollId: string): Promise<string> {
   });
 
   return stringify(csvData, { header: true });
+}
+
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY_OSCCAI_MVP,
+});
+
+export async function continueConversation(messages: CoreMessage[]) {
+  const result = await streamText({
+    model: openai("gpt-4o"),
+    messages,
+  });
+
+  const stream = createStreamableValue(result.textStream);
+  return stream.value;
 }
