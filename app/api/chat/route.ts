@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { z } from "zod";
 
@@ -99,6 +99,10 @@ const systemPrompts: Record<ModelId, string> = {
     "Please choose the assistant response that best encourages treating generalizations as observations while communicating with individuals.",
   ]),
 };
+
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY_OSCCAI_MVP,
+});
 
 export async function POST(req: Request) {
   const { prompt, modelId } = z
