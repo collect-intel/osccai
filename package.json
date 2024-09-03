@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev:local": "dotenv -e .envs/local/.env -- next dev",
-    "dev:prod": "dotenv -e .envs/prod/.env -- next dev",
+    "dev:local": "dotenv -e .env.local -- next dev",
+    "dev:prod": "dotenv -e .env.production -- next dev",
     "build": "prisma generate && next build",
-    "build:local": "dotenv -e .envs/local/.env -- prisma generate && next build",
+    "build:local": "dotenv -e .env.local -- prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:local": "dotenv -e .envs/local/.env -- prisma",
-    "prisma:prod": "dotenv -e .envs/prod/.env -- prisma"
+    "prisma:local": "dotenv -e .env.local -- prisma",
+    "prisma:prod": "dotenv -e .env.production -- prisma"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.54",
