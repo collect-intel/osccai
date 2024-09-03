@@ -44,11 +44,11 @@ export default async function pollPage({
       <div className="flex gap-3 my-4">
         <IconCounter
           count={votes.length ?? 0}
-          icon={<ParticipantIcon className="fill-none stroke-[#A4A4A4]" />}
+          icon={<ParticipantIcon className="fill-none stroke-gray" />}
         />
         <IconCounter
           count={statements.length ?? 0}
-          icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
+          icon={<StatementIcon className="fill-none stroke-gray" />}
         />
       </div>
       <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>

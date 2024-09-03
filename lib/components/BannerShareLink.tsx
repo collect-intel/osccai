@@ -22,9 +22,9 @@ export default function BannerShareLink() {
   };
 
   return (
-    <div className="flex justify-between items-center p-2 mb-8 bg-[#EEF5FF] rounded">
+    <div className="flex justify-between items-center p-2 mb-8 bg-light-blue rounded">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <CheckIcon className="fill-none stroke-[#121212]" />
+        <CheckIcon className="fill-none stroke-charcoal" />
         Your poll is published! Share it with participants to start collecting
         input.
       </div>

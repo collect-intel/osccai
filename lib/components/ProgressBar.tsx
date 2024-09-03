@@ -56,14 +56,14 @@ function ProgressBarItem({
     >
       <div
         className={`rounded-full h-6 w-6 flex justify-center items-center text-mono text-xs text-white font-medium ${
-          isActive ? "bg-[#185849]" : "bg-[#E0E0E0]"
+          isActive ? "bg-teal" : "bg-light-gray"
         }`}
       >
         {stage}
       </div>
       <h2
         className={`text-sm font-medium ${
-          isActive ? "text-[#185849]" : "text-[#E0E0E0]"
+          isActive ? "text-teal" : "text-light-gray"
         }`}
       >
         {label}

@@ -18,7 +18,7 @@ export default function Toggle({
         <Switch
           checked={enabled}
           onChange={setEnabled}
-          className="group relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-[#E0E0E0] transition-colors duration-200 ease-in-out focus:outline-none data-[checked]:bg-[#185849]"
+          className="group relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-light-gray transition-colors duration-200 ease-in-out focus:outline-none data-[checked]:bg-teal"
         >
           <span
             aria-hidden="true"
@@ -26,7 +26,7 @@ export default function Toggle({
           />
         </Switch>
         <Label as="span" className="ml-3 text-sm">
-          <span className="text-[#A4A4A4]">{details}</span>
+          <span className="text-gray">{details}</span>
         </Label>
       </Field>
     </div>

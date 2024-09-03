@@ -28,17 +28,17 @@ export default async function PollCard({ poll }: { poll: Poll }) {
 
     if (isClosed) {
       status = "Closed";
-      color = "text-[#A4A4A4]";
+      color = "text-gray";
     } else if (isPublished) {
       status = "Live";
-      color = "text-[#008302]";
+      color = "text-green";
     } else {
       status = "Draft";
-      color = "text-[#F3CE99]";
+      color = "text-peach";
     }
 
     return (
-      <div className="self-end flex items-center gap-1 text-xs text-[#A4A4A4] font-medium font-mono tracking-tighter">
+      <div className="self-end flex items-center gap-1 text-xs text-gray font-medium font-mono tracking-tighter">
         <div className={`text-xl ${color}`}>&bull;</div>
         {status}
       </div>
@@ -48,7 +48,7 @@ export default async function PollCard({ poll }: { poll: Poll }) {
   const isUserCreator = await isCreator(poll.creatorId);
 
   return (
-    <div className="flex flex-col bg-[#FAFAFA] p-6 rounded w-[284px]">
+    <div className="flex flex-col bg-soft-gray p-6 rounded w-[284px]">
       <StatusIndicator isPublished={poll.published} isClosed={false} />
       <Link
         href={`/${poll.uid}/${poll.urlSlug}`}
@@ -56,10 +56,10 @@ export default async function PollCard({ poll }: { poll: Poll }) {
       >
         {poll.title}
       </Link>
-      <div className="text-sm text-[#777777] my-6 pb-6 border-b border-[#E0E0E0]">
+      <div className="text-sm text-medium-gray my-6 pb-6 border-b border-light-gray">
         {poll.description}
       </div>
-      <div className="flex justify-between items-center mb-6 fill-none stroke-[#A4A4A4]">
+      <div className="flex justify-between items-center mb-6 fill-none stroke-gray">
         <div className="flex gap-3">
           <IconCounter count={votes.length} icon={<ParticipantIcon />} />
           <IconCounter count={statements.length} icon={<StatementIcon />} />

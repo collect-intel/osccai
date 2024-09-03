@@ -29,7 +29,7 @@ function VoteButtons({ onClick }: { onClick: (vote: VoteValue) => void }) {
         </button>
       </div>
       <button
-        className="flex items-center gap-1 text-xs text-[#A4A4A4] hover:text-gray-500 font-medium fill-none stroke-[#A4A4A4] hover:stroke-gray-500"
+        className="flex items-center gap-1 text-xs text-gray hover:text-gray-500 font-medium fill-none stroke-gray hover:stroke-gray-500"
         onClick={() => onClick("PASS")}
       >
         <QuestionIcon /> Skip, I&apos;m not sure
@@ -87,16 +87,16 @@ export default function Voting({
           icon={<PlusIcon className="stroke-white" />}
         />
       </div>
-      <div className="flex flex-col rounded-2xl shadow-lg p-6">
+      <div className="flex flex-col rounded-2xl shadow-lg p-6 bg-light-beige">
         <div className="flex justify-between mb-4">
-          <div className="flex items-center gap-2 text-xs text-[#A4A4A4] font-mono font-medium">
-            <StatementIcon className="fill-none stroke-[#A4A4A4]" />{" "}
+          <div className="flex items-center gap-2 text-xs text-gray font-mono font-medium">
+            <StatementIcon className="fill-none stroke-gray" />{" "}
             {currentStatementNumber} of {statements.length}
           </div>
           <div className="relative">
             <Toast message={message} isVisible={isVisible} />
             <button
-              className="hover:bg-[#F0F0F0] p-3 rounded stroke-[#A4A4A4] hover:stroke-[#121212]"
+              className="hover:bg-almost-white p-3 rounded stroke-gray hover:stroke-charcoal"
               onClick={() => handleFlag(statements[currentStatementIx].uid)}
             >
               <FlagIcon className="fill-none" />
@@ -113,11 +113,11 @@ export default function Voting({
           <textarea
             value={statementText}
             onChange={(e) => setStatementText(e.target.value)}
-            className="rounded-md min-h-48 min-w-[500px] border border-[#E0E0E0] ring-1 ring-inset ring-[#E0E0E0] placeholder:text-gray-400 focus:ring-inset focus:ring-[#185849] focus:border-[#185849]"
+            className="rounded-md min-h-48 min-w-[500px] border border-light-gray bg-yellow ring-1 ring-inset ring-light-gray placeholder:text-gray-400 focus:ring-inset focus:ring-teal focus:border-teal"
           />
           <div className="flex justify-end items-center gap-6">
             <button
-              className="text-sm font-medium hover:bg-[#F0F0F0] p-2 rounded"
+              className="text-sm font-medium hover:bg-almost-white p-2 rounded"
               onClick={() => setIsModalOpen(false)}
             >
               Cancel
