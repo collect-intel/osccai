@@ -37,11 +37,11 @@ export default async function Page({ params }: { params: { pollId: string } }) {
       <div className="flex gap-3 my-4">
         <IconCounter
           count={votes.length ?? 0}
-          icon={<ParticipantIcon className="fill-none stroke-[#A4A4A4]" />}
+          icon={<ParticipantIcon className="fill-none stroke-gray" />}
         />
         <IconCounter
           count={statements.length ?? 0}
-          icon={<StatementIcon className="fill-none stroke-[#A4A4A4]" />}
+          icon={<StatementIcon className="fill-none stroke-gray" />}
         />
       </div>
     </div>

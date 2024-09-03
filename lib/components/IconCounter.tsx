@@ -6,7 +6,7 @@ export default function IconCounter({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-1 text-xs text-[#A4A4A4] font-mono font-medium">
+    <div className="flex items-center gap-1 text-xs text-gray font-mono font-medium">
       {icon}
       {count}
     </div>

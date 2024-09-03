@@ -15,7 +15,7 @@ export default async function Home() {
       </div>
       {polls.length === 0 && (
         <div className="flex flex-col justify-center items-center h-80">
-          <p className="text-[#A4A4A4] font-medium mb-6">No polls found</p>
+          <p className="text-gray font-medium mb-6">No polls found</p>
           <NewPollForm />
         </div>
       )}

@@ -12,7 +12,7 @@ import Toast from "./Toast";
 import { useToast } from "../useToast";
 
 export const controlButtonStyle =
-  "flex items-center gap-1.5 text-sm font-medium fill-none stroke-[#121212]";
+  "flex items-center gap-1.5 text-sm font-medium fill-none stroke-charcoal";
 
 export default function PollControls({ poll }: { poll: Poll }) {
   const pollPath = pollUrl(poll);

@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { Crimson_Text } from "next/font/google";
 
 import { createClient } from "@/lib/supabase/server";
 import ProfileDropdown from "./ProfileDropdown";
+
+const crimson = Crimson_Text({ subsets: ["latin"], weight: "400" });
 
 function NavbarLink({ href, text }: { href: string; text: string }) {
   return (
@@ -20,23 +23,22 @@ export default async function Navbar() {
   }
 
   return (
-    <nav className="text-sm p-4 border-b border-[#E0E0E0]">
+    <nav className="text-sm p-4 border-b border-light-gray bg-yellow">
       <div className="flex items-center justify-between 2xl:container 2xl:mx-auto">
-        <div className="flex gap-10">
+        <div className="flex items-center gap-10">
           <Link
             href="/"
-            className="font-mono font-bold text-black tracking-tight"
+            className={"text-xl text-black tracking-tight " + crimson.className}
           >
-            COMMMUNITY MODELS
+            Community AI Models
           </Link>
-          <NavbarLink href="/about" text="About" />
-          <NavbarLink href="/explore" text="Explore" />
+          <NavbarLink href="/how-it-works" text="How it Works" />
+          <NavbarLink href="/explore" text="Explore Constitutions" />
         </div>
         <div className="flex items-center gap-5">
           {data?.user ? (
             <>
-              <NavbarLink href="/" text="Polls" />
-              <NavbarLink href="/constitutions" text="Constitutions" />
+              <NavbarLink href="/constitutions" text="My Constitutions" />
               <ProfileDropdown />
             </>
           ) : (

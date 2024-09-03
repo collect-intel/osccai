@@ -33,7 +33,7 @@ export default function ProfileDropdown() {
   };
 
   const buttonStyle =
-    "block p-1.5 text-sm font-medium rounded hover:bg-[#F0F0F0]";
+    "block p-1.5 text-sm font-medium rounded hover:bg-almost-white";
 
   return (
     <div
