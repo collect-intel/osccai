@@ -39,6 +39,58 @@ Using this tool creates a new **Poll** that collects **Statements**.
 
 Votes take the form of **Agree, Disagree, **or **Pass**. Participants can also **Flag** a Statement for removal (inappropriate/off-topic).
 
+## Getting Started / Local Setup
+
+This presumes you have the following installed:
+
+* Node (+ npm or pnpm)
+* Postgres (`brew install postgresql`, `brew services start postgresql`)
+
+1. Clone the repo
+
+```bash
+git clone git@github.com:collect-intel/osccai.git
+```
+
+2. Ensure local dependencies are installed:
+
+```bash
+npm install # / pnpm install
+```
+
+3. Set up local env vars in `.env`:
+
+```
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_SUPABASE_URL=...
+DATABASE_URL=postgresql://[your username]@localhost:5432/postgres
+DIRECT_URL=postgresql://[your username]@localhost:5432/postgres
+```
+
+4. Run the prisma migration to get database set-up:
+
+```bash
+# First: Ensure postgres is running!
+npx prisma migrate dev --name init
+npx prisma studio # useful for verifying data is there
+```
+
+5. Run the development server:
+
+```bash
+npm run dev:local # usually runs at localhost:3000 unless port is taken
+```
+
+6. Login / Sign up
+
+```
+Go to http://localhost:3000/login
+```
+
+If you are signing up you'll need to click on a link sent to your email.
+
+7. Done! 🥳
+
 ## Contributing
 
 We welcome contributions from the community! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to get involved.
