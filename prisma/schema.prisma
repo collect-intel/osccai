@@ -2,86 +2,116 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model PollCreator {
-  uid String @id @default(cuid())
-
-  name  String
-  email String
-
-  polls Poll[]
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-model Participant {
-  uid         String  @id @default(cuid())
-  phoneNumber String?
+model CommunityModelOwner {
+  uid               String             @id @default(cuid())
+  name              String
+  email             String
+  participant       Participant?       @relation(fields: [participantId], references: [uid])
+  participantId     String?            @unique
 
-  statements Statement[]
-  votes      Vote[]
-  flags      Flag[]
+  communityModels   CommunityModel[]
+}
+
+model CommunityModel {
+  uid                     String                @id @default(cuid())
+  name                    String
+  owner                   CommunityModelOwner   @relation(fields: [ownerId], references: [uid])
+  ownerId                 String
+  initialIdea             String
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  activeConstitutionId    String?               @unique
+  activeConstitution      Constitution?         @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
+
+  constitutions           Constitution[]        @relation("Constitutions")
+  polls                   Poll[]
+}
+
+model Constitution {
+  uid         String           @id @default(cuid())
+  version     Int
+  content     String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  modelId     String
+  model       CommunityModel    @relation("Constitutions", fields: [modelId], references: [uid])
+
+  isActiveIn  CommunityModel?   @relation("ActiveConstitution")
 }
 
 model Poll {
-  uid                        String      @id @default(cuid())
-  createdAt                  DateTime    @default(now())
-  deleted                    Boolean     @default(false)
-  creator                    PollCreator @relation(fields: [creatorId], references: [uid])
-  creatorId                  String
+  uid                        String            @id @default(cuid())
+  createdAt                  DateTime          @default(now())
+  deleted                    Boolean           @default(false)
+  communityModel             CommunityModel    @relation(fields: [communityModelId], references: [uid])
+  communityModelId           String
   published                  Boolean
-  requireSMS                 Boolean     @default(true)
-  allowParticipantStatements Boolean     @default(true)
 
-  title       String @default("")
-  description String @default("")
-  urlSlug     String 
+  // We consider requireSMS to be synonymous with the idea of
+  // "require authentication" for now. TODO: just call it requireAuth
+  requireSMS                 Boolean           @default(true)
+  allowParticipantStatements Boolean           @default(true)
 
-  statements Statement[]
+  statements                 Statement[]
+}
+
+model Participant {
+  uid                    String                @id @default(cuid())
+  phoneNumber            String?
+  communityModelOwner    CommunityModelOwner?
+
+  statements             Statement[]
+  votes                  Vote[]
+  flags                  Flag[]
 }
 
 model Statement {
-  uid           String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  deleted       Boolean     @default(false)
-  participant   Participant @relation(fields: [participantId], references: [uid])
-  participantId String
+  uid            String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  deleted        Boolean      @default(false)
+  participant    Participant  @relation(fields: [participantId], references: [uid])
+  participantId  String
 
-  text String
+  text           String
 
-  poll   Poll   @relation(fields: [pollId], references: [uid])
-  pollId String
+  poll           Poll         @relation(fields: [pollId], references: [uid])
+  pollId         String
 
-  votes Vote[]
-  flags Flag[]
+  votes          Vote[]
+  flags          Flag[]
+}
+
+model Vote {
+  uid            String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  participant    Participant  @relation(fields: [participantId], references: [uid])
+  participantId  String
+
+  voteValue      VoteValue
+  statement      Statement    @relation(fields: [statementId], references: [uid])
+  statementId    String
 }
 
 model Flag {
-  uid           String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  participant   Participant @relation(fields: [participantId], references: [uid])
-  participantId String
+  uid            String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  participant    Participant  @relation(fields: [participantId], references: [uid])
+  participantId  String
 
-  statement   Statement @relation(fields: [statementId], references: [uid])
-  statementId String
+  statement      Statement    @relation(fields: [statementId], references: [uid])
+  statementId    String
 }
 
 enum VoteValue {
   AGREE
   DISAGREE
   PASS
-}
-
-model Vote {
-  uid           String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  participant   Participant @relation(fields: [participantId], references: [uid])
-  participantId String
-
-  voteValue   VoteValue
-  statement   Statement @relation(fields: [statementId], references: [uid])
-  statementId String
-}
-
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }

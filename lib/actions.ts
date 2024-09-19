@@ -3,17 +3,18 @@ import Anthropic from "@anthropic-ai/sdk";
 // import type { Tool } from "@anthropic-ai/sdk/resources";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { cookies } from 'next/headers';
 import { prisma } from "@/lib/db";
 import type { Poll, VoteValue as VoteValueType } from "@prisma/client";
 import { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
-import { redirect } from "next/navigation";
-import { createClient } from "./supabase/server";
 import slugify from "slugify";
 import { stringify } from "csv-stringify/sync";
 import { createStreamableValue } from "ai/rsc";
 import { CoreMessage, streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { currentUser } from '@clerk/nextjs/server'
 
 const max_tokens = 2048;
 const model = "claude-3-5-sonnet-20240620";
@@ -62,22 +63,25 @@ const separatedStatementsSchema = z.object({
   statements: z.array(z.string()),
 });
 
-export async function createPoll() {
-  const supabase = createClient();
-  const uid = createId();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+export async function createPoll(communityModelId: string) {
+  const user = await currentUser();
   if (!user) {
-    console.error("createPoll error", error);
-    redirect("/error");
+    throw new Error("User not authenticated");
   }
-  const urlSlug = "new";
+
+  const uid = createId();
+  const urlSlug = 'new';
+  
   await prisma.poll.create({
-    data: { uid, urlSlug, creatorId: user.id, published: false },
+    data: { 
+      uid, 
+      urlSlug, 
+      communityModel: { connect: { uid: communityModelId } },
+      published: false 
+    },
   });
-  revalidatePath("/");
+  
+  revalidatePath('/');
   redirect(`/${uid}/${urlSlug}/create`);
 }
 
@@ -149,16 +153,57 @@ async function separateStatements(
 }
 
 async function getParticipantId() {
-  const supabase = createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (!user) {
-    console.error("createPoll error", error);
-    redirect("/error");
+  const user = await currentUser();
+  const cookieStore = cookies();
+
+  if (user) {
+    let participant = await prisma.participant.findUnique({
+      where: { uid: user.id },
+    });
+
+    if (!participant) {
+      participant = await prisma.participant.create({
+        data: { uid: user.id },
+      });
+    }
+
+    return participant.uid;
   }
-  return user.id;
+
+  // For anonymous users, try to retrieve participantId from cookies
+  let participantId = cookieStore.get('participantId')?.value;
+
+  if (participantId) {
+    // Ensure the participant exists in the database
+    const participantExists = await prisma.participant.findUnique({
+      where: { uid: participantId },
+    });
+
+    if (participantExists) {
+      return participantId;
+    }
+
+    // If participant does not exist in the database, create a new one
+  }
+
+  // No participantId found in cookies, or participant does not exist in DB
+  participantId = createId();
+  await prisma.participant.create({
+    data: { uid: participantId },
+  });
+
+  // Set the participantId cookie
+  cookieStore.set({
+    name: 'participantId',
+    value: participantId,
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+  });
+
+  return participantId;
 }
 
 export async function publishPoll(uid: string, statementsStr: string) {
@@ -177,21 +222,23 @@ export async function publishPoll(uid: string, statementsStr: string) {
       participantId,
     })),
   });
-  revalidatePath(`/poll/${uid}`);
+  revalidatePath(`/polls/${uid}`);
 }
 
 export async function submitStatement(pollId: string, text: string) {
+  const participantId = await getParticipantId();
   await prisma.statement.create({
-    data: { pollId, text, participantId: await getParticipantId() },
+    data: { pollId, text, participantId },
   });
-  revalidatePath(`/poll/${pollId}`);
+  revalidatePath(`/polls/${pollId}`);
 }
 
 export async function flagStatement(statementId: string) {
+  const participantId = await getParticipantId();
   await prisma.flag.create({
     data: {
       statementId,
-      participantId: await getParticipantId(),
+      participantId,
     },
   });
 }
@@ -199,10 +246,26 @@ export async function flagStatement(statementId: string) {
 export async function submitVote(
   statementId: string,
   voteValue: VoteValueType,
+  previousVote?: VoteValueType
 ) {
-  await prisma.vote.create({
-    data: { statementId, voteValue, participantId: await getParticipantId() },
-  });
+  const participantId = await getParticipantId();
+
+  if (previousVote) {
+    // If there's a previous vote, update it
+    await prisma.vote.updateMany({
+      where: { 
+        statementId, 
+        participantId,
+        voteValue: previousVote
+      },
+      data: { voteValue },
+    });
+  } else {
+    // If there's no previous vote, create a new one
+    await prisma.vote.create({
+      data: { statementId, voteValue, participantId },
+    });
+  }
 }
 
 export async function generateCsv(pollId: string): Promise<string> {
@@ -275,4 +338,156 @@ export async function continueConversation(messages: CoreMessage[]) {
 
   const stream = createStreamableValue(result.textStream);
   return stream.value;
+}
+
+async function generateStatementsFromIdea(initialIdea: string): Promise<string[]> {
+  return [
+    "The AI should prioritize the interests of the collective or common good over individual preferences or rights",
+    "The AI should be helpful",
+    "Be honest",
+    "Be harmless" 
+  ]
+}
+
+export async function createCommunityModel(name: string, initialIdea: string) {
+  'use server';
+  const user = await currentUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const uid = createId();
+
+  // Ensure the owner exists in the CommunityModelOwner table
+  let owner = await prisma.communityModelOwner.findUnique({
+    where: { uid: user.id },
+  });
+
+  let participantId: string;
+
+  if (!owner) {
+    // Check if Participant already exists
+    let participant = await prisma.participant.findUnique({
+      where: { uid: user.id },
+    });
+
+    if (!participant) {
+      // Create a Participant if it doesn't exist
+      participant = await prisma.participant.create({
+        data: {
+          uid: user.id,
+        },
+      });
+    }
+
+    participantId = participant.uid;
+
+    // Then create the CommunityModelOwner
+    owner = await prisma.communityModelOwner.create({
+      data: {
+        uid: user.id,
+        name: user.fullName || user.firstName || 'Unknown',
+        email: user.primaryEmailAddress?.emailAddress || '',
+        participantId: participantId
+      },
+    });
+  } else {
+    participantId = owner.participantId || user.id;
+    
+    // If owner exists but doesn't have a participantId, link to existing Participant or create a new one
+    if (!owner.participantId) {
+      let participant = await prisma.participant.findUnique({
+        where: { uid: user.id },
+      });
+
+      if (!participant) {
+        participant = await prisma.participant.create({
+          data: {
+            uid: user.id,
+          },
+        });
+      }
+      
+      // Update the CommunityModelOwner with the participantId
+      await prisma.communityModelOwner.update({
+        where: { uid: user.id },
+        data: {
+          participantId: participant.uid
+        },
+      });
+      
+      participantId = participant.uid;
+    }
+  }
+
+  // Create Community Model
+  const communityModel = await prisma.communityModel.create({
+    data: {
+      uid,
+      name,
+      owner: { connect: { uid: owner.uid } },
+      initialIdea,
+    },
+  });
+
+  // Generate initial statements from initialIdea
+  const statements = await generateStatementsFromIdea(initialIdea);
+
+  // Create first poll
+  const pollId = createId();
+  await prisma.poll.create({
+    data: {
+      uid: pollId,
+      communityModel: { connect: { uid: communityModel.uid } },
+      published: true,
+      urlSlug: 'initial'
+    },
+  });
+
+  // Create statements for the poll
+  await prisma.statement.createMany({
+    data: statements.map((text) => ({
+      pollId,
+      text,
+      participantId,
+    })),
+  });
+
+  return uid;
+}
+
+export async function setActiveConstitution(communityModelId: string, constitutionId: string) {
+  await prisma.communityModel.update({
+    where: { uid: communityModelId },
+    data: { activeConstitutionId: constitutionId },
+  });
+
+  await prisma.constitution.update({
+    where: { uid: constitutionId },
+    data: { isPublished: true },
+  });
+
+  revalidatePath(`/community-models/${communityModelId}`);
+}
+
+export async function fetchUserVotes(pollId: string): Promise<Record<string, VoteValueType>> {
+  const participantId = await getParticipantId();
+  const votes = await prisma.vote.findMany({
+    where: {
+      participantId,
+      statement: {
+        pollId
+      }
+    },
+    select: {
+      statementId: true,
+      voteValue: true
+    }
+  });
+
+  return votes.reduce((acc, vote) => {
+    acc[vote.statementId] = vote.voteValue;
+    return acc;
+  }, {} as Record<string, VoteValueType>);
 }

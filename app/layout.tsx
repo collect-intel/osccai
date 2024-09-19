@@ -1,3 +1,4 @@
+import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
@@ -21,10 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={"text-charcoal bg-off-white " + dm.className}>
-        <Navbar />
-        <div className="max-w-4xl mt-10 mx-auto">{children}</div>
-      </body>
+      <ClerkProvider>
+        <body className={"text-charcoal bg-off-white " + dm.className}>
+          <Navbar />
+          {children}
+        </body>
+      </ClerkProvider>
     </html>
   );
 }

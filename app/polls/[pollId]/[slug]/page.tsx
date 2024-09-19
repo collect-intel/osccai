@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import { fetchUserVotes } from "@/lib/actions";
 
 import { prisma } from "@/lib/db";
-import Voting from "@/lib/components/Voting";
+import VotingContainer from "@/lib/components/VotingContainer";
 import PageTitle from "@/lib/components/PageTitle";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
@@ -16,6 +18,8 @@ export default async function pollPage({
 }: {
   params: { pollId: string };
 }) {
+  console.log('pollPage pollId', params);
+
   const poll = await prisma.poll.findUnique({
     where: { uid: params.pollId },
   });
@@ -36,12 +40,15 @@ export default async function pollPage({
 
   const isUserCreator = await isCreator(poll.creatorId);
 
+  const { userId } = auth();
+  const userVotes = userId ? await fetchUserVotes(poll.uid) : {};
+
   return (
-    <div className="flex flex-col">
+    <div className="container mx-auto px-4 py-8 flex flex-col">
       <BannerShareLink />
       {isUserCreator && <PollControls poll={poll} />}
       <PageTitle title={poll.title} />
-      <div className="flex gap-3 my-4">
+      <div className="flex gap-3 mb-4">
         <IconCounter
           count={votes.length ?? 0}
           icon={<ParticipantIcon className="fill-none stroke-gray" />}
@@ -52,7 +59,12 @@ export default async function pollPage({
         />
       </div>
       <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>
-      <Voting statements={statements} pollId={poll.uid} />
+      <VotingContainer
+        statements={statements}
+        pollId={poll.uid}
+        requireSMS={poll.requireSMS}
+        initialVotes={userVotes}
+      />
     </div>
   );
 }

@@ -15,16 +15,19 @@
   "dependencies": {
     "@ai-sdk/openai": "^0.0.54",
     "@anthropic-ai/sdk": "^0.27.0",
+    "@clerk/nextjs": "^5.5.2",
     "@headlessui/react": "^2.1.2",
     "@heroicons/react": "^2.1.5",
     "@paralleldrive/cuid2": "^2.2.2",
-    "@prisma/client": "5.18.0",
+    "@prisma/client": "^5.19.1",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "^2.45.1",
     "@tailwindcss/forms": "^0.5.7",
     "ai": "^3.3.20",
     "clsx": "^2.1.1",
     "csv-stringify": "^6.5.1",
+    "framer-motion": "^11.5.4",
+    "lodash": "^4.17.21",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
@@ -32,6 +35,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -39,7 +43,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
-    "prisma": "^5.18.0",
+    "prisma": "^5.19.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

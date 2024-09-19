@@ -1,43 +1,71 @@
-# Open-Source Collective Constitutional AI (CCAI)
+# Open-Source Collective Constitutional AI (OSCCAI)
 
 ## Overview
 
-Open-Source CCAI is a tool that enables anyone to train an AI model based on a constitution created from collective input. This project aims to democratize the process of aligning AI systems with human values and preferences.
+Open-Source Collective Constitutional AI (OSCCAI) is a platform that enables communities to collaboratively create and refine AI models based on collectively defined constitutions. This project aims to democratize AI alignment by allowing diverse groups to shape AI behavior according to their shared values and preferences.
 
-## Process
+## Application Structure and Flow
 
-1. Constitution Creation: Gather collective input from a diverse group of participants.
-2. Input Transformation: Convert collective feedback into a set of principles (constitution).
-3. Model Training: Fine-tune an AI model using the created constitution.
-4. Sharing: Store Constitutions and trained models in a publicly navigable digital library.
+### 1. Community Models
 
-## Goals
+- Users can create Community Models, which serve as the overarching container for the constitution-creation process.
+- Each Community Model starts with an initial idea or concept.
 
-- Empower communities to create AI models aligned with their values
-- Increase transparency in AI alignment processes
-- Explore scalable methods for incorporating public input into AI development
+### 2. Polls and Collective Input
 
-## Components
+- Within a Community Model, users can create Polls to gather collective input.
+- Polls consist of Statements that participants can vote on (Agree, Disagree, or Pass).
+- Users can also contribute their own statements to the poll.
+- Statements can be flagged for review if deemed inappropriate or off-topic.
 
-- 📄Constitution Creator
-- 💪Model Trainer (from a Constitution)
-- 📚Constitution Library
+### 3. Constitutions
 
-## Overview
+- Based on the collective input from polls, Constitutions are derived.
+- A Community Model can have multiple Constitutions, but only one "active" Constitution at a time.
+- Constitutions contain a set of principles or guidelines that define the AI's behavior and values.
 
-Project / Tool: **Open-Source CCAI** **[OS CCAI]** consists of
+### 4. Chat Interface
 
-- **Collective Constitution Creator**
-- **(Model Training) **
-- **Collective Constitution Library**
+- Each Constitution can be expressed through a Chat Interface, allowing users to interact with an AI model guided by the constitution's principles.
+- The Chat Interface is embedded within the application, providing a seamless experience for users to test and interact with the constitutionally-aligned AI.
 
-**Creators** use the **Collective Constitution Creator** platform to generate **Constitutions** from collective input gathered in a **Poll**.
+### 5. Core AI Service
 
-Using this tool creates a new **Poll** that collects **Statements**.
+- The application interfaces with a separate core AI service (running locally on port 3088) to power the chat functionality.
+- This service takes the constitution data and uses it to seed or guide the AI's responses in the chat interface.
 
-**Participants** interact with the Poll to **Vote** on others’ Statements.
+## Key Components
 
-Votes take the form of **Agree, Disagree, **or **Pass**. Participants can also **Flag** a Statement for removal (inappropriate/off-topic).
+1. **Community Model Creator**: Allows users to initiate new community models with an initial idea.
+2. **Poll System**: Facilitates the creation of polls, statement submission, and voting mechanism.
+3. **Constitution Generator (internal)**: Derives constitutions from poll results and collective input.
+4. **Constitution Manager**: Shows and allows config of different versions of derived constitutions.
+5. **Chat Interface**: Embeds a chat UI that interacts with the core AI service, using the active constitution as a guide.
+
+## User Flow
+
+1. User creates a new Community Model with an initial idea.
+2. The system automatically generates an initial poll based on the idea.
+3. Participants vote on statements and contribute new ones.
+4. Based on poll results, a Constitution is generated.
+5. The Constitution becomes "active" for the Community Model.
+6. Users can interact with the AI through the Chat Interface, which is guided by the active Constitution.
+7. The process can be repeated to refine the Constitution over time.
+
+## Technical Stack
+
+- **Frontend**: Next.js with React
+- **Backend**: Next.js API routes + Server Actions
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: Clerk (for both community model owners and participants)
+- **AI Integration**: Custom core AI service (separate from this application)
+
+## Current Status and TODOs
+
+- TODO: Finalize proper authentication flow using Clerk.
+- TODO: Enhance documentation for the core AI service integration.
+- TODO: Implement Constitution generation. (poll/consensus-derived)
+- TODO: Develop a public library interface for Community Models and Constitutions.
 
 ## Getting Started / Local Setup
 
@@ -81,15 +109,7 @@ npx prisma studio # useful for verifying data is there
 npm run dev:local # usually runs at localhost:3000 unless port is taken
 ```
 
-6. Login / Sign up
-
-```
-Go to http://localhost:3000/login
-```
-
-If you are signing up you'll need to click on a link sent to your email.
-
-7. Done! 🥳
+6. Done! 🥳
 
 ## Contributing
 
