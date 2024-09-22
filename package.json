@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "prisma:local": "dotenv -e .env.local -- prisma",
-    "prisma:prod": "dotenv -e .env.production -- prisma"
+    "db:seed": "node -r ts-node/register prisma/seed.ts",
+    "db:reset": "node scripts/db-reset.js"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.54",
@@ -32,6 +33,7 @@
     "react": "^18",
     "react-dom": "^18",
     "slugify": "^1.6.6",
+    "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -39,12 +41,17 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^10.0.0",
     "dotenv-cli": "^7.4.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
     "prisma": "^5.19.1",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

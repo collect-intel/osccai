@@ -5,9 +5,11 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/polls/:path*",
   "/api/:path*",
-  "/sign-in",
-  "/sign-up",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
   "/how-it-works",
+  "/library",
+  "/library/:path*",
   "/(.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|ico))$",
   "/_next/:path*",
 ]);

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import NewPollForm from "@/lib/components/NewPollForm";
 import PageTitle from "@/lib/components/PageTitle";
-import PollCard from "@/lib/components/PollCard";
+import PollCard from "@/lib/components/polling/PollCard";
 
 export default async function Home() {
   const polls = await prisma.poll.findMany();

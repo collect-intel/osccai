@@ -26,7 +26,7 @@ export default function DefaultConstitutionPage() {
       <ConstitutionViewer constitution={defaultConstitution} />
       <div className="mt-8">
         <h2 className="text-2xl font-semibold mb-4">Try the AI Chatbot</h2>
-        <ChatInterface constitutionId="demo_equality" />
+        <ChatInterface constitutionId="default" />
       </div>
     </div>
   );

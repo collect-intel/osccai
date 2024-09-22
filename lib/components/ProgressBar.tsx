@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { pollUrl } from "../links";
+import { pollUrl } from "@/lib/links";
 import { Poll } from "@prisma/client";
 
 type Step = "create" | "settings" | "statements";

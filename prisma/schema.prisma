@@ -8,110 +8,202 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Represents owners of community models who can create and manage constitutions
 model CommunityModelOwner {
-  uid               String             @id @default(cuid())
-  name              String
-  email             String
-  participant       Participant?       @relation(fields: [participantId], references: [uid])
-  participantId     String?            @unique
+  uid             String          @id @default(cuid())
+  name            String
+  email           String          @unique
+  // Optional link to a participant profile if the owner also participates
+  participantId   String?         @unique
+  participant     Participant?    @relation(fields: [participantId], references: [uid])
+  clerkUserId     String?         @unique
 
-  communityModels   CommunityModel[]
+  // List of community models created by the owner
+  communityModels CommunityModel[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
+// Represents a community model which is a container for constitutions and polls
 model CommunityModel {
-  uid                     String                @id @default(cuid())
+  uid                     String                  @id @default(cuid())
   name                    String
-  owner                   CommunityModelOwner   @relation(fields: [ownerId], references: [uid])
   ownerId                 String
+  owner                   CommunityModelOwner     @relation(fields: [ownerId], references: [uid])
+  // The initial idea or concept for the community model
   initialIdea             String
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
 
-  activeConstitutionId    String?               @unique
-  activeConstitution      Constitution?         @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
+  // Reference to the active constitution for this community model
+  activeConstitutionId    String?                 @unique
+  activeConstitution      Constitution?           @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
 
-  constitutions           Constitution[]        @relation("Constitutions")
+  // All constitutions associated with this community model
+  constitutions           Constitution[]          @relation("Constitutions")
+  // Polls created within this community model
   polls                   Poll[]
+  // Bots associated with this community model
+  bots                    CommunityModelBot[]
+
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  deleted                  Boolean                 @default(false)
+  published               Boolean                 @default(false)
+  @@index([ownerId])
 }
 
+// Represents a constitution derived from poll results within a community model
 model Constitution {
-  uid         String           @id @default(cuid())
-  version     Int
-  content     String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  uid           String                @id @default(cuid())
+  version       Int
+  // Current status of the constitution (e.g., DRAFT, ACTIVE)
+  status        ConstitutionStatus    @default(DRAFT)
+  content       String
+  modelId       String
+  model         CommunityModel        @relation("Constitutions", fields: [modelId], references: [uid], onDelete: Cascade)
+  // Relation to the community model where this constitution is active
+  isActiveIn    CommunityModel?       @relation("ActiveConstitution")
+  bots          CommunityModelBot[]
 
-  modelId     String
-  model       CommunityModel    @relation("Constitutions", fields: [modelId], references: [uid])
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
-  isActiveIn  CommunityModel?   @relation("ActiveConstitution")
+  deleted        Boolean               @default(false)
+  @@index([modelId])
 }
 
+// Possible statuses for a constitution
+enum ConstitutionStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+// Represents a poll used to gather input from participants
 model Poll {
-  uid                        String            @id @default(cuid())
-  createdAt                  DateTime          @default(now())
-  deleted                    Boolean           @default(false)
-  communityModel             CommunityModel    @relation(fields: [communityModelId], references: [uid])
+  uid                        String          @id @default(cuid())
   communityModelId           String
+  communityModel             CommunityModel  @relation(fields: [communityModelId], references: [uid], onDelete: Cascade)
+  title                      String
+  description                String?
   published                  Boolean
-
-  // We consider requireSMS to be synonymous with the idea of
-  // "require authentication" for now. TODO: just call it requireAuth
-  requireSMS                 Boolean           @default(true)
-  allowParticipantStatements Boolean           @default(true)
-
+  // Determines if authentication is required to participate
+  requireAuth                Boolean         @default(true)
+  // Allows participants to submit their own statements
+  allowParticipantStatements Boolean         @default(true)
   statements                 Statement[]
+
+  createdAt                  DateTime        @default(now())
+  updatedAt                  DateTime        @updatedAt
+  deleted                    Boolean         @default(false)
+
+  @@index([communityModelId])
 }
 
+// Represents a participant who can be authenticated via Clerk or anonymous
 model Participant {
-  uid                    String                @id @default(cuid())
-  phoneNumber            String?
+  uid                    String                 @id @default(cuid())
+  // Identifier for anonymous participants (e.g., browser fingerprint)
+  anonymousId            String?                @unique
+  // Clerk User ID for authenticated participants
+  clerkUserId            String?                @unique
+  // Optional relation if the participant is also a community model owner
   communityModelOwner    CommunityModelOwner?
 
   statements             Statement[]
   votes                  Vote[]
   flags                  Flag[]
+
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
 }
 
+
+// Represents a statement submitted in a poll
 model Statement {
-  uid            String       @id @default(cuid())
-  createdAt      DateTime     @default(now())
-  deleted        Boolean      @default(false)
-  participant    Participant  @relation(fields: [participantId], references: [uid])
+  uid            String             @id @default(cuid())
   participantId  String
-
+  participant    Participant        @relation(fields: [participantId], references: [uid], onDelete: Cascade)
+  // The text content of the statement
   text           String
-
-  poll           Poll         @relation(fields: [pollId], references: [uid])
   pollId         String
-
+  poll           Poll               @relation(fields: [pollId], references: [uid], onDelete: Cascade)
+  // Current status in the moderation process
+  status         StatementStatus    @default(PENDING)
   votes          Vote[]
   flags          Flag[]
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  deleted        Boolean            @default(false)
+
+  @@index([pollId])
+  @@index([status])
 }
 
+// Possible statuses for a statement
+enum StatementStatus {
+  PENDING
+  APPROVED
+  FLAGGED
+  DELETED
+}
+
+// Represents a vote cast by a participant on a statement
 model Vote {
   uid            String       @id @default(cuid())
-  createdAt      DateTime     @default(now())
-  participant    Participant  @relation(fields: [participantId], references: [uid])
   participantId  String
-
+  participant    Participant  @relation(fields: [participantId], references: [uid], onDelete: Cascade)
+  statementId    String
+  statement      Statement    @relation(fields: [statementId], references: [uid], onDelete: Cascade)
+  // Value of the vote (Agree, Disagree, Pass)
   voteValue      VoteValue
-  statement      Statement    @relation(fields: [statementId], references: [uid])
-  statementId    String
-}
 
-model Flag {
-  uid            String       @id @default(cuid())
   createdAt      DateTime     @default(now())
-  participant    Participant  @relation(fields: [participantId], references: [uid])
-  participantId  String
+  updatedAt      DateTime     @updatedAt
 
-  statement      Statement    @relation(fields: [statementId], references: [uid])
-  statementId    String
+  @@index([participantId])
+  @@index([statementId])
 }
 
+// Possible vote values
 enum VoteValue {
   AGREE
   DISAGREE
   PASS
+}
+
+// Represents a flag raised by a participant on a statement
+model Flag {
+  uid            String       @id @default(cuid())
+  participantId  String
+  participant    Participant  @relation(fields: [participantId], references: [uid], onDelete: Cascade)
+  statementId    String
+  statement      Statement    @relation(fields: [statementId], references: [uid], onDelete: Cascade)
+  // Reason provided for flagging the statement
+  reason         String
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([participantId])
+  @@index([statementId])
+}
+
+// Represents an AI Agent (bot) associated with a community model
+model CommunityModelBot {
+  uid                  String                   @id @default(cuid())
+  name                 String
+  config               Json?
+  constitutionId       String
+  constitution         Constitution             @relation(fields: [constitutionId], references: [uid], onDelete: Cascade)
+  communityModelId     String
+  communityModel       CommunityModel           @relation(fields: [communityModelId], references: [uid], onDelete: Cascade)
+
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  @@index([constitutionId])
+  @@index([communityModelId])
 }

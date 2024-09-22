@@ -1,33 +1,32 @@
-import { ClerkProvider } from '@clerk/nextjs';
-import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
-import "./globals.css";
-import Navbar from "@/lib/components/Navbar";
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { ClerkProvider } from '@clerk/nextjs'
+import UserDebug from '@/lib/components/UserDebug'
+import Navbar from '@/lib/components/Navbar'
 
-const dm = DM_Sans({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: "OSCCAI",
-  description: "Open-source Collective Constitutional AI",
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
-};
+export const metadata = {
+  title: 'OSCCAI',
+  description: 'Open-Source Collective Constitutional AI',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <ClerkProvider>
-        <body className={"text-charcoal bg-off-white " + dm.className}>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${inter.className} pb-16`}>
           <Navbar />
-          {children}
+          <main className="min-h-screen">
+            {children}
+          </main>
+          <UserDebug />
         </body>
-      </ClerkProvider>
-    </html>
-  );
+      </html>
+    </ClerkProvider>
+  )
 }

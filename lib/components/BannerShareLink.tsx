@@ -2,12 +2,12 @@
 
 import { useSearchParams } from "next/navigation";
 
-import Button from "./Button";
-import CheckIcon from "./icons/CheckIcon";
-import CopyIcon from "./icons/CopyIcon";
+import Button from "@/lib/components/Button";
+import CheckIcon from "@/lib/components/icons/CheckIcon";
+import CopyIcon from "@/lib/components/icons/CopyIcon";
 import { copyToClipboard } from "@/lib/copyToClipboard";
-import { useToast } from "../useToast";
-import Toast from "./Toast";
+import { useToast } from "@/lib/useToast";
+import Toast from "@/lib/components/Toast";
 
 export default function BannerShareLink() {
   const searchParams = useSearchParams();

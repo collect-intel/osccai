@@ -26,7 +26,7 @@ export default function Navbar() {
             Community AI Models
           </Link>
           <NavbarLink href='/how-it-works' text='How it Works' />
-          <NavbarLink href='/explore' text='Explore Constitutions' />
+          <NavbarLink href='/library' text='Explore Public Library' />
         </div>
         <div className='flex items-center gap-5'>
           <NavbarLink href='/community-models' text='My Community Models' />

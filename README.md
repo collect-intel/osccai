@@ -103,13 +103,42 @@ npx prisma migrate dev --name init
 npx prisma studio # useful for verifying data is there
 ```
 
-5. Run the development server:
+5. Seed the database:
+
+```bash
+npm run db:seed
+```
+
+6. Run the development server:
 
 ```bash
 npm run dev:local # usually runs at localhost:3000 unless port is taken
 ```
 
-6. Done! 🥳
+7. (Optional) To reset the database:
+
+```bash
+npm run db:reset
+```
+
+8. Done! 🥳 Your local development environment should now be running at http://localhost:3000 (unless the port is already in use).
+
+## Available Scripts
+
+- `npm run dev:local`: Start the development server using local environment variables
+- `npm run dev:prod`: Start the development server using production environment variables
+- `npm run build`: Generate Prisma client and build the Next.js application
+- `npm run build:local`: Generate Prisma client and build using local environment variables
+- `npm run start`: Start the production server
+- `npm run lint`: Run ESLint
+- `npm run prisma:local`: Run Prisma commands with local environment variables
+- `npm run prisma:prod`: Run Prisma commands with production environment variables
+- `npm run db:seed`: Seed the database using local environment variables
+- `npm run db:seed:prod`: Seed the database using production environment variables
+- `npm run db:reset`: Reset the local database (with confirmation prompt)
+- `npm run db:reset:prod`: Reset the production database (with confirmation prompt)
+
+Note: Always use caution when running database reset or seeding scripts, especially in a production environment.
 
 ## Contributing
 
