@@ -566,7 +566,7 @@ export async function updatePoll(
     statements: Statement[];
     requireAuth: boolean;
     allowParticipantStatements: boolean;
-  }
+  },
 ) {
   const {
     title,
