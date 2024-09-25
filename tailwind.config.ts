@@ -22,6 +22,12 @@ const config: Config = {
         green: "#008302",
         peach: "#F3CE99",
         "light-beige": "#E3E3D6",
+        danger: "#e53e3e", // Add a new color for the danger variant
+      },
+      buttons: {
+        primary: "bg-blue-500 text-white hover:bg-blue-600",
+        secondary: "bg-gray-300 text-gray-800 hover:bg-gray-400",
+        danger: "bg-danger text-white hover:bg-danger/80",
       },
     },
   },

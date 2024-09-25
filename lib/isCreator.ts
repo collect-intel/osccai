@@ -1,15 +1,17 @@
-import { createClient } from "@/lib/supabase/server";
+import { currentUser } from '@clerk/nextjs/server';
+import { prisma } from './db';
 
-export async function isCreator(
-  creatorId: string | undefined,
-): Promise<boolean> {
-  const supabase = createClient();
-  const { data, error } = await supabase.auth.getUser();
+export async function isCreator(ownerId: string | undefined): Promise<boolean> {
+  const user = await currentUser();
 
-  if (error) {
-    console.error(error);
+  if (!user) {
     return false;
   }
 
-  return data.user?.id === creatorId;
+  const owner = await prisma.communityModelOwner.findUnique({
+    where: { uid: ownerId },
+    select: { clerkUserId: true },
+  });
+
+  return owner?.clerkUserId === user.id;
 }

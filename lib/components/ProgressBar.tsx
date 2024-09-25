@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { pollUrl } from "../links";
+import { pollUrl } from "@/lib/links";
 import { Poll } from "@prisma/client";
 
 type Step = "create" | "settings" | "statements";
@@ -50,8 +50,7 @@ function ProgressBarItem({
     <Link
       className="flex flex-col items-center gap-2 mb-4 w-[80px]"
       href={pollUrl(
-        poll,
-        stage === 1 ? "create" : stage === 2 ? "settings" : "statements",
+        poll
       )}
     >
       <div

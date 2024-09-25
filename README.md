@@ -1,64 +1,57 @@
-# Open-Source Collective Constitutional AI (CCAI)
+# Open-Source Collective Constitutional AI (OSCCAI)
 
 ## Overview
 
-Open-Source CCAI is a tool that enables anyone to train an AI model based on a constitution created from collective input. This project aims to democratize the process of aligning AI systems with human values and preferences.
+Open-Source Collective Constitutional AI (OSCCAI) is a platform that enables communities to collaboratively create and refine AI models based on collectively defined constitutions. This project aims to democratize AI alignment by allowing diverse groups to shape AI behavior according to their shared values and preferences.
 
-## Process
+## Application Structure and Flow
 
-1. Constitution Creation: Gather collective input from a diverse group of participants.
-2. Input Transformation: Convert collective feedback into a set of principles (constitution).
-3. Model Training: Fine-tune an AI model using the created constitution.
-4. Sharing: Store Constitutions and trained models in a publicly navigable digital library.
+[The existing structure and flow section can remain unchanged]
 
-## Goals
+## Key Components
 
-- Empower communities to create AI models aligned with their values
-- Increase transparency in AI alignment processes
-- Explore scalable methods for incorporating public input into AI development
+[The existing key components section can remain unchanged]
 
-## Components
+## User Flow
 
-- 📄Constitution Creator
-- 💪Model Trainer (from a Constitution)
-- 📚Constitution Library
+[The existing user flow section can remain unchanged]
 
-## Overview
+## Technical Stack
 
-Project / Tool: **Open-Source CCAI** **[OS CCAI]** consists of
+- **Frontend**: Next.js 14.2.5 with React 18
+- **Backend**: Next.js API routes + Server Actions
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: Clerk
+- **AI Integration**: Custom core AI service (separate from this application)
+- **Additional Libraries**: Tailwind CSS, Headless UI, Heroicons, Framer Motion, and more
 
-- **Collective Constitution Creator**
-- **(Model Training) **
-- **Collective Constitution Library**
+## Current Status and TODOs
 
-**Creators** use the **Collective Constitution Creator** platform to generate **Constitutions** from collective input gathered in a **Poll**.
-
-Using this tool creates a new **Poll** that collects **Statements**.
-
-**Participants** interact with the Poll to **Vote** on others’ Statements.
-
-Votes take the form of **Agree, Disagree, **or **Pass**. Participants can also **Flag** a Statement for removal (inappropriate/off-topic).
+- TODO: Finalize proper authentication flow using Clerk.
+- TODO: Enhance documentation for the core AI service integration.
+- TODO: Implement Constitution generation (poll/consensus-derived).
+- TODO: Develop a public library interface for Community Models and Constitutions.
 
 ## Getting Started / Local Setup
 
-This presumes you have the following installed:
+This setup presumes you have the following installed:
 
-* Node (+ npm or pnpm)
-* Postgres (`brew install postgresql`, `brew services start postgresql`)
+* Node.js (+ npm)
+* PostgreSQL (`brew install postgresql`, `brew services start postgresql`)
 
-1. Clone the repo
+1. Clone the repo:
 
 ```bash
 git clone git@github.com:collect-intel/osccai.git
 ```
 
-2. Ensure local dependencies are installed:
+2. Install dependencies:
 
 ```bash
-npm install # / pnpm install
+npm install
 ```
 
-3. Set up local env vars in `.env`:
+3. Set up local environment variables in `.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
@@ -67,29 +60,51 @@ DATABASE_URL=postgresql://[your username]@localhost:5432/postgres
 DIRECT_URL=postgresql://[your username]@localhost:5432/postgres
 ```
 
-4. Run the prisma migration to get database set-up:
+4. Run the Prisma migration:
 
 ```bash
-# First: Ensure postgres is running!
-npx prisma migrate dev --name init
-npx prisma studio # useful for verifying data is there
+npm run prisma:local -- migrate dev --name init
+npm run prisma:local -- studio  # useful for verifying data
 ```
 
-5. Run the development server:
+5. Seed the database:
 
 ```bash
-npm run dev:local # usually runs at localhost:3000 unless port is taken
+npm run db:seed
 ```
 
-6. Login / Sign up
+6. Run the development server:
 
+```bash
+npm run dev:local
 ```
-Go to http://localhost:3000/login
+
+7. (Optional) To reset the database:
+
+```bash
+npm run db:reset
 ```
 
-If you are signing up you'll need to click on a link sent to your email.
+Your local development environment should now be running at http://localhost:3000 (unless the port is already in use).
 
-7. Done! 🥳
+## Available Scripts
+
+- `npm run dev:local`: Start the development server using local environment variables
+- `npm run dev:prod`: Start the development server using production environment variables
+- `npm run build`: Generate Prisma client and build the Next.js application
+- `npm run build:local`: Generate Prisma client and build using local environment variables
+- `npm run start`: Start the production server
+- `npm run lint`: Run ESLint
+- `npm run prisma:local`: Run Prisma commands with local environment variables
+- `npm run db:seed`: Seed the database using local environment variables
+- `npm run db:seed:prod`: Seed the production database (with confirmation prompt)
+- `npm run db:reset`: Reset the local database (with confirmation prompt)
+- `npm run db:reset:prod`: Reset the production database (with confirmation prompt)
+- `npm run db:migrate`: Run Prisma migrations for local development
+- `npm run db:migrate:prod`: Run Prisma migrations for production (with confirmation prompt)
+- `npm run prisma:studio:prod`: Run Prisma Studio with production environment variables
+
+Note: Always use caution when running database reset, seeding, or migration scripts, especially in a production environment.
 
 ## Contributing
 

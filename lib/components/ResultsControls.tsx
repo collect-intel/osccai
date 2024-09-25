@@ -4,15 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { Poll } from "@prisma/client";
-import ViewIcon from "./icons/ViewIcon";
-import CSVIcon from "./icons/CSVIcon";
-import Button from "./Button";
-import ConstitutionIcon from "./icons/ConstitutionIcon";
-import { pollUrl } from "../links";
+import ViewIcon from "@/lib/components/icons/ViewIcon";
+import CSVIcon from "@/lib/components/icons/CSVIcon";
+import Button from "@/lib/components/Button";
+import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
+import { pollUrl } from "@/lib/links";
 import { generateCsv } from "@/lib/actions";
-import { controlButtonStyle } from "./PollControls";
-import { useToast } from "../useToast";
-import Toast from "./Toast";
+import { controlButtonStyle } from "@/lib/components/polling/PollControls";
+import { useToast } from "@/lib/useToast";
+import Toast from "@/lib/components/Toast";
 
 export default function ResultsControls({ poll }: { poll: Poll }) {
   const { isVisible, message, showToast } = useToast();
@@ -28,7 +28,7 @@ export default function ResultsControls({ poll }: { poll: Poll }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.setAttribute("href", url);
-      a.setAttribute("download", `poll-${poll.urlSlug}.csv`);
+      a.setAttribute("download", `poll-${poll.uid}.csv`);
       a.click();
     } catch (error) {
       console.error("Error downloading CSV:", error);

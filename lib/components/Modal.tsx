@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, ReactNode } from "react";
 
 export default function Modal({
   isOpen,
@@ -7,7 +7,7 @@ export default function Modal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const modalRef = useRef<HTMLDivElement | null>(null);
 
@@ -33,9 +33,14 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div ref={modalRef} className="bg-yellow p-6 rounded-lg shadow-xl">
-        {children}
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+      <div
+        ref={modalRef}
+        className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md"
+      >
+        <div className="max-h-[80vh] overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );
