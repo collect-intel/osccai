@@ -566,7 +566,7 @@ export async function updatePoll(
     statements: Statement[];
     requireAuth: boolean;
     allowParticipantStatements: boolean;
-  },
+  }
 ) {
   const {
     title,
@@ -597,6 +597,25 @@ export async function updatePoll(
             participantId: participantId, // Use the current user's participantId
           },
         })),
+      },
+    },
+    select: {
+      // Only select the properties you need
+      uid: true,
+      title: true,
+      description: true,
+      requireAuth: true,
+      allowParticipantStatements: true,
+      statements: {
+        select: {
+          uid: true,
+          text: true,
+          participantId: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          deleted: true,
+        },
       },
     },
   });

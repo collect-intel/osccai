@@ -76,6 +76,13 @@ const StatementList: React.FC<StatementListProps> = ({
         createdAt: new Date(),
         updatedAt: new Date(),
         deleted: false,
+        agreeCount: 0,
+        disagreeCount: 0,
+        passCount: 0,
+        gacScore: 0,
+        isConstitutionable: false,
+        priorityScore: null,
+        lastCalculatedAt: null,
       };
       onUpdate([...statements, newStatement]);
       setNewStatementText("");

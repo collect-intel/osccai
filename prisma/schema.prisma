@@ -135,6 +135,14 @@ model Statement {
   updatedAt      DateTime           @updatedAt
   deleted        Boolean            @default(false)
 
+  agreeCount Int @default(0)
+  disagreeCount Int @default(0)
+  passCount Int @default(0)
+  gacScore Float?
+  priorityScore Float?
+  lastCalculatedAt DateTime?
+  isConstitutionable Boolean @default(false)
+
   @@index([pollId])
   @@index([status])
 }
