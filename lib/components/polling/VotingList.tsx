@@ -18,7 +18,13 @@ type VotingListProps = {
   allowParticipantStatements: boolean;
 };
 
-export default function VotingList({ statements, pollId, initialVotes = {}, canVote, allowParticipantStatements }: VotingListProps) {
+export default function VotingList({
+  statements,
+  pollId,
+  initialVotes = {},
+  canVote,
+  allowParticipantStatements,
+}: VotingListProps) {
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
   const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,7 +43,10 @@ export default function VotingList({ statements, pollId, initialVotes = {}, canV
   };
 
   const allVoted = useMemo(() => {
-    return statements.length > 0 && statements.every(statement => votes[statement.uid]);
+    return (
+      statements.length > 0 &&
+      statements.every((statement) => votes[statement.uid])
+    );
   }, [statements, votes]);
 
   const renderContent = () => {
@@ -62,8 +71,13 @@ export default function VotingList({ statements, pollId, initialVotes = {}, canV
     if (allVoted) {
       return (
         <div className="bg-light-teal p-4 rounded-lg text-center mb-6">
-          <h2 className="text-2xl font-bold mb-2">Thank you for participating!</h2>
-          <p>You've voted on all the statements. Feel free to review or change your votes below.</p>
+          <h2 className="text-2xl font-bold mb-2">
+            Thank you for participating!
+          </h2>
+          <p>
+            You've voted on all the statements. Feel free to review or change
+            your votes below.
+          </p>
           {allowParticipantStatements && (
             <Button
               title="Add another statement"
@@ -96,14 +110,28 @@ export default function VotingList({ statements, pollId, initialVotes = {}, canV
                       ? "bg-teal text-white"
                       : "bg-gray-200 text-gray-800"
                   }`}
-                  onClick={() => handleVote(statement.uid, voteType as VoteValue)}
+                  onClick={() =>
+                    handleVote(statement.uid, voteType as VoteValue)
+                  }
                   disabled={!canVote}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {voteType === "AGREE" && <ThumbIcon className={`inline mr-1 ${votes[statement.uid] === voteType ? "text-white" : ""}`} />}
-                  {voteType === "DISAGREE" && <ThumbIcon className={`inline mr-1 transform scale-y-[-1] ${votes[statement.uid] === voteType ? "text-white" : ""}`} />}
-                  {voteType === "PASS" && <QuestionIcon className={`inline mr-1 ${votes[statement.uid] === voteType ? "text-white" : ""}`} />}
+                  {voteType === "AGREE" && (
+                    <ThumbIcon
+                      className={`inline mr-1 ${votes[statement.uid] === voteType ? "text-white" : ""}`}
+                    />
+                  )}
+                  {voteType === "DISAGREE" && (
+                    <ThumbIcon
+                      className={`inline mr-1 transform scale-y-[-1] ${votes[statement.uid] === voteType ? "text-white" : ""}`}
+                    />
+                  )}
+                  {voteType === "PASS" && (
+                    <QuestionIcon
+                      className={`inline mr-1 ${votes[statement.uid] === voteType ? "text-white" : ""}`}
+                    />
+                  )}
                   {voteType}
                 </motion.button>
               ))}

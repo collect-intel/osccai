@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createCommunityModel } from '@/lib/actions';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createCommunityModel } from "@/lib/actions";
 
 export default function NewCommunityModelForm() {
-  const [name, setName] = useState('');
-  const [initialIdea, setInitialIdea] = useState('');
+  const [name, setName] = useState("");
+  const [initialIdea, setInitialIdea] = useState("");
   const router = useRouter();
 
   return (

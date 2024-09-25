@@ -13,7 +13,7 @@ export interface Constitution {
   // Add other necessary fields
 }
 
-import React from 'react';
+import React from "react";
 
 export class ChatInterfaceConstitutionData {
   title: string;
@@ -22,7 +22,13 @@ export class ChatInterfaceConstitutionData {
   color: string;
   text: string;
 
-  constructor(title: string, icon: React.ReactNode, constitution: string, color: string, text: string) {
+  constructor(
+    title: string,
+    icon: React.ReactNode,
+    constitution: string,
+    color: string,
+    text: string,
+  ) {
     this.title = title;
     this.icon = icon;
     this.constitution = constitution;
@@ -37,7 +43,12 @@ export class ChatInterfaceKnowledgeData {
   description: string;
   knowledge: string;
 
-  constructor(title: string, icon: React.ReactNode, description: string, knowledge: string) {
+  constructor(
+    title: string,
+    icon: React.ReactNode,
+    description: string,
+    knowledge: string,
+  ) {
     this.title = title;
     this.icon = icon;
     this.description = description;

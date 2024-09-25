@@ -20,7 +20,7 @@ export default function VotingContainer({
   pollId,
   requireAuth,
   initialVotes,
-  allowParticipantStatements
+  allowParticipantStatements,
 }: VotingContainerProps) {
   const [viewMode, setViewMode] = useState<"list" | "individual">("list");
 
@@ -33,8 +33,14 @@ export default function VotingContainer({
       <div className="flex justify-end mb-4">
         <Button
           onClick={toggleViewMode}
-          title={viewMode === "list" ? "Switch to Individual View" : "Switch to List View"}
-          icon={viewMode === "list" ? <></> : <ListIcon className="stroke-white" />}
+          title={
+            viewMode === "list"
+              ? "Switch to Individual View"
+              : "Switch to List View"
+          }
+          icon={
+            viewMode === "list" ? <></> : <ListIcon className="stroke-white" />
+          }
         />
       </div>
       <Voting

@@ -50,10 +50,7 @@ export default async function PollCard({ poll }: { poll: Poll }) {
   return (
     <div className="flex flex-col bg-soft-gray p-6 rounded w-[284px]">
       <StatusIndicator isPublished={poll.published} isClosed={false} />
-      <Link
-        href={`/polls/${poll.uid}`}
-        className="text-lg font-medium"
-      >
+      <Link href={`/polls/${poll.uid}`} className="text-lg font-medium">
         {poll.title}
       </Link>
       <div className="text-sm text-medium-gray my-6 pb-6 border-b border-light-gray">

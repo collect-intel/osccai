@@ -1,5 +1,10 @@
 import { notFound, redirect } from "next/navigation";
-import { fetchUserVotes, getPollData, isPollOwner, getParticipantId } from "@/lib/data";
+import {
+  fetchUserVotes,
+  getPollData,
+  isPollOwner,
+  getParticipantId,
+} from "@/lib/data";
 import VotingContainer from "@/lib/components/polling/VotingContainer";
 import PageTitle from "@/lib/components/PageTitle";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
@@ -30,7 +35,10 @@ export default async function pollPage({
 
   const userVotes = await fetchUserVotes(poll.uid);
 
-  const voteCount = poll.statements.reduce((acc, statement) => acc + statement.votes.length, 0);
+  const voteCount = poll.statements.reduce(
+    (acc, statement) => acc + statement.votes.length,
+    0,
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col">

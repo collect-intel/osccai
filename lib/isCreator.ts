@@ -1,5 +1,5 @@
-import { currentUser } from '@clerk/nextjs/server';
-import { prisma } from './db';
+import { currentUser } from "@clerk/nextjs/server";
+import { prisma } from "./db";
 
 export async function isCreator(ownerId: string | undefined): Promise<boolean> {
   const user = await currentUser();

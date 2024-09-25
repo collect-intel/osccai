@@ -5,8 +5,6 @@ interface ThemedIconProps {
 
 export function ThemedIcon({ active, children }: ThemedIconProps) {
   return (
-    <span className={active ? "text-white" : "text-gray-800"}>
-      {children}
-    </span>
+    <span className={active ? "text-white" : "text-gray-800"}>{children}</span>
   );
 }

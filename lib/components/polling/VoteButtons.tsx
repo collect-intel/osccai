@@ -9,7 +9,11 @@ type VoteButtonsProps = {
   currentVote?: VoteValue;
 };
 
-export default function VoteButtons({ onClick, disabled, currentVote }: VoteButtonsProps) {
+export default function VoteButtons({
+  onClick,
+  disabled,
+  currentVote,
+}: VoteButtonsProps) {
   return (
     <div className="space-x-2">
       {["AGREE", "DISAGREE", "PASS"].map((voteType) => (
@@ -25,9 +29,21 @@ export default function VoteButtons({ onClick, disabled, currentVote }: VoteButt
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {voteType === "AGREE" && <ThumbIcon className={`inline mr-1 ${currentVote === voteType ? "text-white" : ""}`} />}
-          {voteType === "DISAGREE" && <ThumbIcon className={`inline mr-1 transform scale-y-[-1] ${currentVote === voteType ? "text-white" : ""}`} />}
-          {voteType === "PASS" && <QuestionIcon className={`inline mr-1 ${currentVote === voteType ? "text-white" : ""}`} />}
+          {voteType === "AGREE" && (
+            <ThumbIcon
+              className={`inline mr-1 ${currentVote === voteType ? "text-white" : ""}`}
+            />
+          )}
+          {voteType === "DISAGREE" && (
+            <ThumbIcon
+              className={`inline mr-1 transform scale-y-[-1] ${currentVote === voteType ? "text-white" : ""}`}
+            />
+          )}
+          {voteType === "PASS" && (
+            <QuestionIcon
+              className={`inline mr-1 ${currentVote === voteType ? "text-white" : ""}`}
+            />
+          )}
           {voteType}
         </motion.button>
       ))}

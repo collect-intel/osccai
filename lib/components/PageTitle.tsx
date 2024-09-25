@@ -1,15 +1,15 @@
-import React from 'react';
+import React from "react";
 
 interface PageTitleProps {
   title: string;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
-const PageTitle: React.FC<PageTitleProps> = ({ title, size = 'medium' }) => {
+const PageTitle: React.FC<PageTitleProps> = ({ title, size = "medium" }) => {
   const sizeClasses = {
-    small: 'text-2xl',
-    medium: 'text-4xl',
-    large: 'text-6xl',
+    small: "text-2xl",
+    medium: "text-4xl",
+    large: "text-6xl",
   };
 
   return (

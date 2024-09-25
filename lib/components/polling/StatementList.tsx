@@ -11,12 +11,20 @@ interface StatementListProps {
   onDelete: (statementId: string) => Promise<void>;
 }
 
-const StatementList: React.FC<StatementListProps> = ({ statements, onUpdate, onDelete }) => {
-  const [editingStatement, setEditingStatement] = useState<Statement | null>(null);
+const StatementList: React.FC<StatementListProps> = ({
+  statements,
+  onUpdate,
+  onDelete,
+}) => {
+  const [editingStatement, setEditingStatement] = useState<Statement | null>(
+    null,
+  );
   const [newStatementText, setNewStatementText] = useState("");
   const [editStatementText, setEditStatementText] = useState("");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [statementToDelete, setStatementToDelete] = useState<Statement | null>(null);
+  const [statementToDelete, setStatementToDelete] = useState<Statement | null>(
+    null,
+  );
 
   const handleEdit = (statement: Statement) => {
     setEditingStatement(statement);
@@ -25,14 +33,17 @@ const StatementList: React.FC<StatementListProps> = ({ statements, onUpdate, onD
 
   const handleUpdate = (statement: Statement, newText: string) => {
     const updatedStatements = statements.map((s) =>
-      s.uid === statement.uid ? { ...s, text: newText } : s
+      s.uid === statement.uid ? { ...s, text: newText } : s,
     );
     onUpdate(updatedStatements);
     setEditingStatement(null);
     setEditStatementText("");
   };
 
-  const handleDeleteConfirmation = (e: React.MouseEvent, statement: Statement) => {
+  const handleDeleteConfirmation = (
+    e: React.MouseEvent,
+    statement: Statement,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setStatementToDelete(statement);
@@ -72,11 +83,16 @@ const StatementList: React.FC<StatementListProps> = ({ statements, onUpdate, onD
   };
 
   return (
-    <div onClick={(e) => e.stopPropagation()}> {/* Add this wrapper */}
+    <div onClick={(e) => e.stopPropagation()}>
+      {" "}
+      {/* Add this wrapper */}
       <h3 className="text-lg font-semibold mb-4">Statements</h3>
       <ul className="space-y-2">
         {statements.map((statement) => (
-          <li key={statement.uid} className="flex items-center justify-between bg-gray-100 rounded-md px-4 py-2">
+          <li
+            key={statement.uid}
+            className="flex items-center justify-between bg-gray-100 rounded-md px-4 py-2"
+          >
             {editingStatement?.uid === statement.uid ? (
               <div className="flex items-center">
                 <input
@@ -129,18 +145,19 @@ const StatementList: React.FC<StatementListProps> = ({ statements, onUpdate, onD
           placeholder="Add a new statement..."
           className="border border-gray-300 rounded px-2 py-1 mr-2 w-full"
         />
-        <Button 
-          title="Add" 
-          onClick={handleAddStatement}
-        />
+        <Button title="Add" onClick={handleAddStatement} />
       </div>
       <Modal
         isOpen={showDeleteConfirmation}
         onClose={() => setShowDeleteConfirmation(false)}
       >
-        <div> {/* Add this wrapper */}
+        <div>
+          {" "}
+          {/* Add this wrapper */}
           <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-          <p className="mb-4">Are you sure you want to delete this statement?</p>
+          <p className="mb-4">
+            Are you sure you want to delete this statement?
+          </p>
           <div className="flex justify-end space-x-2">
             <Button
               onClick={(e) => {
@@ -151,10 +168,7 @@ const StatementList: React.FC<StatementListProps> = ({ statements, onUpdate, onD
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleDelete}
-              variant="danger"
-            >
+            <Button onClick={handleDelete} variant="danger">
               Delete
             </Button>
           </div>

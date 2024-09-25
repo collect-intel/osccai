@@ -49,9 +49,7 @@ function ProgressBarItem({
   return (
     <Link
       className="flex flex-col items-center gap-2 mb-4 w-[80px]"
-      href={pollUrl(
-        poll
-      )}
+      href={pollUrl(poll)}
     >
       <div
         className={`rounded-full h-6 w-6 flex justify-center items-center text-mono text-xs text-white font-medium ${

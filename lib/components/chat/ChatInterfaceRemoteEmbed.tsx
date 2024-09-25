@@ -1,14 +1,16 @@
-import React from 'react';
+import React from "react";
 
 interface ChatInterfaceProps {
   constitutionId: string;
 }
 
-export default function ChatInterfaceRemoteEmbed({ constitutionId }: ChatInterfaceProps) {
+export default function ChatInterfaceRemoteEmbed({
+  constitutionId,
+}: ChatInterfaceProps) {
   const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/community-models/constitution/${constitutionId}/bot`;
   const iframeSrc = `http://localhost:3088/bot/via_url?url=${encodeURIComponent(apiUrl)}`;
 
-  console.log('iframeSrc', iframeSrc);
+  console.log("iframeSrc", iframeSrc);
 
   return (
     <div className="w-full h-[600px] border rounded-lg overflow-hidden">

@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
 
 interface DeleteIconProps {
   className?: string;
 }
 
-const DeleteIcon: React.FC<DeleteIconProps> = ({ className = '' }) => {
+const DeleteIcon: React.FC<DeleteIconProps> = ({ className = "" }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 // @ts-ignore
-import { ClientProvider, xmllm } from 'xmllm/client';
-import ReactMarkdown from 'react-markdown';
-import { FaRobot, FaUserAlt } from 'react-icons/fa';
+import { ClientProvider, xmllm } from "xmllm/client";
+import ReactMarkdown from "react-markdown";
+import { FaRobot, FaUserAlt } from "react-icons/fa";
 // Import the necessary types from xmllm
-import { XMLLMPromptFn, XMLLMRequestFn } from '../../types';
+import { XMLLMPromptFn, XMLLMRequestFn } from "../../types";
 
 interface ChatInterfaceProps {
   constitution?: {
-    text?: string,
-    color?: string,
-    icon?: React.ReactNode,
+    text?: string;
+    color?: string;
+    icon?: React.ReactNode;
   };
 }
 
 interface MessageWithFields {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   draft_response?: string;
   response_metrics?: string;
@@ -26,15 +26,15 @@ interface MessageWithFields {
 }
 
 const LoadingBubble: React.FC = () => {
-  const [dots, setDots] = useState('');
+  const [dots, setDots] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
       setDots((prevDots) => {
         if (prevDots.length === 3) {
-          return '';
+          return "";
         } else {
-          return prevDots + '.';
+          return prevDots + ".";
         }
       });
     }, 500);
@@ -51,22 +51,26 @@ const LoadingBubble: React.FC = () => {
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
   const [messages, setMessages] = useState<MessageWithFields[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const streamRef = useRef<AsyncGenerator<string | { [key: string]: string }, void, unknown> | null>(null);
+  const streamRef = useRef<AsyncGenerator<
+    string | { [key: string]: string },
+    void,
+    unknown
+  > | null>(null);
 
   const initialMessage = constitution
-    ? `Hi there. You're chatting with an AI encoded with a constitution that is focused broadly around "${constitution?.text || ''}".`
-    : 'Hi there, how can I help you today?';
+    ? `Hi there. You're chatting with an AI encoded with a constitution that is focused broadly around "${constitution?.text || ""}".`
+    : "Hi there, how can I help you today?";
 
   useEffect(() => {
     setMessages([
       {
-        role: 'user',
-        content: 'Hi',
+        role: "user",
+        content: "Hi",
       },
       {
-        role: 'assistant',
+        role: "assistant",
         content: initialMessage,
       },
     ]);
@@ -81,8 +85,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
     };
   }, []);
 
-  const PROXY_URL = 'https://proxyai.cip.org/api/stream';
-  
+  const PROXY_URL = "https://proxyai.cip.org/api/stream";
+
   const clientProvider = new ClientProvider(PROXY_URL);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -95,68 +99,81 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
       streamRef.current = null;
     }
 
-    const isValidRole = (role: string): role is 'user' | 'assistant' => {
-      return role === 'user' || role === 'assistant';
+    const isValidRole = (role: string): role is "user" | "assistant" => {
+      return role === "user" || role === "assistant";
     };
 
-    let convertedMessages = [...messages, { role: 'user', content: inputValue.trim() }].map(message => {
+    let convertedMessages = [
+      ...messages,
+      { role: "user", content: inputValue.trim() },
+    ].map((message) => {
       if (isValidRole(message.role)) {
         return {
           role: message.role,
-          content: (message as MessageWithFields).final_response || message.content,
+          content:
+            (message as MessageWithFields).final_response || message.content,
         };
       } else {
         return {
-          role: 'user',
+          role: "user",
           content: message.content,
         };
       }
     });
 
     // Convert convertedMessages to type MessageWithFields[]
-    convertedMessages = convertedMessages.map(message => ({
-      role: message.role === 'user' ? 'user' : 'assistant',
+    convertedMessages = convertedMessages.map((message) => ({
+      role: message.role === "user" ? "user" : "assistant",
       content: message.content,
     }));
 
     setMessages(convertedMessages as MessageWithFields[]);
-    setInputValue('');
+    setInputValue("");
     setIsLoading(true);
 
-    if (convertedMessages[messages.length - 1].role === 'user') {
+    if (convertedMessages[messages.length - 1].role === "user") {
       // We need alternating roles as per Claude's requirements
-      convertedMessages.push({ role: 'assistant', content: '...' });
+      convertedMessages.push({ role: "assistant", content: "..." });
     }
 
-    console.log('convertedMessages', convertedMessages);
+    console.log("convertedMessages", convertedMessages);
 
     try {
       let stream;
       if (constitution) {
-        stream = await xmllm(({ prompt, req }: { prompt: XMLLMPromptFn, req: XMLLMRequestFn }) => {
-          return [
-            prompt({
-              messages: convertedMessages.map(({ role, content }) => ({ role, content })),
-              schema: {
-                thinking: String,
-                draft_response: String,
-                response_metrics: String,
-                improvement_strategy: String,
-                final_response: String,
+        stream = await xmllm(
+          ({ prompt, req }: { prompt: XMLLMPromptFn; req: XMLLMRequestFn }) => {
+            return [
+              prompt({
+                messages: convertedMessages.map(({ role, content }) => ({
+                  role,
+                  content,
+                })),
+                schema: {
+                  thinking: String,
+                  draft_response: String,
+                  response_metrics: String,
+                  improvement_strategy: String,
+                  final_response: String,
+                },
+                system: genSystemPrompt(constitution?.text || ""),
+              }),
+              function* (t: { [key: string]: string }) {
+                yield t;
               },
-              system: genSystemPrompt(constitution?.text || ''),
-            }),
-            function* (t: { [key: string]: string }) {
-              yield t;
-            },
-          ];
-        }, clientProvider);
+            ];
+          },
+          clientProvider,
+        );
       } else {
         stream = await xmllm(({ req }: { req: XMLLMRequestFn }) => {
           return [
             req({
-              system: 'Be helpful.',
-              messages: convertedMessages.map(({ role, content }) => ({ role, content })),
+              system: "Be helpful.",
+              messages: convertedMessages.map(({ role, content }) => ({
+                role,
+                content,
+              })),
             }),
             function* (t: { [key: string]: string }) {
               yield t;
@@ -169,17 +186,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
       setIsLoading(true); // Set loading state to true before processing the stream
 
       for await (const chunk of stream) {
-        if (typeof chunk === 'string') {
+        if (typeof chunk === "string") {
           setMessages((prevMessages) => {
             const lastMessage = prevMessages[prevMessages.length - 1];
-            if (lastMessage.role === 'assistant') {
+            if (lastMessage.role === "assistant") {
               return [
                 ...prevMessages.slice(0, -1),
                 { ...lastMessage, content: lastMessage.content + chunk },
               ];
             } else {
               setIsLoading(false); // Set loading state to false when regular string content is received
-              return [...prevMessages, { role: 'assistant', content: chunk }];
+              return [...prevMessages, { role: "assistant", content: chunk }];
             }
           });
           continue;
@@ -187,7 +204,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
 
         setMessages((prevMessages) => {
           const lastMessage = prevMessages[prevMessages.length - 1];
-          if (lastMessage.role === 'assistant') {
+          if (lastMessage.role === "assistant") {
             const updatedMessage: MessageWithFields = { ...lastMessage };
 
             if (chunk.thinking) {
@@ -207,12 +224,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
               updatedMessage.final_response = chunk.final_response;
             }
 
-            return [
-              ...prevMessages.slice(0, -1),
-              updatedMessage,
-            ];
+            return [...prevMessages.slice(0, -1), updatedMessage];
           } else {
-            const newMessage: MessageWithFields = { role: 'assistant', content: '' };
+            const newMessage: MessageWithFields = {
+              role: "assistant",
+              content: "",
+            };
 
             if (chunk.thinking) {
               newMessage.content += `<thinking>${chunk.thinking}</thinking>`;
@@ -236,15 +253,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
         });
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while processing your request.');
+      console.error("Error:", error);
+      alert("An error occurred while processing your request.");
       setIsLoading(false); // Set loading state to false in case of an error
     }
   };
 
-  const genSystemPrompt = (constitution: string, configuredSystemPrompt = 'Be helpful') => {
+  const genSystemPrompt = (
+    constitution: string,
+    configuredSystemPrompt = "Be helpful",
+  ) => {
     if (!constitution.trim()) {
-      return 'Be a helpful AI assistant';
+      return "Be a helpful AI assistant";
     }
 
     return `
@@ -264,16 +284,20 @@ ${constitution}
   };
 
   return (
-    <div className={`flex flex-col h-full ${constitution?.color ? `bg-${constitution.color}-100` : 'bg-white'}`}>
+    <div
+      className={`flex flex-col h-full ${constitution?.color ? `bg-${constitution.color}-100` : "bg-white"}`}
+    >
       <div className="flex-1 p-4 overflow-y-auto">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            {message.role === 'user' ? (
+            {message.role === "user" ? (
               <div className="flex mr-2">
-                <div className={`my-2 p-2 rounded-md bg-white text-black shadow-md`}>
+                <div
+                  className={`my-2 p-2 rounded-md bg-white text-black shadow-md`}
+                >
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
                 <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
@@ -281,12 +305,18 @@ ${constitution}
             ) : (
               <div className="flex ml-2">
                 <div className="self-start mt-6 mr-2">{constitution?.icon}</div>
-                <div className={`my-2 p-2 rounded-md bg-${constitution?.color}-800 text-white shadow-md`}>
-                  {message.content && <ReactMarkdown>{message.content}</ReactMarkdown>}
+                <div
+                  className={`my-2 p-2 rounded-md bg-${constitution?.color}-800 text-white shadow-md`}
+                >
+                  {message.content && (
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  )}
                   {message.draft_response && (
                     <div className="bg-gray-200 p-2 rounded-md text-black my-2 overflow-hidden relative max-h-30 border border-dotted border-white">
                       <strong>Draft Response:</strong>
-                      <pre className="font-mono whitespace-pre-wrap text-xs"><ReactMarkdown>{message.draft_response}</ReactMarkdown></pre>
+                      <pre className="font-mono whitespace-pre-wrap text-xs">
+                        <ReactMarkdown>{message.draft_response}</ReactMarkdown>
+                      </pre>
                       {message.draft_response.length > 200 && (
                         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-200 to-transparent"></div>
                       )}
@@ -295,7 +325,11 @@ ${constitution}
                   {message.response_metrics && (
                     <div className="bg-gray-200 p-2 rounded-md text-black my-2 overflow-hidden relative max-h-30 border border-dotted border-white">
                       <strong>Response Metrics:</strong>
-                      <pre className="font-mono whitespace-pre-wrap text-xs"><ReactMarkdown>{message.response_metrics}</ReactMarkdown></pre>
+                      <pre className="font-mono whitespace-pre-wrap text-xs">
+                        <ReactMarkdown>
+                          {message.response_metrics}
+                        </ReactMarkdown>
+                      </pre>
                       {message.response_metrics.length > 200 && (
                         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-200 to-transparent"></div>
                       )}
@@ -304,7 +338,11 @@ ${constitution}
                   {message.improvement_strategy && (
                     <div className="bg-gray-200 p-2 rounded-md text-black my-2 overflow-hidden relative max-h-30 border border-dotted border-white">
                       <strong>Improvement Strategy:</strong>
-                      <pre className="font-mono whitespace-pre-wrap text-xs"><ReactMarkdown>{message.improvement_strategy}</ReactMarkdown></pre>
+                      <pre className="font-mono whitespace-pre-wrap text-xs">
+                        <ReactMarkdown>
+                          {message.improvement_strategy}
+                        </ReactMarkdown>
+                      </pre>
                       {message.improvement_strategy.length > 200 && (
                         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-gray-200 to-transparent"></div>
                       )}
@@ -343,12 +381,12 @@ ${constitution}
           type="submit"
           className={`ml-2 px-4 py-2 rounded-md ${
             isLoading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : `bg-${constitution?.color}-500 text-white hover:bg-${constitution?.color}-600`
           }`}
           disabled={isLoading}
         >
-          {isLoading ? 'Sending...' : 'Send'}
+          {isLoading ? "Sending..." : "Send"}
         </button>
       </form>
     </div>

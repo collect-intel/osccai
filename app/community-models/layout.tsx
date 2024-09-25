@@ -1,5 +1,9 @@
-import DefaultLayout from '@/lib/components/DefaultLayout';
+import DefaultLayout from "@/lib/components/DefaultLayout";
 
-export default function CommunityModelsLayout({ children }: { children: React.ReactNode }) {
+export default function CommunityModelsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <DefaultLayout>{children}</DefaultLayout>;
 }

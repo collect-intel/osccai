@@ -38,9 +38,7 @@ export default function Modal({
         ref={modalRef}
         className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md"
       >
-        <div className="max-h-[80vh] overflow-y-auto">
-          {children}
-        </div>
+        <div className="max-h-[80vh] overflow-y-auto">{children}</div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import Button from "@/lib/components/Button";
 import { deletePoll } from "@/lib/actions"; // Import deletePoll function
 import Modal from "@/lib/components/Modal"; // Import Modal component
 import { useState } from "react";
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from "next/navigation"; // Import useRouter
 
 export const controlButtonStyle =
   "flex items-center gap-1.5 text-sm font-medium fill-none stroke-charcoal";
@@ -57,13 +57,15 @@ export default function PollControls({ poll }: { poll: Poll }) {
           Share
         </button>
       </div>
-      <Button title="Delete Poll" onClick={handleDelete} variant="danger">Delete Poll</Button>
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-      >
+      <Button title="Delete Poll" onClick={handleDelete} variant="danger">
+        Delete Poll
+      </Button>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
         <h2 className="text-xl font-bold mb-4">Delete Poll</h2>
-        <p className="mb-6">Are you sure you want to delete this poll? This action cannot be undone.</p>
+        <p className="mb-6">
+          Are you sure you want to delete this poll? This action cannot be
+          undone.
+        </p>
         <div className="flex justify-end gap-2">
           <Button onClick={() => setShowModal(false)} variant="secondary">
             Cancel

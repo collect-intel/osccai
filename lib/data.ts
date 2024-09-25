@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
-import { CommunityModel, Constitution, Poll } from '@prisma/client';
-import { cookies } from 'next/headers';
-import { currentUser } from '@clerk/nextjs/server';
+import { prisma } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
+import { CommunityModel, Constitution, Poll } from "@prisma/client";
+import { cookies } from "next/headers";
+import { currentUser } from "@clerk/nextjs/server";
 
 type ExtendedCommunityModel = CommunityModel & {
   owner: { uid: string };
@@ -51,7 +51,7 @@ export async function getParticipantId() {
     return participant.uid;
   } else {
     // For anonymous users
-    let anonymousId = cookieStore.get('anonymousId')?.value;
+    let anonymousId = cookieStore.get("anonymousId")?.value;
 
     if (!anonymousId) {
       return null; // Handle this case in the action
@@ -71,8 +71,8 @@ export async function getPollData(pollId: string) {
     include: {
       communityModel: {
         include: {
-          owner: true
-        }
+          owner: true,
+        },
       },
       statements: {
         where: { deleted: false }, // Add this line to filter out soft-deleted statements
@@ -94,7 +94,9 @@ export async function getPollData(pollId: string) {
   });
 }
 
-export async function fetchUserVotes(pollId: string): Promise<Record<string, typeof VoteValue>> {
+export async function fetchUserVotes(
+  pollId: string,
+): Promise<Record<string, typeof VoteValue>> {
   const participantId = await getParticipantId();
   if (!participantId) return {};
 
@@ -102,29 +104,34 @@ export async function fetchUserVotes(pollId: string): Promise<Record<string, typ
     where: {
       participantId,
       statement: {
-        pollId
-      }
+        pollId,
+      },
     },
     select: {
       statementId: true,
-      voteValue: true
-    }
+      voteValue: true,
+    },
   });
 
-  return votes.reduce((acc, vote) => {
-    acc[vote.statementId] = vote.voteValue;
-    return acc;
-  }, {} as Record<string, typeof VoteValue>);
+  return votes.reduce(
+    (acc, vote) => {
+      acc[vote.statementId] = vote.voteValue;
+      return acc;
+    },
+    {} as Record<string, typeof VoteValue>,
+  );
 }
 
-export async function getCommunityModel(modelId: string): Promise<ExtendedCommunityModel | null> {
+export async function getCommunityModel(
+  modelId: string,
+): Promise<ExtendedCommunityModel | null> {
   const { userId: clerkUserId } = auth();
 
-  console.log('Fetching community model:', modelId);
-  console.log('Current Clerk user ID:', clerkUserId);
+  console.log("Fetching community model:", modelId);
+  console.log("Current Clerk user ID:", clerkUserId);
 
   if (!clerkUserId) {
-    console.log('No user ID found');
+    console.log("No user ID found");
     return null;
   }
 
@@ -135,7 +142,7 @@ export async function getCommunityModel(modelId: string): Promise<ExtendedCommun
       activeConstitution: true,
       constitutions: {
         where: { deleted: false },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: 5,
       },
       polls: {
@@ -144,18 +151,21 @@ export async function getCommunityModel(modelId: string): Promise<ExtendedCommun
     },
   });
 
-  console.log('Found community model:', communityModel);
+  console.log("Found community model:", communityModel);
 
   if (!communityModel) {
-    console.log('Community model not found');
+    console.log("Community model not found");
     return null;
   }
 
   // Check if this is the seeded user or if the Clerk user IDs match
-  if (communityModel.owner.clerkUserId !== 'seeded_user' && communityModel.owner.clerkUserId !== clerkUserId) {
-    console.log('User does not own this community model');
-    console.log('Owner Clerk ID:', communityModel.owner.clerkUserId);
-    console.log('Current Clerk ID:', clerkUserId);
+  if (
+    communityModel.owner.clerkUserId !== "seeded_user" &&
+    communityModel.owner.clerkUserId !== clerkUserId
+  ) {
+    console.log("User does not own this community model");
+    console.log("Owner Clerk ID:", communityModel.owner.clerkUserId);
+    console.log("Current Clerk ID:", clerkUserId);
     return null;
   }
 
@@ -175,10 +185,10 @@ export async function isPollOwner(pollId: string): Promise<boolean> {
     include: {
       communityModel: {
         include: {
-          owner: true
-        }
-      }
-    }
+          owner: true,
+        },
+      },
+    },
   });
 
   if (!poll) {
@@ -186,7 +196,7 @@ export async function isPollOwner(pollId: string): Promise<boolean> {
   }
 
   // Check if it's a seeded user
-  if (poll.communityModel.owner.clerkUserId === 'seeded_user') {
+  if (poll.communityModel.owner.clerkUserId === "seeded_user") {
     // For seeded data, we'll check against participantId
     return poll.communityModel.owner.participantId === participantId;
   }

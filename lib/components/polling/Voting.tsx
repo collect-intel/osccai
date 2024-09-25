@@ -36,7 +36,9 @@ export default function Voting({
 }) {
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
-  const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(null);
+  const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(
+    null,
+  );
   const [statementText, setStatementText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isVisible, message, showToast } = useToast();
@@ -46,7 +48,9 @@ export default function Voting({
   useEffect(() => {
     if (canVote) {
       // Find the first statement without a vote
-      const firstUnvotedIndex = statements.findIndex(statement => !votes[statement.uid]);
+      const firstUnvotedIndex = statements.findIndex(
+        (statement) => !votes[statement.uid],
+      );
       setCurrentStatementIx(firstUnvotedIndex >= 0 ? firstUnvotedIndex : null);
     }
   }, [pollId, canVote, statements, votes]);
@@ -59,21 +63,26 @@ export default function Voting({
     await submitVote(statementId, vote, previousVote);
 
     // Find the next unvoted statement
-    const nextUnvotedIndex = statements.findIndex((statement, index) => 
-      index > currentStatementIx && !votes[statement.uid] && statement.uid !== statementId
+    const nextUnvotedIndex = statements.findIndex(
+      (statement, index) =>
+        index > currentStatementIx &&
+        !votes[statement.uid] &&
+        statement.uid !== statementId,
     );
     setCurrentStatementIx(nextUnvotedIndex >= 0 ? nextUnvotedIndex : null);
   };
 
   const handleGoBack = () => {
     if (currentStatementIx === null || currentStatementIx === 0) return;
-    const previousIndex = statements.findIndex((statement, index) => 
-      index < currentStatementIx && votes[statement.uid]
+    const previousIndex = statements.findIndex(
+      (statement, index) => index < currentStatementIx && votes[statement.uid],
     );
     setCurrentStatementIx(previousIndex >= 0 ? previousIndex : 0);
   };
 
-  const hasVotedOnAll = statements.length > 0 && statements.every(statement => votes[statement.uid]);
+  const hasVotedOnAll =
+    statements.length > 0 &&
+    statements.every((statement) => votes[statement.uid]);
 
   const renderContent = () => {
     if (statements.length === 0) {
@@ -97,7 +106,9 @@ export default function Voting({
     if (hasVotedOnAll) {
       return (
         <div className="text-center py-8">
-          <h2 className="text-2xl font-bold mb-4">Thank you for participating!</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            Thank you for participating!
+          </h2>
           <p>You've voted on all the statements in this poll.</p>
           {allowParticipantStatements && (
             <Button
@@ -115,31 +126,35 @@ export default function Voting({
     return currentStatement;
   };
 
-  const currentStatement = currentStatementIx === null ? (
-    <div className="text-center py-8">
-      <h2 className="text-2xl font-bold mb-4">Thank you for participating!</h2>
-      <p>You've already voted on all of these statements.</p>
-    </div>
-  ) : (
-    <motion.div
-      key={currentStatementIx}
-      initial={{ x: 20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -20, opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="text-xl font-semibold mb-6">
-        {statements[currentStatementIx].text}
+  const currentStatement =
+    currentStatementIx === null ? (
+      <div className="text-center py-8">
+        <h2 className="text-2xl font-bold mb-4">
+          Thank you for participating!
+        </h2>
+        <p>You've already voted on all of these statements.</p>
       </div>
-      <VoteButtons
-        onClick={handleVote}
-        disabled={!canVote}
-        currentVote={votes[statements[currentStatementIx].uid]}
-      />
-    </motion.div>
-  );
+    ) : (
+      <motion.div
+        key={currentStatementIx}
+        initial={{ x: 20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: -20, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="text-xl font-semibold mb-6">
+          {statements[currentStatementIx].text}
+        </div>
+        <VoteButtons
+          onClick={handleVote}
+          disabled={!canVote}
+          currentVote={votes[statements[currentStatementIx].uid]}
+        />
+      </motion.div>
+    );
 
-  const currentStatementNumber = currentStatementIx !== null ? currentStatementIx + 1 : 0;
+  const currentStatementNumber =
+    currentStatementIx !== null ? currentStatementIx + 1 : 0;
 
   const handleFlag = async (statementId: string) => {
     await flagStatement(statementId);
@@ -151,7 +166,9 @@ export default function Voting({
       {!canVote && (
         <div className="bg-light-yellow border border-yellow rounded-lg p-4 mb-6 text-center">
           <p className="text-lg font-semibold mb-2">Join the conversation!</p>
-          <p className="mb-4">You need an account to participate in this poll.</p>
+          <p className="mb-4">
+            You need an account to participate in this poll.
+          </p>
           <div className="flex justify-center gap-4">
             <SignUpButton mode="modal">
               <button className="bg-teal text-white font-medium py-2 px-4 rounded hover:bg-teal-dark transition-colors">
@@ -169,7 +186,10 @@ export default function Voting({
 
       <div className="flex justify-between items-center text-lg font-semibold mb-6">
         <div>Vote on these statements</div>
-        <div>Debug: {JSON.stringify({ canVote, requireAuth: !!requireAuth, isSignedIn })}</div>
+        <div>
+          Debug:{" "}
+          {JSON.stringify({ canVote, requireAuth: !!requireAuth, isSignedIn })}
+        </div>
         {allowParticipantStatements && (
           <Button
             title="Contribute a statement"

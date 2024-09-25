@@ -18,10 +18,12 @@ export default function PollForm({ poll, communityModelId }: PollFormProps) {
   const [title, setTitle] = useState(poll?.title || "");
   const [description, setDescription] = useState(poll?.description || "");
   const [statements, setStatements] = useState<Statement[]>(
-    poll?.statements?.filter(s => !s.deleted) || []
+    poll?.statements?.filter((s) => !s.deleted) || [],
   );
   const [requireAuth, setRequireAuth] = useState(poll?.requireAuth || false);
-  const [allowParticipantStatements, setAllowParticipantStatements] = useState(poll?.allowParticipantStatements || false);
+  const [allowParticipantStatements, setAllowParticipantStatements] = useState(
+    poll?.allowParticipantStatements || false,
+  );
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,16 +31,27 @@ export default function PollForm({ poll, communityModelId }: PollFormProps) {
     const pollData = {
       title,
       description,
-      statements: statements.map(({ uid, text, participantId, pollId, status, createdAt, updatedAt, deleted }) => ({
-        uid,
-        text,
-        participantId,
-        pollId: poll.uid || '',
-        status: status as StatementStatus,
-        createdAt,
-        updatedAt,
-        deleted,
-      })),
+      statements: statements.map(
+        ({
+          uid,
+          text,
+          participantId,
+          pollId,
+          status,
+          createdAt,
+          updatedAt,
+          deleted,
+        }) => ({
+          uid,
+          text,
+          participantId,
+          pollId: poll.uid || "",
+          status: status as StatementStatus,
+          createdAt,
+          updatedAt,
+          deleted,
+        }),
+      ),
       requireAuth,
       allowParticipantStatements,
       published: true,
@@ -56,7 +69,9 @@ export default function PollForm({ poll, communityModelId }: PollFormProps) {
   const handleDeleteStatement = async (statementId: string) => {
     try {
       await deleteStatement(statementId);
-      setStatements(prevStatements => prevStatements.filter(s => s.uid !== statementId));
+      setStatements((prevStatements) =>
+        prevStatements.filter((s) => s.uid !== statementId),
+      );
     } catch (error) {
       console.error("Failed to delete statement:", error);
       // Optionally, show an error message to the user
@@ -95,7 +110,9 @@ export default function PollForm({ poll, communityModelId }: PollFormProps) {
         onDelete={handleDeleteStatement}
       />
       <div className="flex justify-end">
-        <Button onClick={handleSubmit}> {/* Remove type="submit" */}
+        <Button onClick={handleSubmit}>
+          {" "}
+          {/* Remove type="submit" */}
           {poll.uid ? "Save Changes" : "Create Poll"}
         </Button>
       </div>
