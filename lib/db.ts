@@ -8,9 +8,9 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
 // middleware to update statement vote counts on vote creation
 prisma.$use(async (params, next) => {
-  if (params.model === 'Vote' && params.action === 'create') {
+  if (params.model === "Vote" && params.action === "create") {
     const result = await next(params);
-    
+
     // Update the corresponding statement's vote counts
     await prisma.statement.update({
       where: { uid: result.statementId },
