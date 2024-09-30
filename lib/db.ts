@@ -37,27 +37,32 @@ prisma.$use(async (params, next) => {
         data: {
           agreeCount: {
             increment:
-              newVoteValue === VoteValue.AGREE && oldVoteValue !== VoteValue.AGREE
+              newVoteValue === VoteValue.AGREE &&
+              oldVoteValue !== VoteValue.AGREE
                 ? 1
-                : newVoteValue !== VoteValue.AGREE && oldVoteValue === VoteValue.AGREE
-                ? -1
-                : 0,
+                : newVoteValue !== VoteValue.AGREE &&
+                    oldVoteValue === VoteValue.AGREE
+                  ? -1
+                  : 0,
           },
           disagreeCount: {
             increment:
-              newVoteValue === VoteValue.DISAGREE && oldVoteValue !== VoteValue.DISAGREE
+              newVoteValue === VoteValue.DISAGREE &&
+              oldVoteValue !== VoteValue.DISAGREE
                 ? 1
-                : newVoteValue !== VoteValue.DISAGREE && oldVoteValue === VoteValue.DISAGREE
-                ? -1
-                : 0,
+                : newVoteValue !== VoteValue.DISAGREE &&
+                    oldVoteValue === VoteValue.DISAGREE
+                  ? -1
+                  : 0,
           },
           passCount: {
             increment:
               newVoteValue === VoteValue.PASS && oldVoteValue !== VoteValue.PASS
                 ? 1
-                : newVoteValue !== VoteValue.PASS && oldVoteValue === VoteValue.PASS
-                ? -1
-                : 0,
+                : newVoteValue !== VoteValue.PASS &&
+                    oldVoteValue === VoteValue.PASS
+                  ? -1
+                  : 0,
           },
         },
       });
