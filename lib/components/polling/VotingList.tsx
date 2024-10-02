@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { useToast } from "@/lib/useToast";
 import Button from "@/lib/components/Button";
 import Modal from "@/lib/components/Modal";
-
+import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 type VotingListProps = {
   statements: Statement[];
   pollId: string;
@@ -25,6 +25,8 @@ export default function VotingList({
   canVote,
   allowParticipantStatements,
 }: VotingListProps) {
+  console.log('<VotingList> initialVotes', initialVotes);
+
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
   const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,11 +36,11 @@ export default function VotingList({
     if (!canVote) return;
     const previousVote = votes[statementId];
     setVotes({ ...votes, [statementId]: vote });
-    await submitVote(statementId, vote, previousVote);
+    await submitVote(statementId, vote, previousVote, getAnonymousId());
   };
 
   const handleFlag = async (statementId: string) => {
-    await flagStatement(statementId);
+    await flagStatement(statementId, getAnonymousId());
     showToast("Statement flagged");
   };
 
@@ -78,15 +80,6 @@ export default function VotingList({
             You've voted on all the statements. Feel free to review or change
             your votes below.
           </p>
-          {allowParticipantStatements && (
-            <Button
-              title="Add another statement"
-              onClick={() => setIsModalOpen(true)}
-              disabled={!canVote}
-              icon={<PlusIcon className="w-5 h-5 stroke-white" />}
-              className="mt-4"
-            />
-          )}
         </div>
       );
     }
@@ -94,6 +87,8 @@ export default function VotingList({
     return null;
   };
 
+  console.log('statements', statements);
+  console.log('votes', votes);
   return (
     <div className="space-y-6">
       {renderContent()}
@@ -166,7 +161,7 @@ export default function VotingList({
             <Button
               title="Add statement"
               onClick={async () => {
-                await submitStatement(pollId, statementText);
+                await submitStatement(pollId, statementText, getAnonymousId());
                 setStatementText("");
                 setIsModalOpen(false);
               }}

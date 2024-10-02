@@ -3,12 +3,10 @@ import { useState, useEffect } from "react";
 import { useAuth, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Statement } from "@prisma/client";
 import type { VoteValue } from "@prisma/client";
+import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 import { flagStatement, submitStatement, submitVote } from "@/lib/actions";
-import { fetchUserVotes } from "@/lib/data";
 import StatementIcon from "../icons/StatementIcon";
 import FlagIcon from "../icons/FlagIcon";
-import QuestionIcon from "../icons/QuestionIcon";
-import ThumbIcon from "../icons/ThumbIcon";
 import Button from "../Button";
 import PlusIcon from "../icons/PlusIcon";
 import Modal from "../Modal";
@@ -34,6 +32,8 @@ export default function Voting({
   initialVotes: Record<string, VoteValue>;
   allowParticipantStatements: boolean;
 }) {
+  console.log('<Voting> initialVotes', initialVotes);
+
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
   const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(
@@ -60,7 +60,7 @@ export default function Voting({
     const statementId = statements[currentStatementIx].uid;
     const previousVote = votes[statementId];
     setVotes({ ...votes, [statementId]: vote });
-    await submitVote(statementId, vote, previousVote);
+    await submitVote(statementId, vote, previousVote, getAnonymousId());
 
     // Find the next unvoted statement
     const nextUnvotedIndex = statements.findIndex(
@@ -110,15 +110,6 @@ export default function Voting({
             Thank you for participating!
           </h2>
           <p>You've voted on all the statements in this poll.</p>
-          {allowParticipantStatements && (
-            <Button
-              title="Add another statement"
-              onClick={() => setIsModalOpen(true)}
-              disabled={!canVote}
-              icon={<PlusIcon className="w-5 h-5 stroke-white" />}
-              className="mt-4"
-            />
-          )}
         </div>
       );
     }
@@ -157,7 +148,7 @@ export default function Voting({
     currentStatementIx !== null ? currentStatementIx + 1 : 0;
 
   const handleFlag = async (statementId: string) => {
-    await flagStatement(statementId);
+    await flagStatement(statementId, getAnonymousId());
     showToast("Statement flagged");
   };
 
@@ -276,7 +267,7 @@ export default function Voting({
             <Button
               title="Add statement"
               onClick={async () => {
-                await submitStatement(pollId, statementText);
+                await submitStatement(pollId, statementText, getAnonymousId());
                 setStatementText("");
                 setIsModalOpen(false);
               }}

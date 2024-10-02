@@ -7,20 +7,17 @@ import type {
   Poll,
   VoteValue as VoteValueType,
   Statement,
+  Participant,
 } from "@prisma/client";
 import { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
 import { stringify } from "csv-stringify/sync";
-import { currentUser } from "@clerk/nextjs/server";
-import { v4 as uuidv4 } from "uuid";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getParticipantId, getPollData } from "./data";
+import { currentUser, auth } from "@clerk/nextjs/server";
+import { getPollData } from "./data";
 import {
   generateStatementsFromIdea,
   generateSimpleConstitution,
 } from "./aiActions";
-
-// According to the [CUID docs](https://github.com/paralleldrive/cuid2), there's a 50% chance of a collision after sqrt(36^(n-1) * 26) IDs, so this has a good chance of a collision after a few million IDs. We should check for collisions but we don't currently.
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -34,7 +31,8 @@ export async function createPoll(
     published: boolean;
   },
 ) {
-  const participantId = await getParticipantId();
+  const participant = await getOrCreateParticipant();
+  const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
 
   const newPoll = await prisma.poll.create({
@@ -83,42 +81,43 @@ export async function editPoll(
 }
 
 export async function publishPoll(
-  uid: string,
-  statementsOrStr: string | Statement[],
+  pollId: string,
+  newStatements: string,
+  setPublished: boolean = true
 ) {
-  const [separatedStatements, participantId] = await Promise.all([
-    Array.isArray(statementsOrStr)
-      ? statementsOrStr
-      : // TODO: separateStatements(statementsOrStr),
-        statementsOrStr.split("\n"),
-    getParticipantId(),
-  ]);
+  const participant = await getOrCreateParticipant();
+  const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
-  await prisma.statement.createMany({
-    data: separatedStatements.map((text) =>
-      typeof text === "string"
-        ? {
-            pollId: uid,
-            text,
-            participantId,
-          }
-        : {
-            uid: text.uid,
-            pollId: uid,
-            text: text.text,
-            participantId: text.participantId,
-            status: text.status,
-            createdAt: text.createdAt,
-            updatedAt: text.updatedAt,
-            deleted: text.deleted,
+
+  const separatedStatements = newStatements.split('\n').filter(s => s.trim() !== '');
+
+  const [updatedPoll] = await prisma.$transaction([
+    prisma.poll.update({
+      where: { uid: pollId },
+      data: {
+        published: setPublished,
+        statements: {
+          createMany: {
+            data: separatedStatements.map(text => ({
+              text,
+              participantId,
+            })),
           },
-    ),
-  });
-  revalidatePath(`/polls/${uid}`);
+        },
+      },
+      include: {
+        statements: true,
+      },
+    }),
+  ]);
+
+  revalidatePath(`/polls/${pollId}`);
+  return updatedPoll;
 }
 
-export async function submitStatement(pollId: string, text: string) {
-  const participantId = await getParticipantId();
+export async function submitStatement(pollId: string, text: string, anonymousId?: string) {
+  const participant = await getOrCreateParticipant(null, anonymousId);
+  const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
   await prisma.statement.create({
     data: { pollId, text, participantId },
@@ -126,8 +125,9 @@ export async function submitStatement(pollId: string, text: string) {
   revalidatePath(`/polls/${pollId}`);
 }
 
-export async function flagStatement(statementId: string) {
-  const participantId = await getParticipantId();
+export async function flagStatement(statementId: string, anonymousId?: string) {
+  const participant = await getOrCreateParticipant(null, anonymousId);
+  const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
   await prisma.flag.create({
     data: {
@@ -138,15 +138,158 @@ export async function flagStatement(statementId: string) {
   });
 }
 
+export async function fetchUserVotes(
+  pollId: string,
+  anonymousId?: string
+): Promise<Record<string, VoteValue>> {
+
+  console.log("fetchUserVotes", { pollId, anonymousId });
+
+  const participant = await getOrCreateParticipant(null, anonymousId);
+  if (!participant) return {};
+
+  const votes = await prisma.vote.findMany({
+    where: {
+      participantId: participant.uid,
+      statement: {
+        pollId,
+      },
+    },
+    select: {
+      statementId: true,
+      voteValue: true,
+    },
+  });
+
+  console.log("votes", votes);
+
+  return votes.reduce(
+    (acc, vote) => {
+      acc[vote.statementId] = vote.voteValue;
+      return acc;
+    },
+    {} as Record<string, VoteValue>
+  );
+}
+
+export async function isPollOwner(pollId: string): Promise<boolean> {
+  const { userId: clerkUserId } = auth();
+
+  if (!clerkUserId) {
+    return false;
+  }
+
+  const poll = await prisma.poll.findUnique({
+    where: { uid: pollId },
+    include: {
+      communityModel: {
+        include: {
+          owner: true,
+        },
+      },
+    },
+  });
+
+  if (!poll) {
+    return false;
+  }
+
+  return (
+    poll.communityModel.owner.clerkUserId === clerkUserId
+  );
+}
+/**
+ * Get or create a participant based on the provided participantId or anonymousId.
+ * If neither is provided, it will attempt to use the current user's session.
+ * If the user is not logged in, it will create an anonymous participant.
+ * This essentially caters to these cases:
+ * 1. The user is logged in and has a participantId
+ * 2. The user is logged in and does not have a participantId, so we link the user to the participant
+ * 3. (If the user is a community model owner, then we ensure that owner is linked to the participant)
+ * 4. The user is not logged in, so we create an anonymous participant
+ * 
+ * @param {string | null} participantId - Optional. The ID of the participant to retrieve.
+ * @param {string | null} anonymousId - Optional. The anonymous ID to create a participant if not logged in.
+ * @returns {Promise<Participant | null>} A promise that resolves to the participant or null if not found.
+ */
+export async function getOrCreateParticipant(
+  participantId?: string | null, 
+  anonymousId?: string | null
+): Promise<Participant | null> {
+
+  // If we have a participantId, return that
+  if (participantId) {
+    return await prisma.participant.findUnique({
+      where: { uid: participantId },
+    });
+  }
+
+  // Otherwise look for user via logged-in session
+  const user = await currentUser();
+
+  if (user) {
+    let participant = await prisma.participant.findUnique({
+      where: { clerkUserId: user.id },
+    });
+
+    if (!participant) {
+      participant = await prisma.participant.create({
+        data: {
+          clerkUserId: user.id
+        },
+      });
+
+      const owner = await prisma.communityModelOwner.findUnique({
+        where: { clerkUserId: user.id },
+      });
+
+      if (owner && !owner.participantId) {
+        await prisma.communityModelOwner.update({
+          where: { uid: owner.uid },
+          data: { participantId: participant.uid },
+        });
+      }
+    }
+
+    return participant;
+  }
+
+  // If they're not logged in, or 
+  if (anonymousId) {
+    let participant = await prisma.participant.findUnique({
+    where: { anonymousId },
+    });
+
+    if (!participant) {
+      participant = await prisma.participant.create({
+        data: { anonymousId },
+      });
+    }
+
+    return participant;
+  }
+
+  return null;
+}
+
 export async function submitVote(
   statementId: string,
-  voteValue: VoteValueType,
-  previousVote?: VoteValueType,
+  voteValue: VoteValue,
+  previousVote?: VoteValue,
+  anonymousId?: string
 ) {
-  const participantId = await getParticipantId();
-  if (!participantId) throw new Error("Participant not found");
+  console.log("submitVote", { statementId, voteValue, previousVote, anonymousId });
+
+  // Pass the anonymousId to get the participant just in case
+  // nobody is logged in, otherwise getOrCreateParticipant() will
+  // use the logged-in user
+  const participant = await getOrCreateParticipant(null, anonymousId);
+  if (!participant) throw new Error("Participant not found");
+
+  const participantId = participant.uid;
 
   if (previousVote) {
+    // Update the existing vote
     await prisma.vote.updateMany({
       where: {
         statementId,
@@ -156,6 +299,7 @@ export async function submitVote(
       data: { voteValue },
     });
   } else {
+    // Create a new vote
     await prisma.vote.create({
       data: { statementId, voteValue, participantId },
     });
@@ -200,16 +344,21 @@ export async function generateCsv(pollId: string): Promise<string> {
   return stringify(csvData, { header: true });
 }
 
-async function getOrCreateOwner(user: ClerkUser) {
-  console.log("Getting or creating owner for user:", user);
+async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
+  console.log("Getting or creating owner for clerk user:", clerkUserId);
 
   let owner = await prisma.communityModelOwner.findUnique({
-    where: { clerkUserId: user.id },
+    where: { clerkUserId },
   });
 
   if (!owner) {
     console.log("Owner not found, creating new owner");
-    const participant = await getOrCreateParticipant(user.id);
+    const user = (await currentUser()) as ClerkUser | null;
+
+    if (!user) {
+      throw new Error('User not logged in');
+    }
+
     const primaryEmailAddress = user.emailAddresses.find(
       (email: ClerkEmailAddress) => email.id === user.primaryEmailAddressId,
     )?.emailAddress;
@@ -227,11 +376,10 @@ async function getOrCreateOwner(user: ClerkUser) {
     try {
       owner = await prisma.communityModelOwner.create({
         data: {
-          uid: user.id,
+          clerkUserId: user.id,
           name:
             (user.firstName || "Unknown") + " " + (user.lastName || "Unknown"),
-          email: primaryEmailAddress || "Unknown",
-          participantId: participant.uid,
+          email: primaryEmailAddress || "Unknown"
         },
       });
       console.log("New owner created:", owner);
@@ -239,33 +387,23 @@ async function getOrCreateOwner(user: ClerkUser) {
       console.error("Error creating owner:", error);
       throw error;
     }
-  } else if (!owner.participantId) {
+  }
+  
+  if (!owner.participantId) {
     console.log("Owner found, but missing participantId. Updating owner...");
-    const participant = await getOrCreateParticipant(user.id);
-    await prisma.communityModelOwner.update({
-      where: { uid: user.id },
-      data: { participantId: participant.uid },
-    });
-    console.log("Owner updated with participantId");
+    const participant = await getOrCreateParticipant();
+    if (participant) {
+      await prisma.communityModelOwner.update({
+        where: { clerkUserId },
+        data: { participantId: participant.uid },
+      });
+      console.log("Owner updated with participantId");
+    }
   } else {
     console.log("Owner found:", owner);
   }
 
   return owner;
-}
-
-async function getOrCreateParticipant(userId: string) {
-  let participant = await prisma.participant.findUnique({
-    where: { uid: userId },
-  });
-
-  if (!participant) {
-    participant = await prisma.participant.create({
-      data: { uid: userId },
-    });
-  }
-
-  return participant;
 }
 
 async function createInitialPoll(
@@ -295,17 +433,31 @@ async function createInitialPoll(
   return pollId;
 }
 
-export async function createCommunityModel(name: string, initialIdea: string) {
+export async function createCommunityModel(name: string, initialIdea: string, anonymousId: string) {
   "use server";
-  const user = (await currentUser()) as ClerkUser | null;
+  const startTime = Date.now(); // Record the start time
 
-  if (!user) {
+  console.time("createCommunityModel"); // Start a timer
+
+  const { userId: clerkUserId }: { userId: string | null } = auth();
+
+  if (!clerkUserId) {
     redirect("/sign-in");
   }
 
-  const owner = await getOrCreateOwner(user);
-  const participantId = owner.participantId || user.id;
+  console.time("getOrCreateOwnerFromClerkId"); // Start a timer for getOrCreateOwnerFromClerkId
+  const owner = await getOrCreateOwnerFromClerkId(clerkUserId);
+  console.timeEnd("getOrCreateOwnerFromClerkId"); // Log the time taken by getOrCreateOwnerFromClerkId
 
+  const participant = await getOrCreateParticipant(null, anonymousId);
+
+  if (!participant) {
+    throw new Error("Participant not found");
+  }
+
+  const participantId = participant.uid;
+
+  console.time("createCommunityModel.prisma"); // Start a timer for Prisma operations
   const communityModel = await prisma.communityModel.create({
     data: {
       uid: createId(),
@@ -315,9 +467,25 @@ export async function createCommunityModel(name: string, initialIdea: string) {
       published: false,
     },
   });
+  console.timeEnd("createCommunityModel.prisma"); // Log the time taken by Prisma operations
 
+  console.time("generateStatementsFromIdea"); // Start a timer for generateStatementsFromIdea
   const statements = await generateStatementsFromIdea(initialIdea);
-  await createInitialPoll(communityModel.uid, name, participantId, statements);
+  console.timeEnd("generateStatementsFromIdea"); // Log the time taken by generateStatementsFromIdea
+
+  console.time("createInitialPoll"); // Start a timer for createInitialPoll
+  await createInitialPoll(
+    communityModel.uid,
+    name,
+    participantId,
+    statements
+  );
+  console.timeEnd("createInitialPoll"); // Log the time taken by createInitialPoll
+
+  console.timeEnd("createCommunityModel"); // Log the total time taken by createCommunityModel
+
+  const endTime = Date.now(); // Record the end time
+  console.log(`createCommunityModel took ${endTime - startTime} ms`);
 
   return communityModel.uid;
 }
@@ -443,7 +611,7 @@ export async function createConstitution(communityModelId: string) {
                           orderBy: { createdAt: "desc" },
                           select: { createdAt: true, version: true },
                         })
-                      )?.createdAt || new Date(0), // Add a fallback date
+                      )?.createdAt || new Date(0),
                   },
                 },
               },
@@ -466,13 +634,9 @@ export async function createConstitution(communityModelId: string) {
     poll.statements.some((statement) => statement.votes.length > 0),
   );
 
-  if (!isFirstConstitution && !hasNewVotes) {
-    throw new Error("No new poll data available to create a new constitution");
-  }
-
   let constitutionContent: string;
 
-  if (isFirstConstitution) {
+  if (isFirstConstitution || !hasNewVotes) {
     constitutionContent = await generateSimpleConstitution(
       communityModel.initialIdea,
     );
@@ -516,46 +680,15 @@ export async function setActiveConstitution(
 }
 
 export async function linkClerkUserToCommunityModelOwner() {
-  const { userId } = auth();
-  if (!userId) {
+  const { userId: clerkUserId } = auth();
+
+  if (!clerkUserId) {
     throw new Error("User not authenticated");
   }
 
-  const user = await clerkClient.users.getUser(userId);
-  const primaryEmailAddress = user.emailAddresses.find(
-    (email) => email.id === user.primaryEmailAddressId,
-  )?.emailAddress;
+  const owner = await getOrCreateOwnerFromClerkId(clerkUserId);
 
-  if (!primaryEmailAddress) {
-    throw new Error("User primary email not found");
-  }
-
-  const existingOwner = await prisma.communityModelOwner.findUnique({
-    where: { email: primaryEmailAddress },
-  });
-
-  if (existingOwner) {
-    // Link the Clerk user ID to the existing CommunityModelOwner
-    await prisma.communityModelOwner.update({
-      where: { email: primaryEmailAddress },
-      data: { clerkUserId: userId },
-    });
-  } else {
-    // Create a new CommunityModelOwner if one doesn't exist
-    await prisma.communityModelOwner.create({
-      data: {
-        uid: uuidv4(),
-        name: user.firstName || "Unknown",
-        email: primaryEmailAddress,
-        clerkUserId: userId,
-        participant: {
-          create: {
-            uid: uuidv4(),
-          },
-        },
-      },
-    });
-  }
+  return owner;
 }
 
 export async function updatePoll(
@@ -577,7 +710,9 @@ export async function updatePoll(
   } = data;
 
   // Get the current user's participantId
-  const participantId = await getParticipantId();
+  const participant = await getOrCreateParticipant();
+  const participantId = participant?.uid;
+
   if (!participantId) throw new Error("Participant not found");
 
   await prisma.poll.update({
@@ -621,4 +756,14 @@ export async function updatePoll(
   });
 
   revalidatePath(`/polls/${uid}`);
+}
+
+export async function updateConstitution(constitutionId: string, newContent: string) {
+  const updatedConstitution = await prisma.constitution.update({
+    where: { uid: constitutionId },
+    data: { content: newContent },
+  });
+
+  revalidatePath(`/community-models/constitution/${constitutionId}`);
+  return updatedConstitution;
 }

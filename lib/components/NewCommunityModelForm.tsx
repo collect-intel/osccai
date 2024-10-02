@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createCommunityModel } from "@/lib/actions";
+import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 
 export default function NewCommunityModelForm() {
   const [name, setName] = useState("");
@@ -13,7 +14,7 @@ export default function NewCommunityModelForm() {
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        const modelId = await createCommunityModel(name, initialIdea);
+        const modelId = await createCommunityModel(name, initialIdea, await getAnonymousId());
         router.push(`/community-models/${modelId}`);
       }}
       className="flex flex-col"

@@ -1,72 +1,59 @@
-import { notFound, redirect } from "next/navigation";
-import {
-  fetchUserVotes,
-  getPollData,
-  isPollOwner,
-  getParticipantId,
-} from "@/lib/data";
-import VotingContainer from "@/lib/components/polling/VotingContainer";
-import PageTitle from "@/lib/components/PageTitle";
-import StatementIcon from "@/lib/components/icons/StatementIcon";
-import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
-import IconCounter from "@/lib/components/IconCounter";
-import PollControls from "@/lib/components/polling/PollControls";
-import { pollUrl } from "@/lib/links";
-import BannerShareLink from "@/lib/components/BannerShareLink";
-import AuthPrompt from "@/lib/components/AuthPrompt"; // New component to create
+"use client";
 
-export default async function pollPage({
-  params,
-}: {
-  params: { pollId: string };
-}) {
-  const poll = await getPollData(params.pollId);
+import { useEffect, useState } from 'react';
+import PollPage from './PollPage';
+import { getAnonymousId } from '@/lib/client_utils/getAnonymousId';
+import { isPollOwner, fetchUserVotes } from '@/lib/actions';
 
-  if (!poll) return notFound();
+export default function PollPageWrapper({ params }: { params: { pollId: string } }) {
+  const [poll, setPoll] = useState<any>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userVotes, setUserVotes] = useState<Record<string, any>>({});
+  const [isUserCreator, setIsUserCreator] = useState(false);
+  const [anonymousUserVotes, setAnonymousUserVotes] = useState<Record<string, any>>({});
 
-  const pollPath = pollUrl(poll);
+  useEffect(() => {
+    const fetchData = async () => {
+      const anonymousId = getAnonymousId();
 
-  if (!poll.published) {
-    // redirect(`${pollPath}/create`);
-  }
+      const res = await fetch(`/api/polls/${params.pollId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ anonymousId }),
+      });
 
-  const isUserCreator = await isPollOwner(poll.uid);
-  const participantId = await getParticipantId();
+      console.log('RES', res);
 
-  const userVotes = await fetchUserVotes(poll.uid);
+      const text = await res.text();
+      const data = JSON.parse(text);
 
-  const voteCount = poll.statements.reduce(
-    (acc, statement) => acc + statement.votes.length,
-    0,
-  );
+      if (res.ok) {
+        setPoll(data.poll);
+        setIsLoggedIn(data.isLoggedIn);
+        setUserVotes(data.userVotes);
 
-  return (
-    <div className="container mx-auto px-4 py-8 flex flex-col">
-      <BannerShareLink />
-      {isUserCreator && <PollControls poll={poll} />}
-      <PageTitle title={poll.title} />
-      <div className="flex gap-3 mb-4">
-        <IconCounter
-          count={voteCount}
-          icon={<ParticipantIcon className="fill-none stroke-gray" />}
-        />
-        <IconCounter
-          count={poll.statements.length}
-          icon={<StatementIcon className="fill-none stroke-gray" />}
-        />
-      </div>
-      <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>
-      {poll.requireAuth && !participantId ? (
-        <AuthPrompt message="You need to be logged in to vote on this poll." />
-      ) : (
-        <VotingContainer
-          statements={poll.statements}
-          pollId={poll.uid}
-          requireAuth={poll.requireAuth}
-          initialVotes={userVotes}
-          allowParticipantStatements={poll.allowParticipantStatements}
-        />
-      )}
-    </div>
-  );
+        const isCreator = await isPollOwner(data.poll.uid);
+        setIsUserCreator(isCreator);
+
+        if (!data.isLoggedIn) {
+          const votes = await fetchUserVotes(data.poll.uid, anonymousId);
+          setAnonymousUserVotes(votes);
+        }
+      } else {
+        console.error('Error fetching poll data:', data.error);
+      }
+    };
+
+    fetchData();
+  }, [params.pollId]);
+
+  if (!poll) return <div>Loading...</div>;
+
+  return <PollPage
+    poll={poll}
+    isLoggedIn={isLoggedIn}
+    userVotes={userVotes}
+  />
 }

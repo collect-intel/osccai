@@ -1,5 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
+import xmllm from "xmllm";
 
 // Define our own Tool type
 interface Tool {
@@ -31,8 +30,32 @@ export async function generateStatementsFromIdea(
 export async function generateSimpleConstitution(
   initialIdea: string,
 ): Promise<string> {
-  // For now, we'll just return an all-caps version of the initial idea
-  return `CONSTITUTION:
 
-${initialIdea.toUpperCase()}`;
+  console.log('XMLLM', xmllm, process.env);
+
+  const stream = await xmllm(({promptClosed}: {promptClosed: (prompt: string, schema: any) => void}) => {
+    return [
+      // pipeline
+      promptClosed(`
+        Generate a brief principle-based and behavioural 
+        in the form of a list of "The AI should..." statements.
+
+        The constitution is for a community that is described thus: ${initialIdea}
+
+        Return the constitution in XML <constitution> element.
+      `, {
+        constitution: String
+      })
+    ];
+  });
+
+  const constitution = (await stream.next()).value?.constitution;
+
+  if (!constitution) {
+    console.error('No constitution generated, using default');
+
+    return 'Behave in a way aligned with the best interests of a community described thus: "' + initialIdea + '"';
+  }
+
+  return constitution;
 }

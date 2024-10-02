@@ -7,7 +7,7 @@ import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
 import IconCounter from "@/lib/components/IconCounter";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import PollCardControls from "./PollCardControls";
-import { isCreator } from "@/lib/isCreator";
+import { isPollOwner } from "@/lib/actions";
 
 export default async function PollCard({ poll }: { poll: Poll }) {
   const statements = await prisma.statement.findMany({
@@ -45,7 +45,7 @@ export default async function PollCard({ poll }: { poll: Poll }) {
     );
   }
 
-  const isUserCreator = await isCreator(poll.communityModelId);
+  const isUserCreator = await isPollOwner(poll.uid);
 
   return (
     <div className="flex flex-col bg-soft-gray p-6 rounded w-[284px]">

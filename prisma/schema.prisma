@@ -12,7 +12,13 @@ datasource db {
 model CommunityModelOwner {
   uid             String          @id @default(cuid())
   name            String
-  email           String          @unique
+
+  // N.B. Avoiding the @unique constraint on email allows for potential email
+  // changes on Clerk and accommodates scenarios where a user may have multiple
+  // email addresses. We should not ever consider this the user's canonical
+  // email ddress, but just _an_ email they use when signing up
+  email           String
+  
   // Optional link to a participant profile if the owner also participates
   participantId   String?         @unique
   participant     Participant?    @relation(fields: [participantId], references: [uid])

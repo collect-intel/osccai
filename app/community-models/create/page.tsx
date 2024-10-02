@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createCommunityModel } from "@/lib/actions";
-
+import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 export default function CreateCommunityModelPage() {
   const { userId } = auth();
 
@@ -19,7 +19,7 @@ export default function CreateCommunityModelPage() {
       return;
     }
 
-    const modelId = await createCommunityModel(name, initialIdea);
+    const modelId = await createCommunityModel(name, initialIdea, await getAnonymousId());
     redirect(`/community-models/${modelId}`);
   }
 

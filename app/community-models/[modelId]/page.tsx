@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import PollList from "@/lib/components/polling/PollList";
-import ConstitutionViewer from "@/lib/components/ConstitutionViewer";
 import PageTitle from "@/lib/components/PageTitle";
-import { createConstitution, setActiveConstitution } from "@/lib/actions";
 import { getCommunityModel } from "@/lib/data";
-import StatementIcon from "@/lib/components/icons/StatementIcon";
-import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
+import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
+import ConstitutionGenerator from "./ConstitutionGenerator";
 
 export default async function CommunityModelPage({
   params,
@@ -24,59 +22,54 @@ export default async function CommunityModelPage({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <PageTitle title={communityModel.name} />
-      <p className="mt-4 text-lg text-gray-600">{communityModel.initialIdea}</p>
+      <PageTitle title={`Community Model: ${communityModel.name}`} />
+      <p className="mt-2 text-lg text-gray-600">
+        Description: {communityModel.initialIdea}
+      </p>
+      <p className="mt-2 text-sm text-gray-500">
+        Created: {communityModel.createdAt.toLocaleDateString()}
+      </p>
 
       <div className="mt-8 space-y-8">
         <section>
-          <h2 className="text-2xl font-semibold mb-4">Constitutions</h2>
-          <form action={createConstitution.bind(null, communityModel.uid)}>
-            <button
-              type="submit"
-              className="bg-teal text-white px-4 py-2 rounded hover:bg-teal-dark"
-            >
-              Create New Constitution
-            </button>
-          </form>
+          <ConstitutionGenerator modelId={communityModel.uid} />
+
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Constitutions</h2>
+          </div>
+          
           {communityModel.constitutions.length > 0 ? (
-            <ul className="space-y-2 mt-4">
+            <ul className="space-y-4">
               {communityModel.constitutions.map((constitution) => (
-                <li
-                  key={constitution.uid}
-                  className="flex items-center space-x-2"
-                >
+                <li key={constitution.uid}>
                   <Link
                     href={`/community-models/constitution/${constitution.uid}`}
-                    className="text-blue-600 hover:underline"
+                    className="block bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-200 ease-in-out"
                   >
-                    Constitution v{constitution.version}
-                  </Link>
-                  {constitution.uid ===
-                  communityModel.activeConstitution?.uid ? (
-                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                      Active
-                    </span>
-                  ) : (
-                    <form
-                      action={setActiveConstitution.bind(
-                        null,
-                        communityModel.uid,
-                        constitution.uid,
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <ConstitutionIcon className="w-8 h-8 text-teal-600" />
+                        <div>
+                          <p className="text-lg font-medium text-blue-600">
+                            Constitution v{constitution.version}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Created: {new Date(constitution.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      {constitution.uid === communityModel.activeConstitution?.uid && (
+                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                          Active
+                        </span>
                       )}
-                    >
-                      <button
-                        type="submit"
-                        className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2.5 py-0.5 rounded"
-                      >
-                        Set Active
-                      </button>
-                    </form>
-                  )}
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-600 mt-4">
+            <p className="text-gray-600">
               There are currently no constitutions for this community model.
             </p>
           )}
