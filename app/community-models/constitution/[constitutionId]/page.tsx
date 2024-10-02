@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ChatInterface from "@/lib/components/chat/ChatInterface";
 import { setActiveConstitution } from "@/lib/actions";
-import EditableConstitution from '@/lib/components/EditableConstitution';
-import { FaArrowLeft } from 'react-icons/fa';
+import EditableConstitution from "@/lib/components/EditableConstitution";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default async function ConstitutionPage({
   params,
@@ -46,7 +46,10 @@ export default async function ConstitutionPage({
       </div>
       <div className="w-1/2 pl-4 flex flex-col h-full">
         <h2 className="text-2xl font-semibold mb-4">Try the AI Chatbot</h2>
-        <div className="flex-grow overflow-hidden" style={{ maxHeight: 'calc(100% - 200px)' }}>
+        <div
+          className="flex-grow overflow-hidden"
+          style={{ maxHeight: "calc(100% - 200px)" }}
+        >
           <ChatInterface
             constitution={{
               text: constitution.content,

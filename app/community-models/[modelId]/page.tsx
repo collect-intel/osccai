@@ -37,7 +37,7 @@ export default async function CommunityModelPage({
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">Constitutions</h2>
           </div>
-          
+
           {communityModel.constitutions.length > 0 ? (
             <ul className="space-y-4">
               {communityModel.constitutions.map((constitution) => (
@@ -54,11 +54,15 @@ export default async function CommunityModelPage({
                             Constitution v{constitution.version}
                           </p>
                           <p className="text-sm text-gray-500">
-                            Created: {new Date(constitution.createdAt).toLocaleDateString()}
+                            Created:{" "}
+                            {new Date(
+                              constitution.createdAt,
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      {constitution.uid === communityModel.activeConstitution?.uid && (
+                      {constitution.uid ===
+                        communityModel.activeConstitution?.uid && (
                         <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
                           Active
                         </span>

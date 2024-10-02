@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { Statement, VoteValue } from "@prisma/client";
 import VotingContainer from "@/lib/components/polling/VotingContainer";
 import PageTitle from "@/lib/components/PageTitle";
@@ -32,13 +32,11 @@ interface PollPageProps {
   userVotes: Record<string, VoteValue>;
 }
 
-const PollPage: React.FC<PollPageProps> = ({
-  poll,
-  isLoggedIn,
-  userVotes,
-}) => {
+const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
   const [isUserCreator, setIsUserCreator] = useState(false);
-  const [anonymousUserVotes, setAnonymousUserVotes] = useState<Record<string, VoteValue>>({});
+  const [anonymousUserVotes, setAnonymousUserVotes] = useState<
+    Record<string, VoteValue>
+  >({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,14 +44,15 @@ const PollPage: React.FC<PollPageProps> = ({
       const isCreator = await isPollOwner(poll.uid);
       setIsUserCreator(isCreator);
 
-      console.log('isLoggedIn', isLoggedIn);
-      console.log('anonymousId', anonymousId);
-      console.log('votes', userVotes);
+      console.log("isLoggedIn", isLoggedIn);
+      console.log("anonymousId", anonymousId);
+      console.log("votes", userVotes);
 
       if (!isLoggedIn) {
         const votes = await fetchUserVotes(poll.uid, anonymousId);
-        console.log('non-logged-in votes', votes);
-        setAnonymousUserVotes(votes as unknown as Record<string, VoteValue>);      }
+        console.log("non-logged-in votes", votes);
+        setAnonymousUserVotes(votes as unknown as Record<string, VoteValue>);
+      }
     };
 
     fetchData();
@@ -72,7 +71,7 @@ const PollPage: React.FC<PollPageProps> = ({
 
   const initialVotes = isLoggedIn ? userVotes : anonymousUserVotes;
 
-  console.log('<PollPage> initialVotes', initialVotes);
+  console.log("<PollPage> initialVotes", initialVotes);
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col">

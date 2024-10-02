@@ -14,7 +14,11 @@ export default function NewCommunityModelForm() {
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        const modelId = await createCommunityModel(name, initialIdea, await getAnonymousId());
+        const modelId = await createCommunityModel(
+          name,
+          initialIdea,
+          await getAnonymousId(),
+        );
         router.push(`/community-models/${modelId}`);
       }}
       className="flex flex-col"

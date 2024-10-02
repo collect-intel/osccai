@@ -1,30 +1,36 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import PollPage from './PollPage';
-import { getAnonymousId } from '@/lib/client_utils/getAnonymousId';
-import { isPollOwner, fetchUserVotes } from '@/lib/actions';
+import { useEffect, useState } from "react";
+import PollPage from "./PollPage";
+import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
+import { isPollOwner, fetchUserVotes } from "@/lib/actions";
 
-export default function PollPageWrapper({ params }: { params: { pollId: string } }) {
+export default function PollPageWrapper({
+  params,
+}: {
+  params: { pollId: string };
+}) {
   const [poll, setPoll] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userVotes, setUserVotes] = useState<Record<string, any>>({});
   const [isUserCreator, setIsUserCreator] = useState(false);
-  const [anonymousUserVotes, setAnonymousUserVotes] = useState<Record<string, any>>({});
+  const [anonymousUserVotes, setAnonymousUserVotes] = useState<
+    Record<string, any>
+  >({});
 
   useEffect(() => {
     const fetchData = async () => {
       const anonymousId = getAnonymousId();
 
       const res = await fetch(`/api/polls/${params.pollId}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ anonymousId }),
       });
 
-      console.log('RES', res);
+      console.log("RES", res);
 
       const text = await res.text();
       const data = JSON.parse(text);
@@ -42,7 +48,7 @@ export default function PollPageWrapper({ params }: { params: { pollId: string }
           setAnonymousUserVotes(votes);
         }
       } else {
-        console.error('Error fetching poll data:', data.error);
+        console.error("Error fetching poll data:", data.error);
       }
     };
 
@@ -51,9 +57,5 @@ export default function PollPageWrapper({ params }: { params: { pollId: string }
 
   if (!poll) return <div>Loading...</div>;
 
-  return <PollPage
-    poll={poll}
-    isLoggedIn={isLoggedIn}
-    userVotes={userVotes}
-  />
+  return <PollPage poll={poll} isLoggedIn={isLoggedIn} userVotes={userVotes} />;
 }

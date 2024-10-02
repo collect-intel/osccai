@@ -30,31 +30,43 @@ export async function generateStatementsFromIdea(
 export async function generateSimpleConstitution(
   initialIdea: string,
 ): Promise<string> {
+  console.log("XMLLM", xmllm, process.env);
 
-  console.log('XMLLM', xmllm, process.env);
-
-  const stream = await xmllm(({promptClosed}: {promptClosed: (prompt: string, schema: any) => void}) => {
-    return [
-      // pipeline
-      promptClosed(`
+  const stream = await xmllm(
+    ({
+      promptClosed,
+    }: {
+      promptClosed: (prompt: string, schema: any) => void;
+    }) => {
+      return [
+        // pipeline
+        promptClosed(
+          `
         Generate a brief principle-based and behavioural 
         in the form of a list of "The AI should..." statements.
 
         The constitution is for a community that is described thus: ${initialIdea}
 
         Return the constitution in XML <constitution> element.
-      `, {
-        constitution: String
-      })
-    ];
-  });
+      `,
+          {
+            constitution: String,
+          },
+        ),
+      ];
+    },
+  );
 
   const constitution = (await stream.next()).value?.constitution;
 
   if (!constitution) {
-    console.error('No constitution generated, using default');
+    console.error("No constitution generated, using default");
 
-    return 'Behave in a way aligned with the best interests of a community described thus: "' + initialIdea + '"';
+    return (
+      'Behave in a way aligned with the best interests of a community described thus: "' +
+      initialIdea +
+      '"'
+    );
   }
 
   return constitution;

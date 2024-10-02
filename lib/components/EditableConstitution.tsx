@@ -1,14 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { updateConstitution } from '@/lib/actions';
+import React, { useState } from "react";
+import { updateConstitution } from "@/lib/actions";
 
 interface EditableConstitutionProps {
   constitutionId: string;
   initialContent: string;
 }
 
-export default function EditableConstitution({ constitutionId, initialContent }: EditableConstitutionProps) {
+export default function EditableConstitution({
+  constitutionId,
+  initialContent,
+}: EditableConstitutionProps) {
   const [content, setContent] = useState(initialContent);
   const [isEditing, setIsEditing] = useState(false);
 

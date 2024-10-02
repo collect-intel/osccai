@@ -228,7 +228,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ constitution }) => {
               role: "assistant",
               content: "",
             };
-            
+
             if (chunk.draft_response) {
               newMessage.draft_response = chunk.draft_response;
               setIsLoading(false); // Set loading state to false when draft response is received
@@ -401,7 +401,10 @@ I observe a peculiar atmospheric phenomenon...
           </div>
         )}
       </div>
-      <form onSubmit={handleSubmit} className="flex p-4 bg-white border-t border-light-gray">
+      <form
+        onSubmit={handleSubmit}
+        className="flex p-4 bg-white border-t border-light-gray"
+      >
         <input
           type="text"
           value={inputValue}

@@ -83,13 +83,15 @@ export async function editPoll(
 export async function publishPoll(
   pollId: string,
   newStatements: string,
-  setPublished: boolean = true
+  setPublished: boolean = true,
 ) {
   const participant = await getOrCreateParticipant();
   const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
 
-  const separatedStatements = newStatements.split('\n').filter(s => s.trim() !== '');
+  const separatedStatements = newStatements
+    .split("\n")
+    .filter((s) => s.trim() !== "");
 
   const [updatedPoll] = await prisma.$transaction([
     prisma.poll.update({
@@ -98,7 +100,7 @@ export async function publishPoll(
         published: setPublished,
         statements: {
           createMany: {
-            data: separatedStatements.map(text => ({
+            data: separatedStatements.map((text) => ({
               text,
               participantId,
             })),
@@ -115,7 +117,11 @@ export async function publishPoll(
   return updatedPoll;
 }
 
-export async function submitStatement(pollId: string, text: string, anonymousId?: string) {
+export async function submitStatement(
+  pollId: string,
+  text: string,
+  anonymousId?: string,
+) {
   const participant = await getOrCreateParticipant(null, anonymousId);
   const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
@@ -140,9 +146,8 @@ export async function flagStatement(statementId: string, anonymousId?: string) {
 
 export async function fetchUserVotes(
   pollId: string,
-  anonymousId?: string
+  anonymousId?: string,
 ): Promise<Record<string, VoteValue>> {
-
   console.log("fetchUserVotes", { pollId, anonymousId });
 
   const participant = await getOrCreateParticipant(null, anonymousId);
@@ -168,7 +173,7 @@ export async function fetchUserVotes(
       acc[vote.statementId] = vote.voteValue;
       return acc;
     },
-    {} as Record<string, VoteValue>
+    {} as Record<string, VoteValue>,
   );
 }
 
@@ -194,9 +199,7 @@ export async function isPollOwner(pollId: string): Promise<boolean> {
     return false;
   }
 
-  return (
-    poll.communityModel.owner.clerkUserId === clerkUserId
-  );
+  return poll.communityModel.owner.clerkUserId === clerkUserId;
 }
 /**
  * Get or create a participant based on the provided participantId or anonymousId.
@@ -207,16 +210,15 @@ export async function isPollOwner(pollId: string): Promise<boolean> {
  * 2. The user is logged in and does not have a participantId, so we link the user to the participant
  * 3. (If the user is a community model owner, then we ensure that owner is linked to the participant)
  * 4. The user is not logged in, so we create an anonymous participant
- * 
+ *
  * @param {string | null} participantId - Optional. The ID of the participant to retrieve.
  * @param {string | null} anonymousId - Optional. The anonymous ID to create a participant if not logged in.
  * @returns {Promise<Participant | null>} A promise that resolves to the participant or null if not found.
  */
 export async function getOrCreateParticipant(
-  participantId?: string | null, 
-  anonymousId?: string | null
+  participantId?: string | null,
+  anonymousId?: string | null,
 ): Promise<Participant | null> {
-
   // If we have a participantId, return that
   if (participantId) {
     return await prisma.participant.findUnique({
@@ -235,7 +237,7 @@ export async function getOrCreateParticipant(
     if (!participant) {
       participant = await prisma.participant.create({
         data: {
-          clerkUserId: user.id
+          clerkUserId: user.id,
         },
       });
 
@@ -254,10 +256,10 @@ export async function getOrCreateParticipant(
     return participant;
   }
 
-  // If they're not logged in, or 
+  // If they're not logged in, or
   if (anonymousId) {
     let participant = await prisma.participant.findUnique({
-    where: { anonymousId },
+      where: { anonymousId },
     });
 
     if (!participant) {
@@ -276,9 +278,14 @@ export async function submitVote(
   statementId: string,
   voteValue: VoteValue,
   previousVote?: VoteValue,
-  anonymousId?: string
+  anonymousId?: string,
 ) {
-  console.log("submitVote", { statementId, voteValue, previousVote, anonymousId });
+  console.log("submitVote", {
+    statementId,
+    voteValue,
+    previousVote,
+    anonymousId,
+  });
 
   // Pass the anonymousId to get the participant just in case
   // nobody is logged in, otherwise getOrCreateParticipant() will
@@ -356,7 +363,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
     const user = (await currentUser()) as ClerkUser | null;
 
     if (!user) {
-      throw new Error('User not logged in');
+      throw new Error("User not logged in");
     }
 
     const primaryEmailAddress = user.emailAddresses.find(
@@ -379,7 +386,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
           clerkUserId: user.id,
           name:
             (user.firstName || "Unknown") + " " + (user.lastName || "Unknown"),
-          email: primaryEmailAddress || "Unknown"
+          email: primaryEmailAddress || "Unknown",
         },
       });
       console.log("New owner created:", owner);
@@ -388,7 +395,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
       throw error;
     }
   }
-  
+
   if (!owner.participantId) {
     console.log("Owner found, but missing participantId. Updating owner...");
     const participant = await getOrCreateParticipant();
@@ -433,7 +440,11 @@ async function createInitialPoll(
   return pollId;
 }
 
-export async function createCommunityModel(name: string, initialIdea: string, anonymousId: string) {
+export async function createCommunityModel(
+  name: string,
+  initialIdea: string,
+  anonymousId: string,
+) {
   "use server";
   const startTime = Date.now(); // Record the start time
 
@@ -474,12 +485,7 @@ export async function createCommunityModel(name: string, initialIdea: string, an
   console.timeEnd("generateStatementsFromIdea"); // Log the time taken by generateStatementsFromIdea
 
   console.time("createInitialPoll"); // Start a timer for createInitialPoll
-  await createInitialPoll(
-    communityModel.uid,
-    name,
-    participantId,
-    statements
-  );
+  await createInitialPoll(communityModel.uid, name, participantId, statements);
   console.timeEnd("createInitialPoll"); // Log the time taken by createInitialPoll
 
   console.timeEnd("createCommunityModel"); // Log the total time taken by createCommunityModel
@@ -758,7 +764,10 @@ export async function updatePoll(
   revalidatePath(`/polls/${uid}`);
 }
 
-export async function updateConstitution(constitutionId: string, newContent: string) {
+export async function updateConstitution(
+  constitutionId: string,
+  newContent: string,
+) {
   const updatedConstitution = await prisma.constitution.update({
     where: { uid: constitutionId },
     data: { content: newContent },

@@ -25,7 +25,7 @@ export default function VotingList({
   canVote,
   allowParticipantStatements,
 }: VotingListProps) {
-  console.log('<VotingList> initialVotes', initialVotes);
+  console.log("<VotingList> initialVotes", initialVotes);
 
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
   const { showToast } = useToast();
@@ -87,8 +87,8 @@ export default function VotingList({
     return null;
   };
 
-  console.log('statements', statements);
-  console.log('votes', votes);
+  console.log("statements", statements);
+  console.log("votes", votes);
   return (
     <div className="space-y-6">
       {renderContent()}

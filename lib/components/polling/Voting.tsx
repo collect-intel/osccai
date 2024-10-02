@@ -32,7 +32,7 @@ export default function Voting({
   initialVotes: Record<string, VoteValue>;
   allowParticipantStatements: boolean;
 }) {
-  console.log('<Voting> initialVotes', initialVotes);
+  console.log("<Voting> initialVotes", initialVotes);
 
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);

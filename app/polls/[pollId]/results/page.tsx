@@ -16,7 +16,7 @@ export default async function Page({ params }: { params: { pollId: string } }) {
       communityModel: { include: { owner: true } },
       statements: {
         where: { deleted: false },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           votes: true,
         },
@@ -33,7 +33,10 @@ export default async function Page({ params }: { params: { pollId: string } }) {
     redirect(pollPath);
   }
 
-  const totalVotes = poll.statements.reduce((sum, statement) => sum + statement.votes.length, 0);
+  const totalVotes = poll.statements.reduce(
+    (sum, statement) => sum + statement.votes.length,
+    0,
+  );
 
   return (
     <div className="flex flex-col">
@@ -62,8 +65,13 @@ export default async function Page({ params }: { params: { pollId: string } }) {
                   <span>Agree: {statement.agreeCount}</span>
                   <span>Disagree: {statement.disagreeCount}</span>
                   <span>Pass: {statement.passCount}</span>
-                  <span>GAC Score: {statement.gacScore?.toFixed(2) ?? 'N/A'}</span>
-                  <span>Priority Score: {statement.priorityScore?.toFixed(2) ?? 'N/A'}</span>
+                  <span>
+                    GAC Score: {statement.gacScore?.toFixed(2) ?? "N/A"}
+                  </span>
+                  <span>
+                    Priority Score:{" "}
+                    {statement.priorityScore?.toFixed(2) ?? "N/A"}
+                  </span>
                 </div>
               </li>
             ))}
