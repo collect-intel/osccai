@@ -177,10 +177,6 @@ export default function Voting({
 
       <div className="flex justify-between items-center text-lg font-semibold mb-6">
         <div>Vote on these statements</div>
-        <div>
-          Debug:{" "}
-          {JSON.stringify({ canVote, requireAuth: !!requireAuth, isSignedIn })}
-        </div>
         {allowParticipantStatements && (
           <Button
             title="Contribute a statement"

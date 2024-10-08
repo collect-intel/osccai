@@ -24,7 +24,7 @@ export default async function PublicCommunityModelPage({
   return (
     <div className="container mx-auto px-4 py-8">
       <PageTitle title={communityModel.name} />
-      <p className="mt-4 text-lg text-gray-600">{communityModel.initialIdea}</p>
+      <p className="mt-4 text-lg text-gray-600">{communityModel.goal}</p>
 
       <div className="mt-8">
         <h2 className="text-2xl font-semibold mb-4">Chat with AI Assistant</h2>

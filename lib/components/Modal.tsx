@@ -1,45 +1,63 @@
-import { useRef, useEffect, ReactNode } from "react";
+import React, { useEffect, useRef } from 'react';
 
-export default function Modal({
-  isOpen,
-  onClose,
-  children,
-}: {
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  children: ReactNode;
-}) {
-  const modalRef = useRef<HTMLDivElement | null>(null);
+  children: React.ReactNode;
+  minHeight?: number; // Add this line
+}
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, minHeight = 400 }) => { // Add minHeight parameter
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
+
+  const handleBackgroundClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === modalRef.current) {
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div
-        ref={modalRef}
-        className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md"
+    <div 
+      ref={modalRef}
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={handleBackgroundClick}
+    >
+      <div 
+        className="bg-white rounded-lg p-8 max-w-4xl w-full overflow-auto relative"
+        style={{
+          maxHeight: '90vh',
+          minHeight: `min(${minHeight}px, 90vh)`, // Add this line
+          height: `min(${minHeight}px, 90vh)` // Add this line
+        }}
       >
-        <div className="max-h-[80vh] overflow-y-auto">{children}</div>
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+        {children}
       </div>
     </div>
   );
-}
+};
+
+export default Modal;

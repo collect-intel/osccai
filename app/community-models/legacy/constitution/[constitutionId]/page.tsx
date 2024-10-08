@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import ChatInterface from "@/lib/components/chat/ChatInterface";
+import ConstitutionalAIChat from "@/lib/components/chat/ConstitutionalAIChat";
 import { setActiveConstitution } from "@/lib/actions";
 import EditableConstitution from "@/lib/components/EditableConstitution";
 import { FaArrowLeft } from "react-icons/fa";
@@ -53,6 +53,8 @@ export default async function ConstitutionPage({
           <ChatInterface
             constitution={{
               text: constitution.content,
+              icon: <ConstitutionIcon />,
+              color: "teal",
             }}
           />
         </div>

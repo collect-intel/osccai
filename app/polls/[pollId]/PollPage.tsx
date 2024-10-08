@@ -13,6 +13,7 @@ import BannerShareLink from "@/lib/components/BannerShareLink";
 import AuthPrompt from "@/lib/components/AuthPrompt";
 import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 import { isPollOwner, fetchUserVotes } from "@/lib/actions";
+import Link from 'next/link';
 
 interface PollPageProps {
   poll: {
@@ -76,7 +77,22 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col">
       <BannerShareLink />
-      {isUserCreator && <PollControls poll={poll} />}
+      {isUserCreator && (
+        <div className="mb-4">
+          <Link 
+            href={`/community-models/flow/${poll.communityModelId}#poll`}
+            className="bg-teal text-white px-4 py-2 rounded mr-2"
+          >
+            Edit Poll
+          </Link>
+          <Link 
+            href={`/community-models/flow/${poll.communityModelId}#poll`}
+            className="bg-teal text-white px-4 py-2 rounded"
+          >
+            View Results
+          </Link>
+        </div>
+      )}
       <PageTitle title={poll.title} />
       <div className="flex gap-3 mb-4">
         <IconCounter

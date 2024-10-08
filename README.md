@@ -1,115 +1,143 @@
 # Open-Source Collective Constitutional AI (OSCCAI)
 
+** This readme is 30% AI generated and 70% human generated. It's not Canonical. **
+
 ## Overview
 
 Open-Source Collective Constitutional AI (OSCCAI) is a platform that enables communities to collaboratively create and refine AI models based on collectively defined constitutions. This project aims to democratize AI alignment by allowing diverse groups to shape AI behavior according to their shared values and preferences.
 
-## Application Structure and Flow
-
-[The existing structure and flow section can remain unchanged]
-
 ## Key Components
 
-[The existing key components section can remain unchanged]
+- **Community Model Creation and Management**: Users can create and manage community AI models, defining their goals, bio, and principles.
+- **Collaborative Constitution Development**: Generate constitutions derived from community input and poll results.
+- **Polling and Voting System**: Create polls for community members to vote on principles and statements.
+- **Constitutional AI Chat Interface**: Interact with an AI chatbot that adheres to the defined constitution.
+- **File Upload and Management**: Upload and manage community logos and other assets using Supabase storage.
 
 ## User Flow
 
-[The existing user flow section can remain unchanged]
+1. **Create a Community Model**: Define the name, bio, goal, and upload a logo.
+2. **Define Initial Principles**: Add core principles that will guide the community AI model.
+3. **Create and Manage Polls**: Collect community input on principles through polls.
+4. **Generate and Refine Constitutions**: Generate a constitution based on poll results and refine it as needed.
+5. **Interact with the AI Chatbot**: Use the Constitutional AI Chat interface to interact with the AI model governed by the community's constitution.
 
 ## Technical Stack
 
 - **Frontend**: Next.js 14.2.5 with React 18
-- **Backend**: Next.js API routes + Server Actions
+- **Backend**: Next.js API routes and Server Actions
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Clerk
-- **AI Integration**: Custom core AI service (separate from this application)
-- **Additional Libraries**: Tailwind CSS, Headless UI, Heroicons, Framer Motion, and more
+- **AI Integration**: Custom AI service using `xmllm`
+- **File Storage**: Supabase (for storing uploaded files like community logos)
+- **Additional Libraries**: Tailwind CSS, Headless UI, Heroicons, Framer Motion, React Markdown, Lodash, and more
 
-## Current Status and TODOs
+## Environment Variables
 
-- TODO: Finalize proper authentication flow using Clerk.
-- TODO: Enhance documentation for the core AI service integration.
-- TODO: Implement Constitution generation (poll/consensus-derived).
-- TODO: Develop a public library interface for Community Models and Constitutions.
+To run the project locally, you'll need to set up the following environment variables in your `.env.local` file:
+
+- **DATABASE_URL**: Connection string for your PostgreSQL database.
+- **DIRECT_URL**: Direct connection URL for Prisma migrations.
+- **NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY**: Publishable key for Clerk authentication.
+- **CLERK_SECRET_KEY**: Secret key for Clerk authentication.
+- **NEXT_PUBLIC_APP_URL**: The URL where your app is running (e.g., `http://localhost:3000`).
+- **ANTHROPIC_API_KEY**: API key for Anthropic's AI services.
+- **NEXT_PUBLIC_SUPABASE_URL**: URL of your Supabase project.
+- **NEXT_PUBLIC_SUPABASE_ANON_KEY**: Supabase anonymous key.
+- **SUPABASE_SERVICE_ROLE_KEY**: Supabase service role key for server-side operations.
+- **SUPABASE_S3_ACCESS_KEY_ID**: Access key ID for Supabase S3 storage.
+- **SUPABASE_S3_SECRET_ACCESS_KEY**: Secret access key for Supabase S3 storage.
+- **SUPABASE_REGION**: Region where your Supabase project is hosted.
 
 ## Getting Started / Local Setup
 
 This setup presumes you have the following installed:
 
-* Node.js (+ npm)
-* PostgreSQL (`brew install postgresql`, `brew services start postgresql`)
+- **Node.js** (with npm)
+- **PostgreSQL** (you can install it using `brew install postgresql` and start it with `brew services start postgresql` on macOS)
 
-1. Clone the repo:
+### Steps:
 
-```bash
-git clone git@github.com:collect-intel/osccai.git
-```
+1. **Clone the repository:**
 
-2. Install dependencies:
+   ```bash
+   git clone git@github.com:collect-intel/osccai.git
+   ```
 
-```bash
-npm install
-```
+2. **Install dependencies:**
 
-3. Set up local environment variables in `.env.local`:
+   ```bash
+   npm install
+   ```
 
-```
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-NEXT_PUBLIC_SUPABASE_URL=...
-DATABASE_URL=postgresql://[your username]@localhost:5432/postgres
-DIRECT_URL=postgresql://[your username]@localhost:5432/postgres
-```
+3. **Set up environment variables:**
 
-4. Run the Prisma migration:
+   Create a `.env.local` file at the root of the project and fill in the environment variables as shown above.
 
-```bash
-npm run prisma:local -- migrate dev --name init
-npm run prisma:local -- studio  # useful for verifying data
-```
+4. **Run Prisma migrations:**
 
-5. Seed the database:
+   ```bash
+   npm run db:migrate
+   ```
 
-```bash
-npm run db:seed
-```
+5. **Seed the database:**
 
-6. Run the development server:
+   ```bash
+   npm run db:seed
+   ```
 
-```bash
-npm run dev:local
-```
+6. **Start the development server:**
 
-7. (Optional) To reset the database:
+   ```bash
+   npm run dev:local
+   ```
 
-```bash
-npm run db:reset
-```
+7. **Access the application:**
 
-Your local development environment should now be running at http://localhost:3000 (unless the port is already in use).
+   Open your browser and navigate to `http://localhost:3000`
+
+### Optional:
+
+- **Reset the database:**
+
+  ```bash
+  npm run db:reset
+  ```
+
+- **Run Prisma Studio:**
+
+  ```bash
+  npm run prisma:studio:local
+  ```
+
+  This opens a web interface to explore and manipulate your database records.
 
 ## Available Scripts
 
-- `npm run dev:local`: Start the development server using local environment variables
-- `npm run dev:prod`: Start the development server using production environment variables
-- `npm run build`: Generate Prisma client and build the Next.js application
-- `npm run build:local`: Generate Prisma client and build using local environment variables
-- `npm run start`: Start the production server
-- `npm run lint`: Run ESLint
-- `npm run prisma:local`: Run Prisma commands with local environment variables
-- `npm run db:seed`: Seed the database using local environment variables
-- `npm run db:seed:prod`: Seed the production database (with confirmation prompt)
-- `npm run db:reset`: Reset the local database (with confirmation prompt)
-- `npm run db:reset:prod`: Reset the production database (with confirmation prompt)
-- `npm run db:migrate`: Run Prisma migrations for local development
-- `npm run db:migrate:prod`: Run Prisma migrations for production (with confirmation prompt)
-- `npm run prisma:studio:prod`: Run Prisma Studio with production environment variables
+- `npm run dev:local`: Start the development server using local environment variables.
+- `npm run dev:prod`: Start the development server using production environment variables.
+- `npm run build`: Generate Prisma client and build the Next.js application.
+- `npm run build:local`: Generate Prisma client and build using local environment variables.
+- `npm run start`: Start the production server.
+- `npm run lint`: Run ESLint to analyze code for potential errors.
+- `npm run prisma:local`: Run Prisma commands with local environment variables (e.g., migrations).
+- `npm run db:seed`: Seed the local database.
+- `npm run db:migrate`: Run Prisma migrations for local development.
+- `npm run db:reset`: Reset the local database (with confirmation prompt).
+- `npm run prisma:studio:local`: Open Prisma Studio to interact with your local database.
 
-Note: Always use caution when running database reset, seeding, or migration scripts, especially in a production environment.
+**Note:** Always use caution when running database reset, seeding, or migration scripts, especially in a production environment.
 
-## Contributing
+## Project Structure
 
-We welcome contributions from the community! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to get involved.
-
-## License
-
-[Insert chosen license here]
+- **`app/`**: Next.js App Router pages and layouts.
+- **`lib/`**: Core application logic, components, and utilities.
+  - **`lib/components/`**: React components used throughout the app.
+    - **`chat/`**: Components related to the AI chat interface (e.g., `AIChat.tsx`, `ConstitutionalAIChat.tsx`).
+    - **`flow/`**: Components for the community model creation flow (e.g., `CommunityModelFlow.tsx`, `PrinciplesZone.tsx`).
+  - **`lib/actions.ts`**: Server actions for data operations, including database interactions and API calls.
+  - **`lib/utils/`**: Utility functions (e.g., `uploader.ts` for handling file uploads).
+  - **`lib/types.ts`**: TypeScript type definitions used across the app.
+- **`prisma/`**: Database schema and migrations.
+- **`public/`**: Static assets (images, icons, etc.).
+- **`styles/`**: Global CSS styles and Tailwind CSS configuration.

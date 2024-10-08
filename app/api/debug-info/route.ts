@@ -21,7 +21,7 @@ export async function GET() {
     select: {
       uid: true,
       name: true,
-      initialIdea: true,
+      goal: true,
       ownerId: true,
       published: true,
       createdAt: true,
@@ -46,7 +46,7 @@ export async function GET() {
           uid: true,
           name: true,
           deleted: true,
-          initialIdea: true,
+          goal: true,
         },
       });
     }

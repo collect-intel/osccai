@@ -19,7 +19,7 @@ export default async function Home() {
             Open-Source Collective Constitutional AI
           </p>
 
-          <div className="bg-light-yellow border border-yellow rounded-lg p-6 mb-8 max-w-md mx-auto">
+          <div className="bg-white border border-yellow rounded-lg p-6 mb-8 max-w-md mx-auto">
             <p className="text-lg font-semibold mb-4">Welcome back!</p>
             <p className="mb-6">Ready to continue shaping the future of AI?</p>
             <Link

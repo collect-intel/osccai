@@ -1,6 +1,5 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import type { ClerkUser, ClerkEmailAddress } from "@/lib/types";
 import type {
@@ -8,6 +7,10 @@ import type {
   VoteValue as VoteValueType,
   Statement,
   Participant,
+  CommunityModelOwner,
+  CommunityModel,
+  Constitution,
+  ConstitutionStatus
 } from "@prisma/client";
 import { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
@@ -15,9 +18,9 @@ import { stringify } from "csv-stringify/sync";
 import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import {
-  generateStatementsFromIdea,
   generateSimpleConstitution,
 } from "./aiActions";
+import { deleteFile } from '@/lib/utils/uploader';
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -416,10 +419,25 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
 async function createInitialPoll(
   communityModelUid: string,
   name: string,
-  participantId: string,
+  owner: CommunityModelOwner,
   statements: string[],
 ) {
   const pollId = createId();
+  
+  // Ensure the owner has a linked participant
+  if (!owner.participantId) {
+    const participant = await getOrCreateParticipant();
+    if (participant) {
+      await prisma.communityModelOwner.update({
+        where: { uid: owner.uid },
+        data: { participantId: participant.uid },
+      });
+      owner.participantId = participant.uid;
+    } else {
+      throw new Error("Failed to create or retrieve participant for owner");
+    }
+  }
+
   await prisma.poll.create({
     data: {
       uid: pollId,
@@ -433,7 +451,7 @@ async function createInitialPoll(
     data: statements.map((text) => ({
       pollId,
       text,
-      participantId,
+      participantId: owner.participantId ?? '',
     })),
   });
 
@@ -453,29 +471,36 @@ export async function createCommunityModel(
   const { userId: clerkUserId }: { userId: string | null } = auth();
 
   if (!clerkUserId) {
-    redirect("/sign-in");
+    throw new Error("User not authenticated");
   }
 
-  console.time("getOrCreateOwnerFromClerkId"); // Start a timer for getOrCreateOwnerFromClerkId
+  if (!data.name || !data.bio) {
+    throw new Error("Name and bio are required to create a community model");
+  }
+
   const owner = await getOrCreateOwnerFromClerkId(clerkUserId);
-  console.timeEnd("getOrCreateOwnerFromClerkId"); // Log the time taken by getOrCreateOwnerFromClerkId
 
-  const participant = await getOrCreateParticipant(null, anonymousId);
-
-  if (!participant) {
-    throw new Error("Participant not found");
-  }
-
-  const participantId = participant.uid;
-
-  console.time("createCommunityModel.prisma"); // Start a timer for Prisma operations
   const communityModel = await prisma.communityModel.create({
     data: {
       uid: createId(),
-      name,
+      name: data.name,
       owner: { connect: { uid: owner.uid } },
-      initialIdea,
+      bio: data.bio,
+      goal: data.goal || '',
+      logoUrl: data.logoUrl || null,
       published: false,
+      polls: data.principles && data.principles.length > 0 ? {
+        create: {
+          title: "Initial Poll",
+          published: false,
+          statements: {
+            create: data.principles.map(principle => ({
+              text: principle.text,
+              participantId: owner.participantId!,
+            })),
+          },
+        },
+      } : undefined,
     },
   });
   console.timeEnd("createCommunityModel.prisma"); // Log the time taken by Prisma operations
@@ -535,9 +560,8 @@ export async function deleteConstitution(constitutionId: string) {
     throw new Error("Constitution not found");
   }
 
-  await prisma.constitution.update({
+  await prisma.constitution.delete({
     where: { uid: constitutionId },
-    data: { deleted: true },
   });
 
   revalidatePath(`/community-models/${constitution.modelId}`);
@@ -594,7 +618,7 @@ export async function unpublishModel(formData: FormData) {
   revalidatePath("/library");
 }
 
-export async function createConstitution(communityModelId: string) {
+export async function createConstitution(communityModelId: string): Promise<Constitution> {
   const communityModel = await prisma.communityModel.findUnique({
     where: { uid: communityModelId },
     include: {
@@ -607,20 +631,7 @@ export async function createConstitution(communityModelId: string) {
         include: {
           statements: {
             include: {
-              votes: {
-                where: {
-                  createdAt: {
-                    gt:
-                      (
-                        await prisma.constitution.findFirst({
-                          where: { modelId: communityModelId },
-                          orderBy: { createdAt: "desc" },
-                          select: { createdAt: true, version: true },
-                        })
-                      )?.createdAt || new Date(0),
-                  },
-                },
-              },
+              votes: true,
             },
           },
         },
@@ -635,23 +646,46 @@ export async function createConstitution(communityModelId: string) {
   const latestConstitution = communityModel.constitutions[0];
   const newVersion = latestConstitution ? latestConstitution.version + 1 : 1;
 
-  const isFirstConstitution = !latestConstitution;
-  const hasNewVotes = communityModel.polls.some((poll) =>
-    poll.statements.some((statement) => statement.votes.length > 0),
-  );
+  // Collect all statements from all polls
+  const allStatements = communityModel.polls.flatMap(poll => poll.statements);
+
+  // Filter constitutionable statements
+  let constitutionableStatements = allStatements.filter(statement => statement.isConstitutionable);
+
+  // If we don't have at least 10 constitutionable statements, add high-scoring ones
+  if (constitutionableStatements.length < 10) {
+    const remainingStatements = allStatements
+      .filter(statement => !statement.isConstitutionable)
+      .sort((a, b) => (b.gacScore || 0) - (a.gacScore || 0));
+
+    constitutionableStatements = [
+      ...constitutionableStatements,
+      ...remainingStatements.slice(0, 10 - constitutionableStatements.length)
+    ];
+  }
+
+  // Prepare statements for the LLM
+  const statementsForLLM: Array<{ text: string; isConstitutionable: boolean; gacScore?: number }> = constitutionableStatements.map(statement => ({
+    text: statement.text,
+    isConstitutionable: statement.isConstitutionable,
+    gacScore: statement.gacScore ?? undefined
+  }));
+
+  console.log('statementsForLLM', statementsForLLM);
 
   let constitutionContent: string;
 
-  if (isFirstConstitution || !hasNewVotes) {
+  if (statementsForLLM.length === 0) {
     constitutionContent = await generateSimpleConstitution(
-      communityModel.initialIdea,
+      communityModel.goal,
+      communityModel.bio
     );
   } else {
-    // Implement actual constitution generation logic here
-    constitutionContent = `CONSTITUTION VERSION ${newVersion}:
-
-Based on new poll data, this constitution has been updated.
-(Implement actual constitution generation logic here)`;
+    constitutionContent = await generateConstitutionFromStatements(
+      communityModel.goal,
+      communityModel.bio,
+      statementsForLLM
+    );
   }
 
   const newConstitution = await prisma.constitution.create({
@@ -670,7 +704,7 @@ Based on new poll data, this constitution has been updated.
 export async function setActiveConstitution(
   communityModelId: string,
   constitutionId: string,
-) {
+): Promise<void> {
   await prisma.communityModel.update({
     where: { uid: communityModelId },
     data: { activeConstitutionId: constitutionId },
@@ -697,71 +731,60 @@ export async function linkClerkUserToCommunityModelOwner() {
   return owner;
 }
 
-export async function updatePoll(
-  uid: string,
-  data: {
-    title: string;
-    description: string;
-    statements: Statement[];
-    requireAuth: boolean;
-    allowParticipantStatements: boolean;
-  },
-) {
-  const {
-    title,
-    description,
-    statements,
-    requireAuth,
-    allowParticipantStatements,
-  } = data;
-
-  // Get the current user's participantId
-  const participant = await getOrCreateParticipant();
-  const participantId = participant?.uid;
-
-  if (!participantId) throw new Error("Participant not found");
-
-  await prisma.poll.update({
-    where: { uid },
-    data: {
-      title,
-      description,
-      requireAuth,
-      allowParticipantStatements,
-      statements: {
-        upsert: statements.map((statement) => ({
-          where: { uid: statement.uid },
-          update: { text: statement.text },
-          create: {
-            uid: statement.uid,
-            text: statement.text,
-            participantId: participantId, // Use the current user's participantId
-          },
-        })),
-      },
-    },
-    select: {
-      // Only select the properties you need
-      uid: true,
-      title: true,
-      description: true,
-      requireAuth: true,
-      allowParticipantStatements: true,
-      statements: {
-        select: {
-          uid: true,
-          text: true,
-          participantId: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          deleted: true,
-        },
-      },
+export async function updatePoll(modelId: string, pollData: Partial<Poll> & { statements?: Partial<Statement>[] }): Promise<Poll> {
+  // First, try to find an existing poll for this community model
+  let existingPoll = await prisma.poll.findFirst({
+    where: {
+      communityModelId: modelId,
     },
   });
 
-  revalidatePath(`/polls/${uid}`);
+  if (existingPoll) {
+    const { statements, ...pollDataWithoutStatements } = pollData;
+    const updatedPoll = await prisma.poll.update({
+      where: {
+        uid: existingPoll.uid,
+      },
+      data: {
+        ...pollDataWithoutStatements,
+        ...(statements && {
+          statements: {
+            deleteMany: {},
+            create: statements.map((statement: Partial<Statement>) => ({
+              text: statement.text ?? '',
+              participantId: statement.participantId ?? '',
+              status: 'PENDING',
+              // Add other required fields here
+            })),
+          },
+        }),
+      },
+      include: { statements: true },
+    });
+    revalidatePath(`/community-models/${modelId}`);
+    return updatedPoll;
+  } else {
+    // If no poll exists, create a new one
+    const { statements, ...pollDataWithoutStatements } = pollData;
+    const newPoll = await prisma.poll.create({
+      data: {
+        ...pollDataWithoutStatements,
+        communityModelId: modelId,
+        title: pollDataWithoutStatements.title || `Poll for ${modelId}`,
+        published: pollDataWithoutStatements.published ?? false, // Set a default value for published
+        statements: {
+          create: statements?.map((statement: Partial<Statement>) => ({
+            text: statement.text ?? '',
+            participantId: statement.participantId ?? '',
+            status: 'PENDING' as const,
+          })) || [],
+        },
+      },
+      include: { statements: true },
+    });
+    revalidatePath(`/community-models/${modelId}`);
+    return newPoll;
+  }
 }
 
 export async function updateConstitution(

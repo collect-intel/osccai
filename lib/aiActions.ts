@@ -1,3 +1,5 @@
+"use server";
+
 import xmllm from "xmllm";
 
 // Define our own Tool type
@@ -17,18 +19,56 @@ interface Tool {
 }
 
 export async function generateStatementsFromIdea(
-  initialIdea: string,
+  goal: string,
+  bio: string
 ): Promise<string[]> {
-  return [
-    "The AI should prioritize the interests of the collective or common good over individual preferences or rights",
-    "The AI should be helpful",
-    "Be honest",
-    "Be harmless",
-  ];
+  const stream = await xmllm(({promptClosed}: {promptClosed: any}) => {
+    return [
+      promptClosed({
+        model: 'claude:good',
+        messages: [
+          {
+            role: 'user',
+            content: `
+              Generate a list of 5 to 10 core principles for a community AI model based on the following description:
+
+              Goal: ${goal}
+              Bio: ${bio}
+
+              Each principle should be a concise statement starting with "The AI should...".
+              Return the principles as an XML list of <principle> elements.
+            `
+          }
+        ],
+        schema: {
+          principles: {
+            principle: [String]
+          }
+        }
+      })
+    ];
+  });
+
+  const result = (await stream.next()).value;
+  const principles = result?.principles?.principle || [];
+
+  if (!principles || principles.length === 0) {
+    console.error('No principles generated, using default');
+    return [
+      "The AI should prioritize the interests of the collective or common good over individual preferences or rights",
+      "The AI should be helpful",
+      "The AI should be honest",
+      "The AI should be harmless",
+      "The AI should respect privacy and data protection"
+    ];
+  }
+
+  return principles;
 }
 
 export async function generateSimpleConstitution(
-  initialIdea: string,
+  goal: string,
+  bio?: string
 ): Promise<string> {
   console.log("XMLLM", xmllm, process.env);
 
@@ -45,7 +85,10 @@ export async function generateSimpleConstitution(
         Generate a brief principle-based and behavioural 
         in the form of a list of "The AI should..." statements.
 
-        The constitution is for a community that is described thus: ${initialIdea}
+              The constitution is for a community that is described thus:
+              
+              Goal: ${goal}
+              Bio: ${bio || ''}
 
         Return the constitution in XML <constitution> element.
       `,

@@ -28,7 +28,8 @@ async function main() {
       uid: uuidv4(),
       name: "Default Community Model",
       ownerId: owner.uid,
-      initialIdea: "This is a default community model for testing purposes.",
+      goal: "This is a default community model for testing purposes.",
+      bio: "This is a default community model for testing purposes.",
     },
   });
 

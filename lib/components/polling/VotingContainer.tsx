@@ -22,7 +22,7 @@ export default function VotingContainer({
   initialVotes,
   allowParticipantStatements,
 }: VotingContainerProps) {
-  const [viewMode, setViewMode] = useState<"list" | "individual">("list");
+  const [viewMode, setViewMode] = useState<"list" | "individual">("individual");
 
   const toggleViewMode = () => {
     setViewMode(viewMode === "list" ? "individual" : "list");
@@ -39,7 +39,7 @@ export default function VotingContainer({
               : "Switch to List View"
           }
           icon={
-            viewMode === "list" ? <></> : <ListIcon className="stroke-white" />
+            viewMode === "individual" ? <ListIcon className="stroke-white" /> : <></>
           }
         />
       </div>

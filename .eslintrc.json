@@ -2,6 +2,7 @@
   "extends": "next/core-web-vitals",
   "overrides": [
     {
+      "files": ["*.js", "*.jsx", "*.ts", "*.tsx"],
       "rules": {
         "react/no-unescaped-entities": "warn"
       }

@@ -7,7 +7,7 @@ import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 
 export default function NewCommunityModelForm() {
   const [name, setName] = useState("");
-  const [initialIdea, setInitialIdea] = useState("");
+  const [goal, setGoal] = useState("");
   const router = useRouter();
 
   return (
@@ -34,9 +34,9 @@ export default function NewCommunityModelForm() {
       />
       <textarea
         placeholder="Initial Idea"
-        value={initialIdea}
-        onChange={(e) => setInitialIdea(e.target.value)}
-        name="initialIdea"
+        value={goal}
+        onChange={(e) => setGoal(e.target.value)}
+        name="goal"
         className="mb-4 p-2 border"
         required
       />

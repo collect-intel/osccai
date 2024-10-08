@@ -25,7 +25,7 @@ CREATE TABLE "CommunityModel" (
     "uid" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "ownerId" TEXT NOT NULL,
-    "initialIdea" TEXT NOT NULL,
+    "goal" TEXT NOT NULL,
     "activeConstitutionId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
