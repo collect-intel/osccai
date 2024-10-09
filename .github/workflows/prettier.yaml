@@ -1,5 +1,11 @@
 name: Prettier
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 jobs:
   prettier:
     runs-on: ubuntu-latest
@@ -7,9 +13,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Make sure the actual branch is checked out when running on pull requests
           ref: ${{ github.head_ref }}
-      - name: Prettify code
-        uses: creyD/prettier_action@v4.3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          prettier_options: --write **/*.{js,ts,tsx}
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Prettier
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            pnpm prettier --write "**/*.{js,ts,tsx}"
+          else
+            pnpm prettier --check "**/*.{js,ts,tsx}"
+
