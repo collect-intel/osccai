@@ -17,10 +17,6 @@ import { init as initCuid } from "@paralleldrive/cuid2";
 import { stringify } from "csv-stringify/sync";
 import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
-import {
-  generateSimpleConstitution,
-  generateConstitutionFromStatements
-} from "./aiActions";
 import { deleteFile } from '@/lib/utils/uploader';
 const createId = initCuid({ length: 10 });
 
@@ -87,15 +83,13 @@ export async function editPoll(
 export async function publishPoll(
   pollId: string,
   newStatements: string,
-  setPublished: boolean = true,
+  setPublished: boolean = true
 ) {
   const participant = await getOrCreateParticipant();
   const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
 
-  const separatedStatements = newStatements
-    .split("\n")
-    .filter((s) => s.trim() !== "");
+  const separatedStatements = newStatements.split('\n').filter(s => s.trim() !== '');
 
   const [updatedPoll] = await prisma.$transaction([
     prisma.poll.update({
@@ -104,7 +98,7 @@ export async function publishPoll(
         published: setPublished,
         statements: {
           createMany: {
-            data: separatedStatements.map((text) => ({
+            data: separatedStatements.map(text => ({
               text,
               participantId,
             })),
@@ -121,11 +115,7 @@ export async function publishPoll(
   return updatedPoll;
 }
 
-export async function submitStatement(
-  pollId: string,
-  text: string,
-  anonymousId?: string,
-) {
+export async function submitStatement(pollId: string, text: string, anonymousId?: string) {
   const participant = await getOrCreateParticipant(null, anonymousId);
   const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
@@ -150,8 +140,9 @@ export async function flagStatement(statementId: string, anonymousId?: string) {
 
 export async function fetchUserVotes(
   pollId: string,
-  anonymousId?: string,
+  anonymousId?: string
 ): Promise<Record<string, VoteValue>> {
+
   console.log("fetchUserVotes", { pollId, anonymousId });
 
   const participant = await getOrCreateParticipant(null, anonymousId);
@@ -177,7 +168,7 @@ export async function fetchUserVotes(
       acc[vote.statementId] = vote.voteValue;
       return acc;
     },
-    {} as Record<string, VoteValue>,
+    {} as Record<string, VoteValue>
   );
 }
 
@@ -203,7 +194,9 @@ export async function isPollOwner(pollId: string): Promise<boolean> {
     return false;
   }
 
-  return poll.communityModel.owner.clerkUserId === clerkUserId;
+  return (
+    poll.communityModel.owner.clerkUserId === clerkUserId
+  );
 }
 /**
  * Get or create a participant based on the provided participantId or anonymousId.
@@ -214,15 +207,16 @@ export async function isPollOwner(pollId: string): Promise<boolean> {
  * 2. The user is logged in and does not have a participantId, so we link the user to the participant
  * 3. (If the user is a community model owner, then we ensure that owner is linked to the participant)
  * 4. The user is not logged in, so we create an anonymous participant
- *
+ * 
  * @param {string | null} participantId - Optional. The ID of the participant to retrieve.
  * @param {string | null} anonymousId - Optional. The anonymous ID to create a participant if not logged in.
  * @returns {Promise<Participant | null>} A promise that resolves to the participant or null if not found.
  */
 export async function getOrCreateParticipant(
-  participantId?: string | null,
-  anonymousId?: string | null,
+  participantId?: string | null, 
+  anonymousId?: string | null
 ): Promise<Participant | null> {
+
   // If we have a participantId, return that
   if (participantId) {
     return await prisma.participant.findUnique({
@@ -241,7 +235,7 @@ export async function getOrCreateParticipant(
     if (!participant) {
       participant = await prisma.participant.create({
         data: {
-          clerkUserId: user.id,
+          clerkUserId: user.id
         },
       });
 
@@ -260,10 +254,10 @@ export async function getOrCreateParticipant(
     return participant;
   }
 
-  // If they're not logged in, or
+  // If they're not logged in, or 
   if (anonymousId) {
     let participant = await prisma.participant.findUnique({
-      where: { anonymousId },
+    where: { anonymousId },
     });
 
     if (!participant) {
@@ -282,14 +276,9 @@ export async function submitVote(
   statementId: string,
   voteValue: VoteValue,
   previousVote?: VoteValue,
-  anonymousId?: string,
+  anonymousId?: string
 ) {
-  console.log("submitVote", {
-    statementId,
-    voteValue,
-    previousVote,
-    anonymousId,
-  });
+  console.log("submitVote", { statementId, voteValue, previousVote, anonymousId });
 
   // Pass the anonymousId to get the participant just in case
   // nobody is logged in, otherwise getOrCreateParticipant() will
@@ -367,7 +356,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
     const user = (await currentUser()) as ClerkUser | null;
 
     if (!user) {
-      throw new Error("User not logged in");
+      throw new Error('User not logged in');
     }
 
     const primaryEmailAddress = user.emailAddresses.find(
@@ -390,7 +379,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
           clerkUserId: user.id,
           name:
             (user.firstName || "Unknown") + " " + (user.lastName || "Unknown"),
-          email: primaryEmailAddress || "Unknown",
+          email: primaryEmailAddress || "Unknown"
         },
       });
       console.log("New owner created:", owner);
@@ -399,7 +388,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
       throw error;
     }
   }
-
+  
   if (!owner.participantId) {
     console.log("Owner found, but missing participantId. Updating owner...");
     const participant = await getOrCreateParticipant();
@@ -459,17 +448,8 @@ async function createInitialPoll(
   return pollId;
 }
 
-export async function createCommunityModel(
-  name: string,
-  initialIdea: string,
-  anonymousId: string,
-) {
-  "use server";
-  const startTime = Date.now(); // Record the start time
-
-  console.time("createCommunityModel"); // Start a timer
-
-  const { userId: clerkUserId }: { userId: string | null } = auth();
+export async function createCommunityModel(data: Partial<CommunityModel> & { principles?: Array<{ id: string; text: string; gacScore?: number }> }) {
+  const { userId: clerkUserId } = auth();
 
   if (!clerkUserId) {
     throw new Error("User not authenticated");
@@ -504,20 +484,6 @@ export async function createCommunityModel(
       } : undefined,
     },
   });
-  console.timeEnd("createCommunityModel.prisma"); // Log the time taken by Prisma operations
-
-  console.time("generateStatementsFromIdea"); // Start a timer for generateStatementsFromIdea
-  const statements = await generateStatementsFromIdea(initialIdea);
-  console.timeEnd("generateStatementsFromIdea"); // Log the time taken by generateStatementsFromIdea
-
-  console.time("createInitialPoll"); // Start a timer for createInitialPoll
-  await createInitialPoll(communityModel.uid, name, participantId, statements);
-  console.timeEnd("createInitialPoll"); // Log the time taken by createInitialPoll
-
-  console.timeEnd("createCommunityModel"); // Log the total time taken by createCommunityModel
-
-  const endTime = Date.now(); // Record the end time
-  console.log(`createCommunityModel took ${endTime - startTime} ms`);
 
   return communityModel.uid;
 }
@@ -630,7 +596,11 @@ export async function createConstitution(communityModelId: string): Promise<Cons
       },
       polls: {
         include: {
-          statements: true,
+          statements: {
+            include: {
+              votes: true,
+            },
+          },
         },
       },
     },
@@ -639,7 +609,6 @@ export async function createConstitution(communityModelId: string): Promise<Cons
   if (!communityModel) {
     throw new Error("Community model not found");
   }
-
   const latestConstitution = communityModel.constitutions[0];
   const newVersion = latestConstitution ? latestConstitution.version + 1 : 1;
 
@@ -761,10 +730,7 @@ export async function updatePoll(modelId: string, pollData: Partial<Poll> & { st
   }
 }
 
-export async function updateConstitution(
-  constitutionId: string,
-  newContent: string,
-) {
+export async function updateConstitution(constitutionId: string, newContent: string) {
   const updatedConstitution = await prisma.constitution.update({
     where: { uid: constitutionId },
     data: { content: newContent },
@@ -772,4 +738,158 @@ export async function updateConstitution(
 
   revalidatePath(`/community-models/constitution/${constitutionId}`);
   return updatedConstitution;
+}
+
+export async function updateCommunityModel(
+  modelId: string, 
+  data: Partial<CommunityModel> & { 
+    principles?: Array<{ id: string; text: string; gacScore?: number }>;
+    constitutions?: Constitution[];
+    activeConstitutionId?: string | null;
+  }
+): Promise<CommunityModel> {
+  const { principles, constitutions, activeConstitutionId, ...modelData } = data;
+
+  try {
+    const currentModel = await prisma.communityModel.findUnique({
+      where: { uid: modelId },
+      include: { polls: { include: { statements: true } }, constitutions: true },
+    });
+
+    if (!currentModel) {
+      throw new Error("Community model not found");
+    }
+
+    const participant = await getOrCreateParticipant();
+    if (!participant) {
+      throw new Error("Failed to get or create participant");
+    }
+
+    const validPrinciples = principles?.filter(p => p.text && p.text.trim() !== '') || [];
+
+    const updatedModel = await prisma.$transaction(async (prisma) => {
+      // Update the community model
+      const model = await prisma.communityModel.update({
+        where: { uid: modelId },
+        data: {
+          ...modelData,
+          activeConstitutionId: activeConstitutionId !== undefined ? activeConstitutionId : undefined,
+        },
+      });
+
+      // Update principles if provided
+      if (validPrinciples.length > 0) {
+        const currentPoll = currentModel.polls[0];
+        if (currentPoll) {
+          // Update existing poll
+          await prisma.poll.update({
+            where: { uid: currentPoll.uid },
+            data: {
+              statements: {
+                deleteMany: {},
+                create: validPrinciples.map(p => ({
+                  text: p.text,
+                  participantId: participant.uid,
+                  gacScore: p.gacScore,
+                })),
+              },
+            },
+          });
+        } else {
+          // Create new poll if it doesn't exist
+          await prisma.poll.create({
+            data: {
+              communityModelId: modelId,
+              title: "Initial Poll",
+              published: false,
+              statements: {
+                create: validPrinciples.map(p => ({
+                  text: p.text,
+                  participantId: participant.uid,
+                  gacScore: p.gacScore,
+                })),
+              },
+            },
+          });
+        }
+      }
+
+      // Update constitutions if provided
+      if (constitutions) {
+        // Delete existing constitutions
+        await prisma.constitution.deleteMany({
+          where: { modelId: modelId },
+        });
+
+        // Create new constitutions
+        await prisma.constitution.createMany({
+          data: constitutions.map(constitution => ({
+            version: constitution.version,
+            content: constitution.content,
+            status: constitution.status,
+            modelId: modelId,
+          })),
+        });
+      }
+
+      return model;
+    });
+
+    revalidatePath(`/community-models/${modelId}`);
+    return updatedModel;
+  } catch (error) {
+    console.error('Error updating community model:', error);
+    throw error;
+  }
+}
+
+export async function getCommunityModel(modelId: string):
+  Promise<(CommunityModel & {
+    principles: string[],
+    requireAuth: boolean,
+    allowContributions: boolean,
+    constitutions: Constitution[],
+    polls: Poll[]  // Add this line
+  }) | null> {
+  const model = await prisma.communityModel.findUnique({
+    where: { uid: modelId },
+    include: {
+      polls: {
+        include: {
+          statements: {
+            include: {
+              votes: true
+            }
+          }
+        }
+      },
+      constitutions: true,
+    }
+  });
+
+  if (!model) {
+    return null;
+  }
+
+  // Extract principles from the first poll's statements
+  const principles = model.polls[0]?.statements.map(statement => statement.text) || [];
+
+  return {
+    ...model,
+    principles,
+    requireAuth: model.polls[0]?.requireAuth || false,
+    allowContributions: model.polls[0]?.allowParticipantStatements || false,
+    constitutions: model.constitutions,
+    polls: model.polls  // Add this line
+  };
+}
+
+async function generateConstitutionFromStatements(
+  goal: string,
+  bio: string,
+  statements: Array<{ text: string; isConstitutionable: boolean; gacScore?: number }>
+): Promise<string> {
+  // Implement this function to generate a constitution from statements
+  // For now, we'll return a placeholder
+  return `Generated constitution based on ${statements.length} statements for ${goal}`;
 }
