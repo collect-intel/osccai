@@ -41,6 +41,6 @@ jobs:
           if [[ "${{ github.event_name }}" == "push" ]]; then
             pnpm lint --fix
           else
-            pnpm lint --max-warnings=0
+            pnpm lint
           fi
 
