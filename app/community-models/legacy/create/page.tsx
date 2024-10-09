@@ -18,11 +18,11 @@ export default function CreateCommunityModelPage() {
       return;
     }
 
-    const modelId = await createCommunityModel(
-      name,
-      initialIdea,
-      await getAnonymousId(),
-    );
+    const modelId = await createCommunityModel({
+      name: name,
+      goal: goal,
+      logoUrl: "",
+    });
     redirect(`/community-models/${modelId}`);
   }
 

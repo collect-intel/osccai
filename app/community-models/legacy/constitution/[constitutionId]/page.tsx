@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ConstitutionalAIChat from "@/lib/components/chat/ConstitutionalAIChat";
-import { setActiveConstitution } from "@/lib/actions";
 import EditableConstitution from "@/lib/components/EditableConstitution";
 import { FaArrowLeft } from "react-icons/fa";
 
@@ -50,10 +49,9 @@ export default async function ConstitutionPage({
           className="flex-grow overflow-hidden"
           style={{ maxHeight: "calc(100% - 200px)" }}
         >
-          <ChatInterface
+          <ConstitutionalAIChat
             constitution={{
               text: constitution.content,
-              icon: <ConstitutionIcon />,
               color: "teal",
             }}
           />
