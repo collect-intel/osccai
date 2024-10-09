@@ -19,6 +19,7 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import {
   generateSimpleConstitution,
+  generateConstitutionFromStatements
 } from "./aiActions";
 import { deleteFile } from '@/lib/utils/uploader';
 const createId = initCuid({ length: 10 });
@@ -629,11 +630,7 @@ export async function createConstitution(communityModelId: string): Promise<Cons
       },
       polls: {
         include: {
-          statements: {
-            include: {
-              votes: true,
-            },
-          },
+          statements: true,
         },
       },
     },
@@ -646,46 +643,23 @@ export async function createConstitution(communityModelId: string): Promise<Cons
   const latestConstitution = communityModel.constitutions[0];
   const newVersion = latestConstitution ? latestConstitution.version + 1 : 1;
 
-  // Collect all statements from all polls
-  const allStatements = communityModel.polls.flatMap(poll => poll.statements);
+  // Collect all statements from all polls that are marked as constitutionable
+  const constitutionableStatements = communityModel.polls
+    .flatMap(poll => poll.statements)
+    .filter(statement => statement.isConstitutionable);
 
-  // Filter constitutionable statements
-  let constitutionableStatements = allStatements.filter(statement => statement.isConstitutionable);
+  // Generate the constitution content
+  let constitutionContent = `Community Name: ${communityModel.name}\n\n`;
+  constitutionContent += `Goal: ${communityModel.goal}\n\n`;
+  constitutionContent += `Bio: ${communityModel.bio}\n\n`;
 
-  // If we don't have at least 10 constitutionable statements, add high-scoring ones
-  if (constitutionableStatements.length < 10) {
-    const remainingStatements = allStatements
-      .filter(statement => !statement.isConstitutionable)
-      .sort((a, b) => (b.gacScore || 0) - (a.gacScore || 0));
-
-    constitutionableStatements = [
-      ...constitutionableStatements,
-      ...remainingStatements.slice(0, 10 - constitutionableStatements.length)
-    ];
-  }
-
-  // Prepare statements for the LLM
-  const statementsForLLM: Array<{ text: string; isConstitutionable: boolean; gacScore?: number }> = constitutionableStatements.map(statement => ({
-    text: statement.text,
-    isConstitutionable: statement.isConstitutionable,
-    gacScore: statement.gacScore ?? undefined
-  }));
-
-  console.log('statementsForLLM', statementsForLLM);
-
-  let constitutionContent: string;
-
-  if (statementsForLLM.length === 0) {
-    constitutionContent = await generateSimpleConstitution(
-      communityModel.goal,
-      communityModel.bio
-    );
+  if (constitutionableStatements.length > 0) {
+    constitutionContent += "Principles:\n";
+    constitutionableStatements.forEach((statement, index) => {
+      constitutionContent += `${index + 1}. ${statement.text}\n`;
+    });
   } else {
-    constitutionContent = await generateConstitutionFromStatements(
-      communityModel.goal,
-      communityModel.bio,
-      statementsForLLM
-    );
+    constitutionContent += "[No specific principles]\n";
   }
 
   const newConstitution = await prisma.constitution.create({

@@ -151,7 +151,7 @@ export default function PollZone({
                     <span>Disagree: {statement.disagreeCount}</span>
                     <span>Pass: {statement.passCount}</span>
                     <span>GAC Score: {statement.gacScore?.toFixed(2) ?? 'N/A'}</span>
-                    <span>Priority Score: {statement.priorityScore?.toFixed(2) ?? 'N/A'}</span>
+                    <span>Constitutionable: {statement.isConstitutionable ? 'Yes' : 'No'}</span>
                   </div>
                 </li>
               ))}
