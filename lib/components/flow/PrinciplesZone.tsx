@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ZoneWrapper from "./ZoneWrapper";
 import Toggle from "@/lib/components/Toggle";
 import { generateStatementsFromIdea } from "@/lib/aiActions";
 import Principle from "@/lib/components/Principle";
 import { FaMagic } from "react-icons/fa";
-import { debounce } from "lodash";
 
 interface PrinciplesZoneProps {
   isActive: boolean;
@@ -47,10 +46,7 @@ export default function PrinciplesZone({
   const [principles, setPrinciples] = useState<PrincipleData[]>(() => {
     return Array.isArray(modelData.principles)
       ? modelData.principles.map((p) => ({
-          id:
-            typeof p === "string"
-              ? `principle-${Date.now()}-${Math.random()}`
-              : p.id,
+          id: typeof p === "string" ? `principle-${Date.now()}-${Math.random()}` : p.id,
           text: typeof p === "string" ? p : p.text,
           isLoading: false,
           isEditing: false,
@@ -65,29 +61,6 @@ export default function PrinciplesZone({
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGeneratedPrinciples, setHasGeneratedPrinciples] = useState(false);
 
-  const previousPrinciples = useRef(principles);
-
-  const updateModelDataDebounced = useCallback(
-    debounce((data: Partial<PrinciplesZoneProps["modelData"]>) => {
-      updateModelData(data);
-    }, 500),
-    [updateModelData],
-  );
-
-  useEffect(() => {
-    const principlesChanged =
-      JSON.stringify(principles) !== JSON.stringify(previousPrinciples.current);
-    if (principlesChanged) {
-      const formattedPrinciples = principles.map(({ id, text, gacScore }) => ({
-        id,
-        text,
-        gacScore,
-      }));
-      updateModelDataDebounced({ principles: formattedPrinciples });
-      previousPrinciples.current = principles;
-    }
-  }, [principles, updateModelDataDebounced]);
-
   const addPrinciple = () => {
     const newPrinciple: PrincipleData = {
       id: `new-${Date.now()}`,
@@ -95,33 +68,59 @@ export default function PrinciplesZone({
       isLoading: false,
       isEditing: true,
     };
-    setPrinciples([...principles, newPrinciple]);
+    setPrinciples((prevPrinciples) => {
+      const newPrinciples = [...prevPrinciples, newPrinciple];
+      
+      // Immediately update the model data
+      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
+        id,
+        text,
+        gacScore,
+      }));
+      updateModelData({ principles: formattedPrinciples });
+      
+      return newPrinciples;
+    });
   };
 
   const updatePrinciple = (id: string, value: string) => {
-    console.log("Updating principle:", id, value);
-    if (value.trim() !== "") {
-      const newPrinciples = principles.map((p) =>
-        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p,
+    setPrinciples((prevPrinciples) => {
+      const newPrinciples = prevPrinciples.map((p) =>
+        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p
       );
-      setPrinciples(newPrinciples);
-      updateModelData({ principles: newPrinciples });
-      console.log("Principles after update:", newPrinciples);
-    } else {
-      removePrinciple(id);
-    }
+      
+      // Immediately update the model data
+      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
+        id,
+        text,
+        gacScore,
+      }));
+      updateModelData({ principles: formattedPrinciples });
+      
+      return newPrinciples;
+    });
   };
 
   const removePrinciple = (id: string) => {
-    const newPrinciples = principles.filter((p) => p.id !== id);
-    setPrinciples(newPrinciples);
+    setPrinciples((prevPrinciples) => {
+      const newPrinciples = prevPrinciples.filter((p) => p.id !== id);
+      
+      // Immediately update the model data
+      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
+        id,
+        text,
+        gacScore,
+      }));
+      updateModelData({ principles: formattedPrinciples });
+      
+      return newPrinciples;
+    });
   };
 
   const setIsEditing = (id: string, isEditing: boolean) => {
-    const newPrinciples = principles.map((p) =>
-      p.id === id ? { ...p, isEditing } : p,
+    setPrinciples((prevPrinciples) => 
+      prevPrinciples.map((p) => (p.id === id ? { ...p, isEditing } : p))
     );
-    setPrinciples(newPrinciples);
   };
 
   const handleToggleChange = (
@@ -181,7 +180,6 @@ export default function PrinciplesZone({
             Add at least 5 principles for your community to vote on
           </label>
           {principles.map((principle) => {
-            console.log("Rendering principle:", principle); // Add this log
             return (
               <Principle
                 key={principle.id}

@@ -481,21 +481,23 @@ export async function createCommunityModel(
       goal: data.goal || "",
       logoUrl: data.logoUrl || null,
       published: false,
-      polls:
-        data.principles && data.principles.length > 0
-          ? {
-              create: {
-                title: "Initial Poll",
-                published: false,
-                statements: {
-                  create: data.principles.map((principle) => ({
-                    text: principle.text,
-                    participantId: owner.participantId!,
-                  })),
-                },
-              },
-            }
-          : undefined,
+      polls: {
+        create: {
+          title: `Poll for Community Model: ${data.name}`,
+          published: false,
+          statements: data.principles && data.principles.length > 0
+            ? {
+                create: data.principles.map((principle) => ({
+                  text: principle.text,
+                  participantId: owner.participantId!,
+                })),
+              }
+            : undefined,
+        },
+      },
+    },
+    include: {
+      polls: true,
     },
   });
 
@@ -770,9 +772,8 @@ export async function updateCommunityModel(
     constitutions?: Constitution[];
     activeConstitutionId?: string | null;
   },
-): Promise<CommunityModel> {
-  const { principles, constitutions, activeConstitutionId, ...modelData } =
-    data;
+): Promise<CommunityModel & { polls: Poll[] }> {
+  const { principles, constitutions, activeConstitutionId, ...modelData } = data;
 
   try {
     const currentModel = await prisma.communityModel.findUnique({
@@ -808,41 +809,40 @@ export async function updateCommunityModel(
         },
       });
 
+      // Ensure a poll exists
+      let currentPoll = await prisma.poll.findFirst({
+        where: { communityModelId: modelId },
+      });
+
+      if (!currentPoll) {
+        currentPoll = await prisma.poll.create({
+          data: {
+            communityModelId: modelId,
+            title: "Initial Poll",
+            published: false,
+          },
+        });
+      }
+
       // Update principles if provided
       if (validPrinciples.length > 0) {
-        const currentPoll = currentModel.polls[0];
-        if (currentPoll) {
-          // Update existing poll
-          await prisma.poll.update({
-            where: { uid: currentPoll.uid },
-            data: {
-              statements: {
-                deleteMany: {},
-                create: validPrinciples.map((p) => ({
-                  text: p.text,
-                  participantId: participant.uid,
-                  gacScore: p.gacScore,
-                })),
-              },
+        const updatedPoll = await prisma.poll.update({
+          where: { uid: currentPoll.uid },
+          data: {
+            statements: {
+              deleteMany: {},
+              create: validPrinciples.map((p) => ({
+                text: p.text,
+                participantId: participant.uid,
+                gacScore: p.gacScore,
+              })),
             },
-          });
-        } else {
-          // Create new poll if it doesn't exist
-          await prisma.poll.create({
-            data: {
-              communityModelId: modelId,
-              title: "Initial Poll",
-              published: false,
-              statements: {
-                create: validPrinciples.map((p) => ({
-                  text: p.text,
-                  participantId: participant.uid,
-                  gacScore: p.gacScore,
-                })),
-              },
-            },
-          });
-        }
+          },
+          include: { statements: true },
+        });
+        
+        // Return the updated model with the updated poll
+        return { ...model, polls: [updatedPoll] };
       }
 
       // Update constitutions if provided
@@ -863,7 +863,13 @@ export async function updateCommunityModel(
         });
       }
 
-      return model;
+      // Fetch the updated model with polls and constitutions
+      const updatedModelWithRelations = await prisma.communityModel.findUnique({
+        where: { uid: modelId },
+        include: { polls: { include: { statements: true } }, constitutions: true },
+      });
+
+      return updatedModelWithRelations!;
     });
 
     revalidatePath(`/community-models/${modelId}`);

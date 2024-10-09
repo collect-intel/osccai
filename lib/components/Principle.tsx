@@ -38,10 +38,12 @@ const Principle: React.FC<PrincipleProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmedText = editedText.trim();
-    console.log("trimmedText", trimmedText);
+    console.log("Submitting principle text:", trimmedText);
     if (trimmedText !== "") {
       onUpdate(trimmedText);
       setIsEditing(false);
+    } else {
+      console.log("Principle text is empty, not updating");
     }
   };
 

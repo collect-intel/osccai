@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ZoneWrapper from "./ZoneWrapper";
 import Link from "next/link";
 import { copyToClipboard } from "@/lib/copyToClipboard";
@@ -35,6 +35,19 @@ export default function PollZone({
   onUpdate,
 }: PollZoneProps) {
   const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    if (!pollData && modelId) {
+      handleCreatePoll();
+    }
+  }, [pollData, modelId]);
+
+  useEffect(() => {
+    if (pollData) {
+      console.log("Poll data updated:", pollData);
+      // You can add any additional logic here to update the component's state or trigger re-renders
+    }
+  }, [pollData]);
 
   const totalVotes =
     pollData?.statements?.reduce(
@@ -81,9 +94,8 @@ export default function PollZone({
       published: false,
       requireAuth: true,
       allowParticipantStatements: true,
-      // Remove the statements field from here
     };
-    await handlePollUpdate(newPoll);
+    await onUpdate(newPoll);
   };
 
   const handleViewPoll = () => {

@@ -174,13 +174,17 @@ export default function CommunityModelFlow({
     if (modelId) {
       try {
         setSavingStatus((prev) => ({ ...prev, principles: "saving" }));
-        await updateCommunityModel(modelId, {
-          principles: data.principles, // Send the full principles array
+        const updatedModel = await updateCommunityModel(modelId, {
+          principles: data.principles,
         });
         setModelData((prevData) => {
           if (!prevData) return null;
-          const newData = { ...prevData, ...data } as ExtendedAboutZoneData;
-          console.log("Updated model data:", newData); // Log the updated data
+          const newData = {
+            ...prevData,
+            ...data,
+            polls: updatedModel.polls,
+          } as ExtendedAboutZoneData;
+          console.log("Updated model data:", newData);
           return newData;
         });
         setSavingStatus((prev) => ({ ...prev, principles: "saved" }));
