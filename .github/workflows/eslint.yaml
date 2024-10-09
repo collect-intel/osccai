@@ -38,8 +38,9 @@ jobs:
 
       - name: Run ESLint
         run: |
-          if [ "${{ github.event_name }}" == "push" ]; then
+          if [[ "${{ github.event_name }}" == "push" ]]; then
             pnpm lint --fix
           else
             pnpm lint --max-warnings=0
+          fi
 
