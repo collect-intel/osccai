@@ -38,8 +38,8 @@ model CommunityModel {
   ownerId                 String
   owner                   CommunityModelOwner     @relation(fields: [ownerId], references: [uid])
 
-  goal                    String
-  bio                     String
+  goal                    String?
+  bio                     String?
   logoUrl                 String?
 
   // Reference to the active constitution for this community model

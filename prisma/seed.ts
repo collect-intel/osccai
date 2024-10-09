@@ -13,7 +13,7 @@ async function main() {
       uid: uuidv4(),
       name: "James",
       email: DEFAULT_OWNER_EMAIL,
-      clerkUserId: DEFAULT_CLERK_USER_ID, // Add this line
+      clerkUserId: DEFAULT_CLERK_USER_ID,
       participant: {
         create: {
           uid: uuidv4(),
@@ -30,6 +30,7 @@ async function main() {
       ownerId: owner.uid,
       goal: "This is a default community model for testing purposes.",
       bio: "This is a default community model for testing purposes.",
+      published: true, // Set this to true for the seed data
     },
   });
 
@@ -39,7 +40,10 @@ async function main() {
       uid: uuidv4(),
       communityModelId: communityModel.uid,
       title: "Default Poll",
+      description: "This is a default poll for testing purposes.",
       published: true,
+      requireAuth: false, // Set this to false for easier testing
+      allowParticipantStatements: true,
     },
   });
 
@@ -78,6 +82,10 @@ async function main() {
   // Create random votes for each statement
   const voteValues = Object.values(VoteValue);
   for (const statement of createdStatements) {
+    let agreeCount = 0;
+    let disagreeCount = 0;
+    let passCount = 0;
+
     for (const participant of anonymousParticipants) {
       const randomVoteValue =
         voteValues[Math.floor(Math.random() * voteValues.length)];
@@ -89,7 +97,23 @@ async function main() {
           voteValue: randomVoteValue,
         },
       });
+
+      // Update counts based on the vote
+      if (randomVoteValue === VoteValue.AGREE) agreeCount++;
+      else if (randomVoteValue === VoteValue.DISAGREE) disagreeCount++;
+      else if (randomVoteValue === VoteValue.PASS) passCount++;
     }
+
+    // Update the statement with the vote counts
+    await prisma.statement.update({
+      where: { uid: statement.uid },
+      data: {
+        agreeCount,
+        disagreeCount,
+        passCount,
+        lastCalculatedAt: new Date(),
+      },
+    });
   }
 
   console.log("Database has been seeded.");
