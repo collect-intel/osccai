@@ -104,10 +104,10 @@ export default function CommunityModelFlow({
           const fetchedModelData = await getCommunityModel(modelId);
           if (fetchedModelData) {
             setModelData({
-              name: fetchedModelData.name,
-              bio: fetchedModelData.bio,
-              goal: fetchedModelData.goal,
-              logoUrl: fetchedModelData.logoUrl,
+              name: fetchedModelData.name || "Default Name",
+              bio: fetchedModelData.bio || "",
+              goal: fetchedModelData.goal || "",
+              logoUrl: fetchedModelData.logoUrl || "",
               principles: fetchedModelData.principles.map((p) =>
                 typeof p === "string"
                   ? { id: `principle-${Date.now()}-${Math.random()}`, text: p }

@@ -924,16 +924,3 @@ export async function getCommunityModel(modelId: string): Promise<
   };
 }
 
-async function generateConstitutionFromStatements(
-  goal: string,
-  bio: string,
-  statements: Array<{
-    text: string;
-    isConstitutionable: boolean;
-    gacScore?: number;
-  }>,
-): Promise<string> {
-  // Implement this function to generate a constitution from statements
-  // For now, we'll return a placeholder
-  return `Generated constitution based on ${statements.length} statements for ${goal}`;
-}

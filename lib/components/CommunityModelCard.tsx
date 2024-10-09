@@ -3,7 +3,7 @@ import Link from "next/link";
 interface CommunityModel {
   uid: string;
   name: string;
-  goal: string;
+  goal: string | null;
   createdAt: Date;
 }
 
@@ -30,9 +30,9 @@ export default function CommunityModelCard({
       <div className="p-4 border rounded-md bg-dark-green text-white hover:bg-opacity-90 transition-colors h-full flex flex-col">
         <h2 className="text-lg font-medium">{model.name}</h2>
         <p className="mt-2 flex-grow">
-          {model.goal.length > 100
+          {model.goal && model.goal.length > 100
             ? `${model.goal.substring(0, 100)}...`
-            : model.goal}
+            : model.goal || 'No goal set'}
         </p>
         <p className="text-white font-mono mt-4 text-sm">{formattedDate}</p>
       </div>
