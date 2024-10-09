@@ -10,7 +10,7 @@ import type {
   CommunityModelOwner,
   CommunityModel,
   Constitution,
-  ConstitutionStatus
+  ConstitutionStatus,
 } from "@prisma/client";
 import { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
@@ -19,9 +19,9 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import {
   generateSimpleConstitution,
-  generateConstitutionFromStatements
+  generateConstitutionFromStatements,
 } from "./aiActions";
-import { deleteFile } from '@/lib/utils/uploader';
+import { deleteFile } from "@/lib/utils/uploader";
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -424,7 +424,7 @@ async function createInitialPoll(
   statements: string[],
 ) {
   const pollId = createId();
-  
+
   // Ensure the owner has a linked participant
   if (!owner.participantId) {
     const participant = await getOrCreateParticipant();
@@ -452,7 +452,7 @@ async function createInitialPoll(
     data: statements.map((text) => ({
       pollId,
       text,
-      participantId: owner.participantId ?? '',
+      participantId: owner.participantId ?? "",
     })),
   });
 
@@ -487,21 +487,24 @@ export async function createCommunityModel(
       name: data.name,
       owner: { connect: { uid: owner.uid } },
       bio: data.bio,
-      goal: data.goal || '',
+      goal: data.goal || "",
       logoUrl: data.logoUrl || null,
       published: false,
-      polls: data.principles && data.principles.length > 0 ? {
-        create: {
-          title: "Initial Poll",
-          published: false,
-          statements: {
-            create: data.principles.map(principle => ({
-              text: principle.text,
-              participantId: owner.participantId!,
-            })),
-          },
-        },
-      } : undefined,
+      polls:
+        data.principles && data.principles.length > 0
+          ? {
+              create: {
+                title: "Initial Poll",
+                published: false,
+                statements: {
+                  create: data.principles.map((principle) => ({
+                    text: principle.text,
+                    participantId: owner.participantId!,
+                  })),
+                },
+              },
+            }
+          : undefined,
     },
   });
   console.timeEnd("createCommunityModel.prisma"); // Log the time taken by Prisma operations
@@ -619,7 +622,9 @@ export async function unpublishModel(formData: FormData) {
   revalidatePath("/library");
 }
 
-export async function createConstitution(communityModelId: string): Promise<Constitution> {
+export async function createConstitution(
+  communityModelId: string,
+): Promise<Constitution> {
   const communityModel = await prisma.communityModel.findUnique({
     where: { uid: communityModelId },
     include: {
@@ -645,8 +650,8 @@ export async function createConstitution(communityModelId: string): Promise<Cons
 
   // Collect all statements from all polls that are marked as constitutionable
   const constitutionableStatements = communityModel.polls
-    .flatMap(poll => poll.statements)
-    .filter(statement => statement.isConstitutionable);
+    .flatMap((poll) => poll.statements)
+    .filter((statement) => statement.isConstitutionable);
 
   // Generate the constitution content
   let constitutionContent = `Community Name: ${communityModel.name}\n\n`;
@@ -705,7 +710,10 @@ export async function linkClerkUserToCommunityModelOwner() {
   return owner;
 }
 
-export async function updatePoll(modelId: string, pollData: Partial<Poll> & { statements?: Partial<Statement>[] }): Promise<Poll> {
+export async function updatePoll(
+  modelId: string,
+  pollData: Partial<Poll> & { statements?: Partial<Statement>[] },
+): Promise<Poll> {
   // First, try to find an existing poll for this community model
   let existingPoll = await prisma.poll.findFirst({
     where: {
@@ -725,9 +733,9 @@ export async function updatePoll(modelId: string, pollData: Partial<Poll> & { st
           statements: {
             deleteMany: {},
             create: statements.map((statement: Partial<Statement>) => ({
-              text: statement.text ?? '',
-              participantId: statement.participantId ?? '',
-              status: 'PENDING',
+              text: statement.text ?? "",
+              participantId: statement.participantId ?? "",
+              status: "PENDING",
               // Add other required fields here
             })),
           },
@@ -747,11 +755,12 @@ export async function updatePoll(modelId: string, pollData: Partial<Poll> & { st
         title: pollDataWithoutStatements.title || `Poll for ${modelId}`,
         published: pollDataWithoutStatements.published ?? false, // Set a default value for published
         statements: {
-          create: statements?.map((statement: Partial<Statement>) => ({
-            text: statement.text ?? '',
-            participantId: statement.participantId ?? '',
-            status: 'PENDING' as const,
-          })) || [],
+          create:
+            statements?.map((statement: Partial<Statement>) => ({
+              text: statement.text ?? "",
+              participantId: statement.participantId ?? "",
+              status: "PENDING" as const,
+            })) || [],
         },
       },
       include: { statements: true },

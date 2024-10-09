@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import ZoneWrapper from './ZoneWrapper';
-import Toggle from '@/lib/components/Toggle';
-import { generateStatementsFromIdea } from '@/lib/aiActions';
-import Principle from '@/lib/components/Principle';
-import { FaMagic } from 'react-icons/fa';
-import { debounce } from 'lodash';
+import { useState, useEffect, useCallback, useRef } from "react";
+import ZoneWrapper from "./ZoneWrapper";
+import Toggle from "@/lib/components/Toggle";
+import { generateStatementsFromIdea } from "@/lib/aiActions";
+import Principle from "@/lib/components/Principle";
+import { FaMagic } from "react-icons/fa";
+import { debounce } from "lodash";
 
 interface PrinciplesZoneProps {
   isActive: boolean;
@@ -21,10 +21,10 @@ interface PrinciplesZoneProps {
     goal: string;
     bio: string;
   };
-  updateModelData: (data: Partial<PrinciplesZoneProps['modelData']>) => void;
+  updateModelData: (data: Partial<PrinciplesZoneProps["modelData"]>) => void;
   isExistingModel: boolean;
   onToggle: () => void;
-  savingStatus: 'idle' | 'saving' | 'saved';
+  savingStatus: "idle" | "saving" | "saved";
 }
 
 interface PrincipleData {
@@ -35,79 +35,100 @@ interface PrincipleData {
   isEditing: boolean;
 }
 
-export default function PrinciplesZone({ 
-  isActive, 
-  onComplete, 
-  modelData, 
-  updateModelData, 
-  isExistingModel, 
+export default function PrinciplesZone({
+  isActive,
+  onComplete,
+  modelData,
+  updateModelData,
+  isExistingModel,
   onToggle,
-  savingStatus 
+  savingStatus,
 }: PrinciplesZoneProps) {
-
   const [principles, setPrinciples] = useState<PrincipleData[]>(() => {
-    return Array.isArray(modelData.principles) 
-      ? modelData.principles.map(p => ({ 
-          id: typeof p === 'string' ? `principle-${Date.now()}-${Math.random()}` : p.id,
-          text: typeof p === 'string' ? p : p.text,
-          isLoading: false, 
+    return Array.isArray(modelData.principles)
+      ? modelData.principles.map((p) => ({
+          id:
+            typeof p === "string"
+              ? `principle-${Date.now()}-${Math.random()}`
+              : p.id,
+          text: typeof p === "string" ? p : p.text,
+          isLoading: false,
           isEditing: false,
-          gacScore: typeof p === 'object' ? p.gacScore : undefined
+          gacScore: typeof p === "object" ? p.gacScore : undefined,
         }))
       : [];
   });
   const [requireAuth, setRequireAuth] = useState(modelData.requireAuth);
-  const [allowContributions, setAllowContributions] = useState(modelData.allowContributions);
+  const [allowContributions, setAllowContributions] = useState(
+    modelData.allowContributions,
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGeneratedPrinciples, setHasGeneratedPrinciples] = useState(false);
 
   const previousPrinciples = useRef(principles);
 
   const updateModelDataDebounced = useCallback(
-    debounce((data: Partial<PrinciplesZoneProps['modelData']>) => {
+    debounce((data: Partial<PrinciplesZoneProps["modelData"]>) => {
       updateModelData(data);
     }, 500),
-    [updateModelData]
+    [updateModelData],
   );
 
   useEffect(() => {
-    const principlesChanged = JSON.stringify(principles) !== JSON.stringify(previousPrinciples.current);
+    const principlesChanged =
+      JSON.stringify(principles) !== JSON.stringify(previousPrinciples.current);
     if (principlesChanged) {
-      const formattedPrinciples = principles.map(({ id, text, gacScore }) => ({ id, text, gacScore }));
+      const formattedPrinciples = principles.map(({ id, text, gacScore }) => ({
+        id,
+        text,
+        gacScore,
+      }));
       updateModelDataDebounced({ principles: formattedPrinciples });
       previousPrinciples.current = principles;
     }
   }, [principles, updateModelDataDebounced]);
 
   const addPrinciple = () => {
-    const newPrinciple: PrincipleData = { id: `new-${Date.now()}`, text: '', isLoading: false, isEditing: true };
+    const newPrinciple: PrincipleData = {
+      id: `new-${Date.now()}`,
+      text: "",
+      isLoading: false,
+      isEditing: true,
+    };
     setPrinciples([...principles, newPrinciple]);
   };
 
   const updatePrinciple = (id: string, value: string) => {
-    console.log('Updating principle:', id, value);
-    if (value.trim() !== '') {
-      const newPrinciples = principles.map(p => p.id === id ? { ...p, text: value.trim(), isEditing: false } : p);
+    console.log("Updating principle:", id, value);
+    if (value.trim() !== "") {
+      const newPrinciples = principles.map((p) =>
+        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p,
+      );
       setPrinciples(newPrinciples);
       updateModelData({ principles: newPrinciples });
-      console.log('Principles after update:', newPrinciples);
+      console.log("Principles after update:", newPrinciples);
     } else {
       removePrinciple(id);
     }
   };
 
   const removePrinciple = (id: string) => {
-    const newPrinciples = principles.filter(p => p.id !== id);
+    const newPrinciples = principles.filter((p) => p.id !== id);
     setPrinciples(newPrinciples);
   };
 
   const setIsEditing = (id: string, isEditing: boolean) => {
-    const newPrinciples = principles.map(p => p.id === id ? { ...p, isEditing } : p);
+    const newPrinciples = principles.map((p) =>
+      p.id === id ? { ...p, isEditing } : p,
+    );
     setPrinciples(newPrinciples);
   };
 
-  const handleToggleChange = (field: 'requireAuth' | 'allowContributions', value: boolean) => {
-    if (field === 'requireAuth') {
+  const handleToggleChange = (
+    field: "requireAuth" | "allowContributions",
+    value: boolean,
+  ) => {
+    if (field === "requireAuth") {
       setRequireAuth(value);
     } else {
       setAllowContributions(value);
@@ -117,11 +138,14 @@ export default function PrinciplesZone({
 
   const handleGeneratePrinciples = async () => {
     if (hasGeneratedPrinciples) return;
-    
+
     setIsGenerating(true);
 
     try {
-      const generatedPrinciples = await generateStatementsFromIdea(modelData.goal, modelData.bio);
+      const generatedPrinciples = await generateStatementsFromIdea(
+        modelData.goal,
+        modelData.bio,
+      );
       const newPrinciples = generatedPrinciples.map((text) => ({
         id: `generated-${Date.now()}-${Math.random()}`,
         text,
@@ -131,24 +155,33 @@ export default function PrinciplesZone({
       setPrinciples([...principles, ...newPrinciples]);
       setHasGeneratedPrinciples(true);
     } catch (error) {
-      console.error('Error generating principles:', error);
+      console.error("Error generating principles:", error);
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <ZoneWrapper title="Configure Principles" isActive={isActive} onToggle={onToggle} savingStatus={savingStatus}>
+    <ZoneWrapper
+      title="Configure Principles"
+      isActive={isActive}
+      onToggle={onToggle}
+      savingStatus={savingStatus}
+    >
       <div className="flex">
         <div className="w-1/3 pr-4">
           <p className="text-gray-600">
-            Define the core principles that will guide your community AI model. These principles will be used to create polls for your community to vote on.
+            Define the core principles that will guide your community AI model.
+            These principles will be used to create polls for your community to
+            vote on.
           </p>
         </div>
         <div className="w-2/3 space-y-4">
-          <label className="block text-sm font-medium text-gray-700">Add at least 5 principles for your community to vote on</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Add at least 5 principles for your community to vote on
+          </label>
           {principles.map((principle) => {
-            console.log('Rendering principle:', principle); // Add this log
+            console.log("Rendering principle:", principle); // Add this log
             return (
               <Principle
                 key={principle.id}
@@ -158,18 +191,22 @@ export default function PrinciplesZone({
                 onUpdate={(value) => updatePrinciple(principle.id, value)}
                 onDelete={() => removePrinciple(principle.id)}
                 isEditing={principle.isEditing}
-                setIsEditing={(isEditing) => setIsEditing(principle.id, isEditing)}
+                setIsEditing={(isEditing) =>
+                  setIsEditing(principle.id, isEditing)
+                }
               />
             );
           })}
           <div className="space-y-2">
             {!hasGeneratedPrinciples && (
-              <button 
-                onClick={handleGeneratePrinciples} 
+              <button
+                onClick={handleGeneratePrinciples}
                 className="text-white bg-teal flex items-center px-3 py-1 rounded text-m"
                 disabled={isGenerating || hasGeneratedPrinciples}
               >
-                {isGenerating ? 'Generating...' : (
+                {isGenerating ? (
+                  "Generating..."
+                ) : (
                   <>
                     <FaMagic className="h-4 w-4 mr-1" />
                     Generate some principles automatically
@@ -178,30 +215,43 @@ export default function PrinciplesZone({
               </button>
             )}
             <button onClick={addPrinciple} className="text-teal block">
-              {principles.length === 0 ? '+ Add a principle' : '+ Add another principle'}
+              {principles.length === 0
+                ? "+ Add a principle"
+                : "+ Add another principle"}
             </button>
           </div>
           <Toggle
             label="Require Authentication"
             enabled={requireAuth}
-            setEnabled={(value) => handleToggleChange('requireAuth', value)}
+            setEnabled={(value) => handleToggleChange("requireAuth", value)}
             details="Require community voters to authenticate"
           />
           <Toggle
             label="Allow Participant Contributions"
             enabled={allowContributions}
-            setEnabled={(value) => handleToggleChange('allowContributions', value)}
+            setEnabled={(value) =>
+              handleToggleChange("allowContributions", value)
+            }
             details="Allow community voters to contribute their own principles"
           />
           {!isExistingModel && (
             <button
               onClick={onComplete}
               className="bg-teal text-white px-4 py-2 rounded flex items-center"
-              disabled={principles.filter(p => !p.isLoading).length < 5}
+              disabled={principles.filter((p) => !p.isLoading).length < 5}
             >
               Next
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 ml-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
           )}

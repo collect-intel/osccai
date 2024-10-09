@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -7,22 +7,28 @@ interface ModalProps {
   minHeight?: number; // Add this line
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, minHeight = 400 }) => { // Add minHeight parameter
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  children,
+  minHeight = 400,
+}) => {
+  // Add minHeight parameter
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen, onClose]);
 
@@ -35,17 +41,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, minHeight = 40
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       ref={modalRef}
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackgroundClick}
     >
-      <div 
+      <div
         className="bg-white rounded-lg p-8 max-w-4xl w-full overflow-auto relative"
         style={{
-          maxHeight: '90vh',
+          maxHeight: "90vh",
           minHeight: `min(${minHeight}px, 90vh)`, // Add this line
-          height: `min(${minHeight}px, 90vh)` // Add this line
+          height: `min(${minHeight}px, 90vh)`, // Add this line
         }}
       >
         <button

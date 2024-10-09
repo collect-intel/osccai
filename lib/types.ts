@@ -111,7 +111,7 @@ export interface ClerkEmailAddress {
 }
 
 export interface MessageWithFields {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   final_response?: string;
   draft_response?: string;

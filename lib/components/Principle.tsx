@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FaPencilAlt, FaTrash, FaCheck } from 'react-icons/fa';
-import Modal from './Modal';
+import React, { useState, useRef, useEffect } from "react";
+import { FaPencilAlt, FaTrash, FaCheck } from "react-icons/fa";
+import Modal from "./Modal";
 
 interface PrincipleProps {
   text: string;
@@ -12,14 +12,14 @@ interface PrincipleProps {
   setIsEditing: (isEditing: boolean) => void;
 }
 
-const Principle: React.FC<PrincipleProps> = ({ 
-  text, 
-  isLoading, 
-  gacScore, 
-  onUpdate, 
-  onDelete, 
-  isEditing, 
-  setIsEditing 
+const Principle: React.FC<PrincipleProps> = ({
+  text,
+  isLoading,
+  gacScore,
+  onUpdate,
+  onDelete,
+  isEditing,
+  setIsEditing,
 }) => {
   const [editedText, setEditedText] = useState(text);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -38,15 +38,15 @@ const Principle: React.FC<PrincipleProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmedText = editedText.trim();
-    console.log('trimmedText', trimmedText);
-    if (trimmedText !== '') {
+    console.log("trimmedText", trimmedText);
+    if (trimmedText !== "") {
       onUpdate(trimmedText);
       setIsEditing(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSubmit();
     }
   };
@@ -71,28 +71,38 @@ const Principle: React.FC<PrincipleProps> = ({
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center space-x-2">
             {isEditing ? (
-              <button onClick={handleSubmit} className="text-green-500 hover:text-green-700 p-1">
+              <button
+                onClick={handleSubmit}
+                className="text-green-500 hover:text-green-700 p-1"
+              >
                 <FaCheck />
               </button>
             ) : (
-              <button onClick={() => setIsEditing(true)} className="text-blue-500 hover:text-blue-700 p-1">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-blue-500 hover:text-blue-700 p-1"
+              >
                 <FaPencilAlt />
               </button>
             )}
-            <button onClick={() => setShowDeleteModal(true)} className="text-red-500 hover:text-red-700 p-1">
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="text-red-500 hover:text-red-700 p-1"
+            >
               <FaTrash />
             </button>
           </div>
-          {gacScore !== undefined && <span className="text-sm text-gray-500">Score: {gacScore}</span>}
+          {gacScore !== undefined && (
+            <span className="text-sm text-gray-500">Score: {gacScore}</span>
+          )}
         </div>
       )}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-      >
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
         <div className="p-4">
           <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-          <p className="mb-4">Are you sure you want to delete this principle?</p>
+          <p className="mb-4">
+            Are you sure you want to delete this principle?
+          </p>
           <div className="flex justify-end space-x-2">
             <button
               onClick={() => setShowDeleteModal(false)}

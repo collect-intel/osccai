@@ -1,1 +1,1 @@
-declare module 'xmllm/client';
+declare module "xmllm/client";
