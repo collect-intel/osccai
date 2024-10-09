@@ -1,12 +1,12 @@
 "use client";
 
-import React, { forwardRef, useCallback, useState } from 'react';
-import ReactMarkdown, { Components } from 'react-markdown';
-import AIChat, { AIChatHandle } from './AIChat';
-import { MessageWithFields } from '../../types';
-import { ClientProvider, xmllm } from 'xmllm/client';
-import { FaInfoCircle } from 'react-icons/fa';
-import AIResponseModal from './AIResponseModal';
+import React, { forwardRef, useCallback, useState } from "react";
+import ReactMarkdown, { Components } from "react-markdown";
+import AIChat, { AIChatHandle } from "./AIChat";
+import { MessageWithFields } from "../../types";
+import { ClientProvider, xmllm } from "xmllm/client";
+import { FaInfoCircle } from "react-icons/fa";
+import AIResponseModal from "./AIResponseModal";
 
 interface ConstitutionalAIChatProps {
   onUserMessage?: (message: string) => void;
@@ -25,20 +25,27 @@ interface ConstitutionalAIChatProps {
   };
 }
 
-const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>(({
-  onUserMessage,
-  onAIMessage,
-  constitution,
-  interactive = true,
-  initialMessages,
-  customStyles = {},
-}, ref) => {
-  const genSystemPrompt = (constitutionText: string): string => {
-    if (!constitutionText.trim()) {
-      return 'Be a helpful AI assistant';
-    }
+const ConstitutionalAIChat = forwardRef<
+  AIChatHandle,
+  ConstitutionalAIChatProps
+>(
+  (
+    {
+      onUserMessage,
+      onAIMessage,
+      constitution,
+      interactive = true,
+      initialMessages,
+      customStyles = {},
+    },
+    ref,
+  ) => {
+    const genSystemPrompt = (constitutionText: string): string => {
+      if (!constitutionText.trim()) {
+        return "Be a helpful AI assistant";
+      }
 
-    return `
+      return `
 Main system prompt:
 
 Be helpful
@@ -75,123 +82,147 @@ Patronizing: 10% (good)
 I observe a peculiar atmospheric phenomenon...
 </final_response>
 `.trim();
-  };
+    };
 
-  const system = genSystemPrompt(constitution.text);
+    const system = genSystemPrompt(constitution.text);
 
-  const genStream = useCallback(async (messages: MessageWithFields[]) => {
-    const proxyUrl = process.env.PROXY_API_URL || 'https://proxyai.cip.org/api/stream';
-    const clientProvider = new ClientProvider(proxyUrl);
+    const genStream = useCallback(
+      async (messages: MessageWithFields[]) => {
+        const proxyUrl =
+          process.env.PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+        const clientProvider = new ClientProvider(proxyUrl);
 
-    // Remove the first two messages
-    const messagesToSend = messages.slice(2);
-    const convertedMessages = messagesToSend.map(message => ({
-      role: message.role,
-      content: message.final_response || message.content,
-    }));
+        // Remove the first two messages
+        const messagesToSend = messages.slice(2);
+        const convertedMessages = messagesToSend.map((message) => ({
+          role: message.role,
+          content: message.final_response || message.content,
+        }));
 
-    return await xmllm(({ prompt }: { prompt: any }) => {
-      return [
-        prompt({
-          model: 'claude:good',
-          messages: convertedMessages,
-          schema: {
-            thinking: String,
-            draft_response: String,
-            response_metrics: String,
-            improvement_strategy: String,
-            final_response: String,
-          },
-          system: system,
-        }),
-        function* (t: any) {
-          console.log('[ConstitutionalAIChat] Prompt yield t', t);
-          // Yield an object with role 'assistant' to create a new message
-          yield { role: 'assistant', ...t };
-        }
-      ];
-    }, clientProvider);
-  }, [system]);
+        return await xmllm(({ prompt }: { prompt: any }) => {
+          return [
+            prompt({
+              model: "claude:good",
+              messages: convertedMessages,
+              schema: {
+                thinking: String,
+                draft_response: String,
+                response_metrics: String,
+                improvement_strategy: String,
+                final_response: String,
+              },
+              system: system,
+            }),
+            function* (t: any) {
+              console.log("[ConstitutionalAIChat] Prompt yield t", t);
+              // Yield an object with role 'assistant' to create a new message
+              yield { role: "assistant", ...t };
+            },
+          ];
+        }, clientProvider);
+      },
+      [system],
+    );
 
-  initialMessages = initialMessages || [
-    { role: 'user', content: 'Hello' },
-    {
-      role: 'assistant',
-      content: `Hi there.`,
-    },
-  ];
+    initialMessages = initialMessages || [
+      { role: "user", content: "Hello" },
+      {
+        role: "assistant",
+        content: `Hi there.`,
+      },
+    ];
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<MessageWithFields | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] =
+      useState<MessageWithFields | null>(null);
 
-  const renderMessage = (message: MessageWithFields) => {
-    console.log('[ConstitutionalAIChat] renderMessage', message);
-    
-    const isComplete = !message.isStreaming;
-    const hasVisibleContent = (message.final_response && message.final_response.trim() !== '') || 
-                              (message.content && message.content.trim() !== '');
-    const hasAdditionalInfo = !!(message.draft_response || message.response_metrics || message.improvement_strategy);
+    const renderMessage = (message: MessageWithFields) => {
+      console.log("[ConstitutionalAIChat] renderMessage", message);
 
-    const messageStyle = message.role === 'user' ? customStyles.userMessage : customStyles.aiMessage;
+      const isComplete = !message.isStreaming;
+      const hasVisibleContent =
+        (message.final_response && message.final_response.trim() !== "") ||
+        (message.content && message.content.trim() !== "");
+      const hasAdditionalInfo = !!(
+        message.draft_response ||
+        message.response_metrics ||
+        message.improvement_strategy
+      );
 
-    if (message.role === 'assistant' && message.isStreaming && !hasVisibleContent) {
-      return <div className={`${messageStyle || ''}`}>Thinking...</div>;
-    }
+      const messageStyle =
+        message.role === "user"
+          ? customStyles.userMessage
+          : customStyles.aiMessage;
 
-    if (!hasVisibleContent) {
-      return null;
-    }
+      if (
+        message.role === "assistant" &&
+        message.isStreaming &&
+        !hasVisibleContent
+      ) {
+        return <div className={`${messageStyle || ""}`}>Thinking...</div>;
+      }
 
-    const markdownComponents: Partial<Components> = {
-      pre: ({ children }: { children?: React.ReactNode }) => <p>{children}</p>,
-      code: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
+      if (!hasVisibleContent) {
+        return null;
+      }
+
+      const markdownComponents: Partial<Components> = {
+        pre: ({ children }: { children?: React.ReactNode }) => (
+          <p>{children}</p>
+        ),
+        code: ({ children }: { children?: React.ReactNode }) => (
+          <span>{children}</span>
+        ),
+      };
+
+      return (
+        <div
+          className={`relative ${messageStyle || ""} ${hasAdditionalInfo ? "pr-8" : ""}`}
+        >
+          {message.role === "assistant" && isComplete && hasAdditionalInfo && (
+            <FaInfoCircle
+              className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-blue-500"}`}
+              onClick={() => {
+                setSelectedMessage(message);
+                setModalOpen(true);
+              }}
+            />
+          )}
+          <ReactMarkdown
+            className="prose max-w-none"
+            components={markdownComponents}
+          >
+            {message.final_response || message.content}
+          </ReactMarkdown>
+        </div>
+      );
     };
 
     return (
-      <div className={`relative ${messageStyle || ''} ${hasAdditionalInfo ? 'pr-8' : ''}`}>
-        {message.role === 'assistant' && isComplete && hasAdditionalInfo && (
-          <FaInfoCircle
-            className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || 'text-blue-500'}`}
-            onClick={() => {
-              setSelectedMessage(message);
-              setModalOpen(true);
-            }}
-          />
-        )}
-        <ReactMarkdown 
-          className="prose max-w-none"
-          components={markdownComponents}
-        >
-          {message.final_response || message.content}
-        </ReactMarkdown>
-      </div>
+      <>
+        <AIChat
+          ref={ref}
+          onUserMessage={onUserMessage}
+          onAIMessage={onAIMessage}
+          system={system}
+          initialMessages={initialMessages}
+          interactive={interactive}
+          icon={constitution.icon}
+          color={constitution.color}
+          renderMessage={renderMessage}
+          genStream={genStream}
+        />
+        <AIResponseModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          message={selectedMessage}
+        />
+      </>
     );
-  };
-
-  return (
-    <>
-      <AIChat
-        ref={ref}
-        onUserMessage={onUserMessage}
-        onAIMessage={onAIMessage}
-        system={system}
-        initialMessages={initialMessages}
-        interactive={interactive}
-        icon={constitution.icon}
-        color={constitution.color}
-        renderMessage={renderMessage}
-        genStream={genStream}
-      />
-      <AIResponseModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        message={selectedMessage}
-      />
-    </>
-  );
-});
+  },
+);
 
 // Add this line at the end of the file, after the component definition
-ConstitutionalAIChat.displayName = 'ConstitutionalAIChat';
+ConstitutionalAIChat.displayName = "ConstitutionalAIChat";
 
 export default ConstitutionalAIChat;

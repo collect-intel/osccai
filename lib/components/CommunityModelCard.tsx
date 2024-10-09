@@ -13,14 +13,17 @@ export default function CommunityModelCard({
   model: CommunityModel;
 }) {
   // Format the date
-  const formattedDate = model.createdAt.toLocaleString('en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  }).replace(',', '').replace(' ', ' at ');
+  const formattedDate = model.createdAt
+    .toLocaleString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .replace(",", "")
+    .replace(" ", " at ");
 
   return (
     <Link href={`/community-models/flow/${model.uid}`} className="block h-full">
@@ -31,9 +34,7 @@ export default function CommunityModelCard({
             ? `${model.goal.substring(0, 100)}...`
             : model.goal}
         </p>
-        <p className="text-white font-mono mt-4 text-sm">
-          {formattedDate}
-        </p>
+        <p className="text-white font-mono mt-4 text-sm">{formattedDate}</p>
       </div>
     </Link>
   );

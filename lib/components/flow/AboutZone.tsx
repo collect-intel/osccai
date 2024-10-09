@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import ZoneWrapper from './ZoneWrapper';
-import LogoUploader from '../LogoUploader';
+import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+import ZoneWrapper from "./ZoneWrapper";
+import LogoUploader from "../LogoUploader";
 
 export interface AboutZoneData {
   name: string;
@@ -18,17 +18,28 @@ interface AboutZoneProps {
   modelId?: string;
   onToggle: () => void;
   onUpdate: (data: Partial<AboutZoneData>) => void;
-  savingStatus: 'idle' | 'saving' | 'saved';
+  savingStatus: "idle" | "saving" | "saved";
 }
 
-export default function AboutZone({ isActive, onSave, initialData, isExistingModel, modelId, onToggle, onUpdate, savingStatus }: AboutZoneProps) {
-  const [name, setName] = useState(initialData?.name || '');
-  const [bio, setBio] = useState(initialData?.bio || '');
-  const [goal, setGoal] = useState(initialData?.goal || '');
-  const [logoUrl, setLogoUrl] = useState<string | null>(initialData?.logoUrl || null);
+export default function AboutZone({
+  isActive,
+  onSave,
+  initialData,
+  isExistingModel,
+  modelId,
+  onToggle,
+  onUpdate,
+  savingStatus,
+}: AboutZoneProps) {
+  const [name, setName] = useState(initialData?.name || "");
+  const [bio, setBio] = useState(initialData?.bio || "");
+  const [goal, setGoal] = useState(initialData?.goal || "");
+  const [logoUrl, setLogoUrl] = useState<string | null>(
+    initialData?.logoUrl || null,
+  );
   const [isSaveDisabled, setIsSaveDisabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [localStorageKey, setLocalStorageKey] = useState<string>('');
+  const [localStorageKey, setLocalStorageKey] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -59,7 +70,9 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
   }, [isExistingModel, modelId]);
 
   useEffect(() => {
-    setIsSaveDisabled(name.trim() === '' || bio.trim() === '' || goal.trim() === '');
+    setIsSaveDisabled(
+      name.trim() === "" || bio.trim() === "" || goal.trim() === "",
+    );
   }, [name, bio, goal]);
 
   useEffect(() => {
@@ -73,10 +86,10 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
 
   const handleChange = (field: keyof AboutZoneData, value: string | null) => {
     const newData = { ...{ name, bio, goal, logoUrl }, [field]: value };
-    if (field === 'name') setName(value as string);
-    if (field === 'bio') setBio(value as string);
-    if (field === 'goal') setGoal(value as string);
-    if (field === 'logoUrl') setLogoUrl(value as string);
+    if (field === "name") setName(value as string);
+    if (field === "bio") setBio(value as string);
+    if (field === "goal") setGoal(value as string);
+    if (field === "logoUrl") setLogoUrl(value as string);
 
     // Call onUpdate for every change if it's a new model
     if (!isExistingModel) {
@@ -86,9 +99,18 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
 
   const handleBlur = (field: keyof AboutZoneData) => {
     if (isExistingModel) {
-      const data = { [field]: field === 'logoUrl' ? logoUrl : (field === 'name' ? name : (field === 'bio' ? bio : goal)) };
-      if (data[field] && data[field].trim() !== '') {
-        console.log('Updating on blur:', field, data[field]); // Add this log
+      const data = {
+        [field]:
+          field === "logoUrl"
+            ? logoUrl
+            : field === "name"
+              ? name
+              : field === "bio"
+                ? bio
+                : goal,
+      };
+      if (data[field] && data[field].trim() !== "") {
+        console.log("Updating on blur:", field, data[field]); // Add this log
         onUpdate(data);
       }
     }
@@ -99,7 +121,7 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
   };
 
   const handleLogoUploadError = (error: string) => {
-    console.error('Logo upload error:', error);
+    console.error("Logo upload error:", error);
   };
 
   const handleSave = async () => {
@@ -113,7 +135,7 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
         localStorage.removeItem(`${localStorageKey}goal`);
         localStorage.removeItem(`${localStorageKey}logoUrl`);
       } catch (error) {
-        console.error('Error saving community model:', error);
+        console.error("Error saving community model:", error);
       } finally {
         setIsSaving(false);
       }
@@ -122,9 +144,9 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
 
   const getCharCountColor = (current: number, max: number) => {
     const percentage = (current / max) * 100;
-    if (percentage >= 95) return 'text-red-500';
-    if (percentage >= 90) return 'text-amber-500';
-    return 'text-gray-500';
+    if (percentage >= 95) return "text-red-500";
+    if (percentage >= 90) return "text-amber-500";
+    return "text-gray-500";
   };
 
   if (!isClient) {
@@ -132,69 +154,95 @@ export default function AboutZone({ isActive, onSave, initialData, isExistingMod
   }
 
   return (
-    <ZoneWrapper title="About" isActive={isActive} onToggle={onToggle} savingStatus={savingStatus}>
+    <ZoneWrapper
+      title="About"
+      isActive={isActive}
+      onToggle={onToggle}
+      savingStatus={savingStatus}
+    >
       <div className="flex">
         <div className="w-1/3 pr-4">
           <p className="text-gray-600">
-            Tell us about your community and what you hope to achieve with your AI model.
+            Tell us about your community and what you hope to achieve with your
+            AI model.
           </p>
         </div>
         <div className="w-2/3 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">What is your community called?</label>
+            <label className="block text-sm font-medium text-gray-700">
+              What is your community called?
+            </label>
             <input
               type="text"
               value={name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              onBlur={() => handleBlur('name')}
+              onChange={(e) => handleChange("name", e.target.value)}
+              onBlur={() => handleBlur("name")}
               maxLength={20}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
-            <p className={`text-sm mt-1 text-right ${getCharCountColor(name.length, 20)}`}>{name.length}/20</p>
+            <p
+              className={`text-sm mt-1 text-right ${getCharCountColor(name.length, 20)}`}
+            >
+              {name.length}/20
+            </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Upload your community logo</label>
-            <LogoUploader 
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload your community logo
+            </label>
+            <LogoUploader
               initialLogo={logoUrl}
               onLogoUpload={(file) => {
-                handleChange('logoUrl', file ? file.url : null);
-                handleBlur('logoUrl');
-              }} 
-              onUploadError={handleLogoUploadError} 
+                handleChange("logoUrl", file ? file.url : null);
+                handleBlur("logoUrl");
+              }}
+              onUploadError={handleLogoUploadError}
             />
           </div>
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700">Add your community bio</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Add your community bio
+            </label>
             <textarea
               value={bio}
-              onChange={(e) => handleChange('bio', e.target.value)}
-              onBlur={() => handleBlur('bio')}
+              onChange={(e) => handleChange("bio", e.target.value)}
+              onBlur={() => handleBlur("bio")}
               rows={3}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
-            <p className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-white px-1 ${getCharCountColor(bio.length, 2000)}`}>{bio.length}/2000</p>
+            <p
+              className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-white px-1 ${getCharCountColor(bio.length, 2000)}`}
+            >
+              {bio.length}/2000
+            </p>
           </div>
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700">What do you hope to achieve with your community AI model?</label>
+            <label className="block text-sm font-medium text-gray-700">
+              What do you hope to achieve with your community AI model?
+            </label>
             <textarea
               value={goal}
-              onChange={(e) => handleChange('goal', e.target.value)}
-              onBlur={() => handleBlur('goal')}
+              onChange={(e) => handleChange("goal", e.target.value)}
+              onBlur={() => handleBlur("goal")}
               rows={3}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
-            <p className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-white px-1 ${getCharCountColor(goal.length, 2000)}`}>{goal.length}/2000</p>
+            <p
+              className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-white px-1 ${getCharCountColor(goal.length, 2000)}`}
+            >
+              {goal.length}/2000
+            </p>
           </div>
           {!isExistingModel && (
             <button
               onClick={handleSave}
-              className={`bg-teal text-white px-4 py-2 rounded flex items-center ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-teal text-white px-4 py-2 rounded flex items-center ${isSaveDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
               disabled={isSaveDisabled || isSaving}
             >
-              {isSaving ? 'Saving...' : 'Save and begin defining principles'}
+              {isSaving ? "Saving..." : "Save and begin defining principles"}
             </button>
           )}
         </div>

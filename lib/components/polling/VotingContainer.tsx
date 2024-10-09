@@ -39,7 +39,11 @@ export default function VotingContainer({
               : "Switch to List View"
           }
           icon={
-            viewMode === "individual" ? <ListIcon className="stroke-white" /> : <></>
+            viewMode === "individual" ? (
+              <ListIcon className="stroke-white" />
+            ) : (
+              <></>
+            )
           }
         />
       </div>

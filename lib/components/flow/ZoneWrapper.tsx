@@ -1,20 +1,26 @@
-import { ReactNode, useState, useEffect } from 'react';
-import SavingIndicator from '../SavingIndicator';
+import { ReactNode, useState, useEffect } from "react";
+import SavingIndicator from "../SavingIndicator";
 
 interface ZoneWrapperProps {
   title: string;
   isActive: boolean;
   children: ReactNode;
   onToggle: () => void;
-  savingStatus: 'idle' | 'saving' | 'saved';
+  savingStatus: "idle" | "saving" | "saved";
 }
 
-export default function ZoneWrapper({ title, isActive, children, onToggle, savingStatus }: ZoneWrapperProps) {
+export default function ZoneWrapper({
+  title,
+  isActive,
+  children,
+  onToggle,
+  savingStatus,
+}: ZoneWrapperProps) {
   const [showSaved, setShowSaved] = useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (savingStatus === 'saved') {
+    if (savingStatus === "saved") {
       setShowSaved(true);
       timer = setTimeout(() => {
         setShowSaved(false);
@@ -26,12 +32,14 @@ export default function ZoneWrapper({ title, isActive, children, onToggle, savin
   }, [savingStatus]);
 
   return (
-    <div className={`bg-white border rounded-lg p-4 relative ${isActive ? 'border-teal' : 'border-gray-300'}`}>
+    <div
+      className={`bg-white border rounded-lg p-4 relative ${isActive ? "border-teal" : "border-gray-300"}`}
+    >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">{title}</h2>
         <div className="flex items-center">
           <div className="absolute bottom-2 left-2">
-            {savingStatus === 'saving' && <SavingIndicator status="saving" />}
+            {savingStatus === "saving" && <SavingIndicator status="saving" />}
             {showSaved && <SavingIndicator status="saved" />}
           </div>
           {/* <button onClick={onToggle} className="text-teal ml-2 ">

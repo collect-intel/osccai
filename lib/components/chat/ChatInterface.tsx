@@ -67,12 +67,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="flex-1 p-4 overflow-y-auto bg-white bg-opacity-80">
         {messages.map((message, index) => {
           const renderedMessage = renderMessage(message);
-          const hasVisibleContent = message.role === "user" || 
-                                    (message.content && message.content.trim() !== "") || 
-                                    (message.final_response && message.final_response.trim() !== "");
-          
+          const hasVisibleContent =
+            message.role === "user" ||
+            (message.content && message.content.trim() !== "") ||
+            (message.final_response && message.final_response.trim() !== "");
+
           return (
-            <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={index}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               {message.role === "user" ? (
                 <div className="flex mr-2">
                   <div className="my-2 p-2 rounded-md bg-white text-black shadow-md">
@@ -82,11 +86,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
               ) : (
                 <div className="flex ml-2">
-                  <div className="self-start mt-6 mr-2">{icon || <ConstitutionIcon />}</div>
+                  <div className="self-start mt-6 mr-2">
+                    {icon || <ConstitutionIcon />}
+                  </div>
                   {message.isStreaming && !hasVisibleContent ? (
                     <LoadingBubble />
                   ) : hasVisibleContent ? (
-                    <div className={`my-2 p-2 rounded-md bg-${color} text-white shadow-md`}>
+                    <div
+                      className={`my-2 p-2 rounded-md bg-${color} text-white shadow-md`}
+                    >
                       {renderedMessage}
                     </div>
                   ) : null}
@@ -97,7 +105,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         })}
       </div>
       {interactive && (
-        <form onSubmit={handleSubmit} className="flex p-4 bg-white border-t border-light-gray">
+        <form
+          onSubmit={handleSubmit}
+          className="flex p-4 bg-white border-t border-light-gray"
+        >
           <input
             type="text"
             value={inputValue}

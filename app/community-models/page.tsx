@@ -44,7 +44,8 @@ export default async function CommunityModelsPage() {
 
       {communityModels.length === 0 ? (
         <p className="text-gray-600">
-          You haven't created any Community Models yet. Why not start by creating one?
+          You haven't created any Community Models yet. Why not start by
+          creating one?
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import ZoneWrapper from './ZoneWrapper';
-import Link from 'next/link';
-import { copyToClipboard } from '@/lib/copyToClipboard';
-import IconCounter from '@/lib/components/IconCounter';
-import { FaUser, FaCommentAlt, FaShareAlt } from 'react-icons/fa';
-import { Poll, Statement } from '@prisma/client'; // Import these types
-import Button from '@/lib/components/Button';
+import React, { useState } from "react";
+import ZoneWrapper from "./ZoneWrapper";
+import Link from "next/link";
+import { copyToClipboard } from "@/lib/copyToClipboard";
+import IconCounter from "@/lib/components/IconCounter";
+import { FaUser, FaCommentAlt, FaShareAlt } from "react-icons/fa";
+import { Poll, Statement } from "@prisma/client"; // Import these types
+import Button from "@/lib/components/Button";
 
 interface PollZoneProps {
   isActive: boolean;
@@ -16,10 +16,10 @@ interface PollZoneProps {
     bio: string;
     principles: string[];
   };
-  pollData?: Poll & { statements: Statement[] };  // Update this type
+  pollData?: Poll & { statements: Statement[] }; // Update this type
   isExistingModel: boolean;
   onToggle: () => void;
-  savingStatus: 'idle' | 'saving' | 'saved';
+  savingStatus: "idle" | "saving" | "saved";
   onUpdate: (updatedPollData: Partial<Poll>) => Promise<void>;
 }
 
@@ -32,14 +32,19 @@ export default function PollZone({
   isExistingModel,
   onToggle,
   savingStatus,
-  onUpdate
+  onUpdate,
 }: PollZoneProps) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const totalVotes = pollData?.statements?.reduce(
-    (sum: number, statement: Statement) => sum + statement.agreeCount + statement.disagreeCount + statement.passCount, 
-    0
-  ) ?? 0;
+  const totalVotes =
+    pollData?.statements?.reduce(
+      (sum: number, statement: Statement) =>
+        sum +
+        statement.agreeCount +
+        statement.disagreeCount +
+        statement.passCount,
+      0,
+    ) ?? 0;
 
   const handleShare = () => {
     if (pollData?.uid) {
@@ -56,7 +61,9 @@ export default function PollZone({
       await onUpdate({
         ...updatedData,
         title: updatedData.title || `Poll for ${modelData.name}`,
-        description: updatedData.description || `This poll is for the community model: ${modelData.name}`,
+        description:
+          updatedData.description ||
+          `This poll is for the community model: ${modelData.name}`,
       });
     } else {
       // If there's an existing poll, we're updating it
@@ -85,14 +92,17 @@ export default function PollZone({
 
   const handleViewResults = () => {
     if (pollData?.uid) {
-      window.open(`/community-models/flow/${modelId}#poll`, '_blank');
+      window.open(`/community-models/flow/${modelId}#poll`, "_blank");
     }
   };
 
   const renderPollContent = () => {
     if (!pollData) {
       return (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+        <div
+          className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4"
+          role="alert"
+        >
           <p className="font-bold">No Poll Available</p>
           <p>A poll hasn't been created for this community model yet.</p>
           <button
@@ -121,7 +131,7 @@ export default function PollZone({
           </div>
           <div className="flex space-x-2">
             {pollData.uid && (
-              <Link 
+              <Link
                 href={`/polls/${pollData.uid}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -135,7 +145,7 @@ export default function PollZone({
               variant="primary"
               icon={<FaShareAlt />}
             >
-              {isCopied ? 'Copied!' : 'Share'}
+              {isCopied ? "Copied!" : "Share"}
             </Button>
           </div>
         </div>
@@ -150,17 +160,29 @@ export default function PollZone({
                     <span>Agree: {statement.agreeCount}</span>
                     <span>Disagree: {statement.disagreeCount}</span>
                     <span>Pass: {statement.passCount}</span>
-                    <span>GAC Score: {statement.gacScore?.toFixed(2) ?? 'N/A'}</span>
-                    <span>Constitutionable: {statement.isConstitutionable ? 'Yes' : 'No'}</span>
+                    <span>
+                      GAC Score: {statement.gacScore?.toFixed(2) ?? "N/A"}
+                    </span>
+                    <span>
+                      Constitutionable:{" "}
+                      {statement.isConstitutionable ? "Yes" : "No"}
+                    </span>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
         ) : (
-          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mt-4" role="alert">
+          <div
+            className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mt-4"
+            role="alert"
+          >
             <p className="font-bold">Poll Created</p>
-            <p>Your poll has been created, but it doesn't have any statements yet. Statements will be added based on the principles you've defined.</p>
+            <p>
+              Your poll has been created, but it doesn't have any statements
+              yet. Statements will be added based on the principles you've
+              defined.
+            </p>
           </div>
         )}
       </>
@@ -168,7 +190,12 @@ export default function PollZone({
   };
 
   return (
-    <ZoneWrapper title="Poll Results" isActive={isActive} onToggle={onToggle} savingStatus={savingStatus}>
+    <ZoneWrapper
+      title="Poll Results"
+      isActive={isActive}
+      onToggle={onToggle}
+      savingStatus={savingStatus}
+    >
       <div className="flex">
         <div className="w-1/3 pr-4">
           <p className="text-gray-600">
@@ -178,11 +205,7 @@ export default function PollZone({
         <div className="w-2/3 space-y-4">
           {renderPollContent()}
           {!isExistingModel && pollData && (
-            <Button
-              onClick={onComplete}
-              variant="primary"
-              className="mt-4"
-            >
+            <Button onClick={onComplete} variant="primary" className="mt-4">
               Next
             </Button>
           )}

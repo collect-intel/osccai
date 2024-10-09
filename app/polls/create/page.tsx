@@ -32,7 +32,7 @@ export default async function CreatePollPage({
           description: "",
           requireAuth: false,
           allowParticipantStatements: false,
-          statements: []
+          statements: [],
         }}
       />
     </div>
