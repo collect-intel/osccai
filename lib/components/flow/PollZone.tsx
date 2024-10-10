@@ -91,9 +91,11 @@ export default function PollZone({
 
   const uniqueParticipants =
     new Set(
-      localPollData?.statements?.flatMap((statement) =>
-        statement.votes?.map((vote) => vote.participantId),
-      ),
+      localPollData?.statements?.flatMap((statement) => [
+        ...Array(statement.agreeCount).fill(statement.participantId),
+        ...Array(statement.disagreeCount).fill(statement.participantId),
+        ...Array(statement.passCount).fill(statement.participantId),
+      ]),
     ).size ?? 0;
 
   const handleShare = () => {

@@ -24,7 +24,7 @@ interface PollPageProps {
     published: boolean;
     requireAuth: boolean;
     allowParticipantStatements: boolean;
-    statements: (Statement & { votes: { length: number } })[];
+    statements: (Statement & { votes: { participantId: string }[] })[];
     createdAt: Date;
     updatedAt: Date;
     deleted: boolean;
