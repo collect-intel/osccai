@@ -7,6 +7,7 @@ import PageTitle from "@/lib/components/PageTitle";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import IconCounter from "@/lib/components/IconCounter";
+import VoteIcon from "@/lib/components/icons/VoteIcon";
 import PollControls from "@/lib/components/polling/PollControls";
 import { pollUrl } from "@/lib/links";
 import BannerShareLink from "@/lib/components/BannerShareLink";
@@ -65,6 +66,8 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
     // redirect(`${pollPath}/create`);
   }
 
+  const participantCount = new Set(poll.statements.flatMap(statement => statement.votes.map(vote => vote.participantId))).size;
+
   const voteCount = poll.statements.reduce(
     (acc, statement) => acc + statement.votes.length,
     0,
@@ -96,12 +99,16 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
       <PageTitle title={poll.title} />
       <div className="flex gap-3 mb-4">
         <IconCounter
-          count={voteCount}
+          count={participantCount}
           icon={<ParticipantIcon className="fill-none stroke-gray" />}
         />
         <IconCounter
           count={poll.statements.length}
           icon={<StatementIcon className="fill-none stroke-gray" />}
+        />
+        <IconCounter
+          count={voteCount}
+          icon={<VoteIcon className="fill-gray" />}
         />
       </div>
       <p className="text-sm whitespace-pre-wrap mb-8">{poll.description}</p>

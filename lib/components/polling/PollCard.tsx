@@ -6,6 +6,7 @@ import StatementIcon from "@/lib/components/icons/StatementIcon";
 import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
 import IconCounter from "@/lib/components/IconCounter";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
+import VoteIcon from "@/lib/components/icons/VoteIcon";
 import PollCardControls from "./PollCardControls";
 import { isPollOwner } from "@/lib/actions";
 
@@ -16,6 +17,8 @@ export default async function PollCard({ poll }: { poll: Poll }) {
   const votes = await prisma.vote.findMany({
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
   });
+
+  const participantCount = new Set(votes.map(vote => vote.participantId)).size;
 
   function StatusIndicator({
     isPublished,
@@ -58,8 +61,9 @@ export default async function PollCard({ poll }: { poll: Poll }) {
       </div>
       <div className="flex justify-between items-center mb-6 fill-none stroke-gray">
         <div className="flex gap-3">
-          <IconCounter count={votes.length} icon={<ParticipantIcon />} />
+          <IconCounter count={participantCount} icon={<ParticipantIcon />} />
           <IconCounter count={statements.length} icon={<StatementIcon />} />
+          <IconCounter count={votes.length} icon={<VoteIcon className="fill-gray" />} />
         </div>
         {isUserCreator && <PollCardControls poll={poll} />}
       </div>
