@@ -1,5 +1,11 @@
 name: Typecheck and Lint
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,10 +30,17 @@ jobs:
         run: pnpm install
 
       - name: Prisma generate
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         run: pnpm prisma generate
 
       - name: Typecheck
         run: pnpm tsc
 
       - name: Run ESLint
-        run: pnpm lint
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            pnpm lint --fix
+          else
+            pnpm lint
+          fi
+

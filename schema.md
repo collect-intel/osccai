@@ -14,7 +14,7 @@ erDiagram
         string uid PK
         string name
         string ownerId FK
-        string initialIdea
+        string goal
         string activeConstitutionId UK
         datetime createdAt
         datetime updatedAt

@@ -33,7 +33,6 @@ export default async function CreatePollPage({
           requireAuth: false,
           allowParticipantStatements: false,
           statements: [],
-          // Add any other required fields with default values
         }}
       />
     </div>

@@ -1,10 +1,10 @@
-export default function Toast({
-  message,
-  isVisible,
-}: {
+interface ToastProps {
   message: string;
   isVisible: boolean;
-}) {
+  onClose?: () => void;
+}
+
+export default function Toast({ message, isVisible, onClose }: ToastProps) {
   return (
     <div
       className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-charcoal text-xs text-white font-mono font-medium px-3 py-1.5 rounded transition-opacity duration-300 ${
@@ -12,6 +12,7 @@ export default function Toast({
       }`}
     >
       {message}
+      <button onClick={onClose}>Close</button>
     </div>
   );
 }

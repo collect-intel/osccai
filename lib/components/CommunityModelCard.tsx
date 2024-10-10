@@ -3,7 +3,8 @@ import Link from "next/link";
 interface CommunityModel {
   uid: string;
   name: string;
-  initialIdea: string;
+  goal: string | null;
+  createdAt: Date;
 }
 
 export default function CommunityModelCard({
@@ -11,20 +12,30 @@ export default function CommunityModelCard({
 }: {
   model: CommunityModel;
 }) {
+  // Format the date
+  const formattedDate = model.createdAt
+    .toLocaleString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .replace(",", "")
+    .replace(" ", " at ");
+
   return (
-    <div className="p-4 border rounded">
-      <h2 className="text-lg font-medium">{model.name}</h2>
-      <p className="mt-2">
-        {model.initialIdea.length > 100
-          ? `${model.initialIdea.substring(0, 100)}...`
-          : model.initialIdea}
-      </p>
-      <Link
-        href={`/community-models/${model.uid}`}
-        className="text-teal mt-4 block"
-      >
-        View Details
-      </Link>
-    </div>
+    <Link href={`/community-models/flow/${model.uid}`} className="block h-full">
+      <div className="p-4 border rounded-md bg-dark-green text-white hover:bg-opacity-90 transition-colors h-full flex flex-col">
+        <h2 className="text-lg font-medium">{model.name}</h2>
+        <p className="mt-2 flex-grow">
+          {model.goal && model.goal.length > 100
+            ? `${model.goal.substring(0, 100)}...`
+            : model.goal || 'No goal set'}
+        </p>
+        <p className="text-white font-mono mt-4 text-sm">{formattedDate}</p>
+      </div>
+    </Link>
   );
 }

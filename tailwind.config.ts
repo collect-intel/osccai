@@ -17,7 +17,7 @@ const config: Config = {
         "off-white": "#F9F3E5",
         "light-blue": "#EEF5FF",
         teal: "#185849",
-        "dark-green": "#0E352C",
+        "dark-green": "#0E342B",
         yellow: "#ECC156",
         green: "#008302",
         peach: "#F3CE99",

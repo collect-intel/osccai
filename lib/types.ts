@@ -1,16 +1,14 @@
 export interface CommunityModel {
   uid: string;
   name: string;
-  initialIdea: string;
+  goal: string;
   ownerId: string;
   activeConstitutionId: string | null;
-  // Add other necessary fields
 }
 
 export interface Constitution {
   uid: string;
   version: number;
-  // Add other necessary fields
 }
 
 import React from "react";
@@ -110,4 +108,14 @@ export interface ClerkEmailAddress {
   emailAddress: string;
   verification: any[];
   linkedTo: any[];
+}
+
+export interface MessageWithFields {
+  role: "user" | "assistant";
+  content: string;
+  final_response?: string;
+  draft_response?: string;
+  response_metrics?: string;
+  improvement_strategy?: string;
+  isStreaming?: boolean;
 }

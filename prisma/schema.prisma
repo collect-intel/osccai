@@ -37,8 +37,10 @@ model CommunityModel {
   name                    String
   ownerId                 String
   owner                   CommunityModelOwner     @relation(fields: [ownerId], references: [uid])
-  // The initial idea or concept for the community model
-  initialIdea             String
+
+  goal                    String?
+  bio                     String?
+  logoUrl                 String?
 
   // Reference to the active constitution for this community model
   activeConstitutionId    String?                 @unique

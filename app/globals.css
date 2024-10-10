@@ -5,3 +5,7 @@
 .btn-danger {
   @apply bg-red-500 text-white hover:bg-red-600;
 }
+
+html, body {
+  background: #F9F3E5;
+}

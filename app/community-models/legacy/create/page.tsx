@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createCommunityModel } from "@/lib/actions";
-import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 export default function CreateCommunityModelPage() {
   const { userId } = auth();
 
@@ -12,18 +11,18 @@ export default function CreateCommunityModelPage() {
   async function handleSubmit(formData: FormData) {
     "use server";
     const name = formData.get("name") as string;
-    const initialIdea = formData.get("initialIdea") as string;
+    const goal = formData.get("goal") as string;
 
-    if (!name || !initialIdea) {
+    if (!name || !goal) {
       // Handle error (you might want to add client-side validation as well)
       return;
     }
 
-    const modelId = await createCommunityModel(
-      name,
-      initialIdea,
-      await getAnonymousId(),
-    );
+    const modelId = await createCommunityModel({
+      name: name,
+      goal: goal,
+      logoUrl: "",
+    });
     redirect(`/community-models/${modelId}`);
   }
 
@@ -37,12 +36,13 @@ export default function CreateCommunityModelPage() {
             htmlFor="name"
             className="block text-sm font-medium text-gray-700"
           >
-            Model Name
+            What shall we call your community?
           </label>
           <input
             type="text"
             name="name"
             id="name"
+            placeholder="E.g. Our Civic Association"
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
           />
@@ -50,18 +50,18 @@ export default function CreateCommunityModelPage() {
 
         <div>
           <label
-            htmlFor="initialIdea"
+            htmlFor="goal"
             className="block text-sm font-medium text-gray-700"
           >
             Describe your community model and its purpose
           </label>
           <textarea
-            name="initialIdea"
-            id="initialIdea"
+            name="goal"
+            id="goal"
             rows={4}
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
-            placeholder="Describe the initial concept for your Community Model..."
+            placeholder="E.g. We are a tight-knit community of 100 families who meet regularly to discuss and decide on matters of importance to our neighborhood."
           ></textarea>
         </div>
 

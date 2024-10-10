@@ -24,7 +24,7 @@ export default async function CommunityModelPage({
     <div className="container mx-auto px-4 py-8">
       <PageTitle title={`Community Model: ${communityModel.name}`} />
       <p className="mt-2 text-lg text-gray-600">
-        Description: {communityModel.initialIdea}
+        Description: {communityModel.goal}
       </p>
       <p className="mt-2 text-sm text-gray-500">
         Created: {communityModel.createdAt.toLocaleDateString()}

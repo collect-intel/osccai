@@ -7,18 +7,18 @@ import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 
 export default function NewCommunityModelForm() {
   const [name, setName] = useState("");
-  const [initialIdea, setInitialIdea] = useState("");
+  const [goal, setGoal] = useState("");
   const router = useRouter();
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        const modelId = await createCommunityModel(
+        const modelId = await createCommunityModel({
           name,
-          initialIdea,
-          await getAnonymousId(),
-        );
+          goal,
+          logoUrl: "",
+        });
         router.push(`/community-models/${modelId}`);
       }}
       className="flex flex-col"
@@ -34,9 +34,9 @@ export default function NewCommunityModelForm() {
       />
       <textarea
         placeholder="Initial Idea"
-        value={initialIdea}
-        onChange={(e) => setInitialIdea(e.target.value)}
-        name="initialIdea"
+        value={goal}
+        onChange={(e) => setGoal(e.target.value)}
+        name="goal"
         className="mb-4 p-2 border"
         required
       />
