@@ -6,6 +6,7 @@ import { kmeans } from 'ml-kmeans';
 const prisma = new PrismaClient();
 
 export default async function updateGACScores() {
+  console.log('Starting updateGACScores function', new Date().toISOString());
   try {
     const polls = await fetchPollsWithChanges();
     console.log(`Found ${polls.length} polls with changes`);
@@ -37,8 +38,10 @@ export default async function updateGACScores() {
     console.log('GAC scores updated successfully');
   } catch (error) {
     console.error('Error updating GAC scores:', error);
+    throw error; // Re-throw the error so it can be caught in the API route
   } finally {
     await prisma.$disconnect();
+    console.log('Finished updateGACScores function', new Date().toISOString());
   }
 }
 

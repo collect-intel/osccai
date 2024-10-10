@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/functions/update-gac-scores",
-      "schedule": "* * * * *"
+      "path": "/api/cron/update-gac-scores",
+      "schedule": "0 * * * *"
     }
   ]
 }
