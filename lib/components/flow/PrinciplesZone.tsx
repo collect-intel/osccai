@@ -46,7 +46,10 @@ export default function PrinciplesZone({
   const [principles, setPrinciples] = useState<PrincipleData[]>(() => {
     return Array.isArray(modelData.principles)
       ? modelData.principles.map((p) => ({
-          id: typeof p === "string" ? `principle-${Date.now()}-${Math.random()}` : p.id,
+          id:
+            typeof p === "string"
+              ? `principle-${Date.now()}-${Math.random()}`
+              : p.id,
           text: typeof p === "string" ? p : p.text,
           isLoading: false,
           isEditing: false,
@@ -70,15 +73,17 @@ export default function PrinciplesZone({
     };
     setPrinciples((prevPrinciples) => {
       const newPrinciples = [...prevPrinciples, newPrinciple];
-      
+
       // Immediately update the model data
-      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
-        id,
-        text,
-        gacScore,
-      }));
+      const formattedPrinciples = newPrinciples.map(
+        ({ id, text, gacScore }) => ({
+          id,
+          text,
+          gacScore,
+        }),
+      );
       updateModelData({ principles: formattedPrinciples });
-      
+
       return newPrinciples;
     });
   };
@@ -86,17 +91,19 @@ export default function PrinciplesZone({
   const updatePrinciple = (id: string, value: string) => {
     setPrinciples((prevPrinciples) => {
       const newPrinciples = prevPrinciples.map((p) =>
-        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p
+        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p,
       );
-      
+
       // Immediately update the model data
-      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
-        id,
-        text,
-        gacScore,
-      }));
+      const formattedPrinciples = newPrinciples.map(
+        ({ id, text, gacScore }) => ({
+          id,
+          text,
+          gacScore,
+        }),
+      );
       updateModelData({ principles: formattedPrinciples });
-      
+
       return newPrinciples;
     });
   };
@@ -104,22 +111,24 @@ export default function PrinciplesZone({
   const removePrinciple = (id: string) => {
     setPrinciples((prevPrinciples) => {
       const newPrinciples = prevPrinciples.filter((p) => p.id !== id);
-      
+
       // Immediately update the model data
-      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
-        id,
-        text,
-        gacScore,
-      }));
+      const formattedPrinciples = newPrinciples.map(
+        ({ id, text, gacScore }) => ({
+          id,
+          text,
+          gacScore,
+        }),
+      );
       updateModelData({ principles: formattedPrinciples });
-      
+
       return newPrinciples;
     });
   };
 
   const setIsEditing = (id: string, isEditing: boolean) => {
-    setPrinciples((prevPrinciples) => 
-      prevPrinciples.map((p) => (p.id === id ? { ...p, isEditing } : p))
+    setPrinciples((prevPrinciples) =>
+      prevPrinciples.map((p) => (p.id === id ? { ...p, isEditing } : p)),
     );
   };
 

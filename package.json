@@ -2,6 +2,7 @@
   "name": "osccai",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev:local": "dotenv -e .env.local -- next dev",
     "dev:prod": "dotenv -e .env.production -- next dev",
@@ -17,7 +18,8 @@
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev --name dev",
     "db:migrate:prod": "read -p \"Are you sure you want to migrate the production database? (y/n)\" -n 1 -r && echo && if [[ $REPLY =~ ^[Yy]$ ]]; then dotenv -e .env.production -- prisma migrate deploy; fi",
     "prisma:studio:prod": "dotenv -e .env.production -- prisma studio",
-    "prisma:studio:local": "dotenv -e .env.local -- prisma studio"
+    "prisma:studio:local": "dotenv -e .env.local -- prisma studio",
+    "cron:local": "dotenv -e .env.local -- node --loader ts-node/esm scripts/local-cron.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.54",
@@ -40,7 +42,11 @@
     "formidable": "^3.5.1",
     "framer-motion": "^11.5.4",
     "lodash": "^4.17.21",
+    "ml-kmeans": "^6.0.0",
+    "ml-matrix": "^6.10.4",
+    "ml-pca": "^4.0.0",
     "next": "14.2.5",
+    "Prettier": "npm:prettier@^3.3.3",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.2.9",
@@ -57,6 +63,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
+    "@vercel/node": "^2.0.0",
     "dotenv-cli": "^7.4.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",

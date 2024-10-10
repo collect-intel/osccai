@@ -43,4 +43,3 @@ jobs:
           else
             pnpm lint
           fi
-

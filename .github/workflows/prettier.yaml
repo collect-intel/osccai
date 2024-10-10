@@ -30,4 +30,3 @@ jobs:
           else
             pnpm prettier --check "**/*.{js,ts,tsx}"
           fi
-

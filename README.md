@@ -92,7 +92,14 @@ This setup presumes you have the following installed:
    npm run dev:local
    ```
 
-7. **Access the application:**
+7. **Start the local cron job (in a separate terminal):**
+   This ensures that your local environment mimics the production environment, where the cron job runs alongside the main application to update GAC scores periodically.
+
+   ```bash
+   npm run cron:local
+   ```
+
+8. **Access the application:**
 
    Open your browser and navigate to `http://localhost:3000`
 
@@ -125,6 +132,7 @@ This setup presumes you have the following installed:
 - `npm run db:migrate`: Run Prisma migrations for local development.
 - `npm run db:reset`: Reset the local database (with confirmation prompt).
 - `npm run prisma:studio:local`: Open Prisma Studio to interact with your local database.
+- `npm run cron:local`: Run the local cron job for updating GAC scores.
 
 **Note:** Always use caution when running database reset, seeding, or migration scripts, especially in a production environment.
 
@@ -141,3 +149,5 @@ This setup presumes you have the following installed:
 - **`prisma/`**: Database schema and migrations.
 - **`public/`**: Static assets (images, icons, etc.).
 - **`styles/`**: Global CSS styles and Tailwind CSS configuration.
+- **`functions/`**: Contains serverless functions, including `update-gac-scores.ts` for the cron job.
+- **`scripts/`**: Utility scripts, including `local-cron.ts` for running the cron job locally.
