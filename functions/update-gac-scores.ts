@@ -151,6 +151,7 @@ async function updateStatements(statements: Statement[], gacScores: Map<number, 
         data: {
           gacScore: gacScore,
           lastCalculatedAt: now,
+          isConstitutionable: gacScore >= 0.66,
         },
       });
     }
