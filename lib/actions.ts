@@ -875,7 +875,7 @@ export async function updateCommunityModel(
           ...modelData,
           activeConstitutionId: activeConstitutionId !== undefined ? activeConstitutionId : undefined,
         },
-        include: { polls: true },
+        include: { polls: true, owner: true },
       });
 
       // Update all associated polls
@@ -900,12 +900,27 @@ export async function updateCommunityModel(
             where: { pollId: poll.uid },
           });
 
+          // Ensure the owner has a linked participant
+          let participantId = model.owner.participantId;
+          if (!participantId) {
+            const participant = await prisma.participant.create({
+              data: {
+                clerkUserId: model.owner.clerkUserId,
+              },
+            });
+            participantId = participant.uid;
+            await prisma.communityModelOwner.update({
+              where: { uid: model.owner.uid },
+              data: { participantId: participantId },
+            });
+          }
+
           await prisma.statement.createMany({
             data: principles.map((principle) => ({
               pollId: poll.uid,
               text: principle.text,
               gacScore: principle.gacScore,
-              participantId: model.ownerId, // Assuming the owner creates these statements
+              participantId: participantId,
             })),
           });
         }
