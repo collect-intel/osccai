@@ -3,7 +3,13 @@ import ZoneWrapper from "./ZoneWrapper";
 import Link from "next/link";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 import IconCounter from "@/lib/components/IconCounter";
-import { FaUser, FaCommentAlt, FaShareAlt, FaSync, FaVoteYea } from "react-icons/fa";
+import {
+  FaUser,
+  FaCommentAlt,
+  FaShareAlt,
+  FaSync,
+  FaVoteYea,
+} from "react-icons/fa";
 import { Poll, Statement } from "@prisma/client";
 import Button from "@/lib/components/Button";
 import { fetchPollData } from "@/lib/actions";
@@ -74,20 +80,21 @@ export default function PollZone({
   }, [isActive, fetchUpdatedPollData]);
 
   const totalVotes =
-  localPollData?.statements?.reduce(
-    (sum: number, statement: Statement) =>
-      sum +
-      statement.agreeCount +
-      statement.disagreeCount +
-      statement.passCount,
-    0,
-  ) ?? 0;
+    localPollData?.statements?.reduce(
+      (sum: number, statement: Statement) =>
+        sum +
+        statement.agreeCount +
+        statement.disagreeCount +
+        statement.passCount,
+      0,
+    ) ?? 0;
 
-  const uniqueParticipants = new Set(
-    localPollData?.statements?.flatMap((statement) =>
-      statement.votes?.map((vote) => vote.participantId)
-    )
-  ).size ?? 0;
+  const uniqueParticipants =
+    new Set(
+      localPollData?.statements?.flatMap((statement) =>
+        statement.votes?.map((vote) => vote.participantId),
+      ),
+    ).size ?? 0;
 
   const handleShare = () => {
     if (localPollData?.uid) {
@@ -112,11 +119,12 @@ export default function PollZone({
     }
   };
 
-  const sortedStatements = localPollData?.statements?.sort((a, b) => {
-    const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
-    const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
-    return totalVotesB - totalVotesA; // Sort in descending order
-  }) || [];
+  const sortedStatements =
+    localPollData?.statements?.sort((a, b) => {
+      const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
+      const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
+      return totalVotesB - totalVotesA; // Sort in descending order
+    }) || [];
 
   const statementsToShow = showAllStatements
     ? sortedStatements
@@ -167,7 +175,7 @@ export default function PollZone({
             <IconCounter
               count={totalVotes}
               icon={<FaVoteYea className="text-gray-600" />}
-            />            
+            />
           </div>
           <div className="flex space-x-2">
             {localPollData.uid && (
@@ -192,62 +200,85 @@ export default function PollZone({
         {localPollData.statements && localPollData.statements.length > 0 ? (
           <div className="bg-white p-4 rounded-md shadow mt-4">
             <h3 className="text-xl font-semibold mb-4">
-              {showAllStatements ? "All Statements" : "Most Voted-Upon Statements"}
+              {showAllStatements
+                ? "All Statements"
+                : "Most Voted-Upon Statements"}
             </h3>
             <ul className="space-y-4">
               {statementsToShow.map((statement, index) => {
-                const total = statement.agreeCount + statement.disagreeCount + statement.passCount;
+                const total =
+                  statement.agreeCount +
+                  statement.disagreeCount +
+                  statement.passCount;
                 const agreeRatio = total > 0 ? statement.agreeCount / total : 0;
-                const disagreeRatio = total > 0 ? statement.disagreeCount / total : 0;
+                const disagreeRatio =
+                  total > 0 ? statement.disagreeCount / total : 0;
                 const skipRatio = total > 0 ? statement.passCount / total : 0;
-                
-                const areAllEqual = agreeRatio === disagreeRatio && disagreeRatio === skipRatio;
-                const flexBasis = areAllEqual ? '33.33%' : '0%';
-                
-                const isConstitutionable = isStatementConstitutionable(statement);
-                
+
+                const areAllEqual =
+                  agreeRatio === disagreeRatio && disagreeRatio === skipRatio;
+                const flexBasis = areAllEqual ? "33.33%" : "0%";
+
+                const isConstitutionable =
+                  isStatementConstitutionable(statement);
+
                 return (
-                  <li key={index} className="shadow rounded-lg flex flex-col overflow-hidden">
+                  <li
+                    key={index}
+                    className="shadow rounded-lg flex flex-col overflow-hidden"
+                  >
                     <div className="p-4 bg-soft-gray">
                       <p>{statement.text}</p>
                     </div>
                     <div className="flex text-white text-sm">
                       <div className="flex flex-grow">
-                        <div 
-                          className="flex bg-agree-green" 
-                          style={{ 
-                            flexGrow: agreeRatio, 
+                        <div
+                          className="flex bg-agree-green"
+                          style={{
+                            flexGrow: agreeRatio,
                             flexBasis: flexBasis,
-                            minWidth: areAllEqual ? 'auto' : '60px'
+                            minWidth: areAllEqual ? "auto" : "60px",
                           }}
                         >
-                          <span className="py-2 px-4 whitespace-nowrap">Agree: {statement.agreeCount}</span>
+                          <span className="py-2 px-4 whitespace-nowrap">
+                            Agree: {statement.agreeCount}
+                          </span>
                         </div>
-                        <div 
-                          className="flex bg-disagree-red" 
-                          style={{ 
-                            flexGrow: disagreeRatio, 
+                        <div
+                          className="flex bg-disagree-red"
+                          style={{
+                            flexGrow: disagreeRatio,
                             flexBasis: flexBasis,
-                            minWidth: areAllEqual ? 'auto' : '60px'
+                            minWidth: areAllEqual ? "auto" : "60px",
                           }}
                         >
-                          <span className="py-2 px-4 whitespace-nowrap">Disagree: {statement.disagreeCount}</span>
+                          <span className="py-2 px-4 whitespace-nowrap">
+                            Disagree: {statement.disagreeCount}
+                          </span>
                         </div>
-                        <div 
-                          className="flex bg-skip-amber" 
-                          style={{ 
-                            flexGrow: skipRatio, 
+                        <div
+                          className="flex bg-skip-amber"
+                          style={{
+                            flexGrow: skipRatio,
                             flexBasis: flexBasis,
-                            minWidth: areAllEqual ? 'auto' : '60px'
+                            minWidth: areAllEqual ? "auto" : "60px",
                           }}
                         >
-                          <span className="py-2 px-4 whitespace-nowrap">Skip: {statement.passCount}</span>
+                          <span className="py-2 px-4 whitespace-nowrap">
+                            Skip: {statement.passCount}
+                          </span>
                         </div>
                       </div>
-                      <div className={`w-1/4 py-2 px-4 text-center ${
-                        isConstitutionable ? 'bg-slate-blue' : 'bg-medium-gray'
-                      }`}>
-                        {isConstitutionable ? 'Constitutionable' : 'Not Constitutionable'}
+                      <div
+                        className={`w-1/4 py-2 px-4 text-center ${
+                          isConstitutionable
+                            ? "bg-slate-blue"
+                            : "bg-medium-gray"
+                        }`}
+                      >
+                        {isConstitutionable
+                          ? "Constitutionable"
+                          : "Not Constitutionable"}
                       </div>
                     </div>
                   </li>
@@ -260,7 +291,9 @@ export default function PollZone({
                 variant="secondary"
                 className="mt-4"
               >
-                {showAllStatements ? "Show Top 5 Most Voted-Upon Statements" : "Show All Statements"}
+                {showAllStatements
+                  ? "Show Top 5 Most Voted-Upon Statements"
+                  : "Show All Statements"}
               </Button>
             )}
           </div>
@@ -291,7 +324,8 @@ export default function PollZone({
       <div className="flex">
         <div className="w-1/3 pr-4">
           <p className="text-gray-600">
-            View and manage your community poll results here. Results update automatically every 30 seconds.
+            View and manage your community poll results here. Results update
+            automatically every 30 seconds.
           </p>
         </div>
         <div className="w-2/3 space-y-4">

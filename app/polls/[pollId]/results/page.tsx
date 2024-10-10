@@ -38,13 +38,13 @@ export default async function Page({ params }: { params: { pollId: string } }) {
     (sum, statement) => sum + statement.votes.length,
     0,
   );
-  
+
   const uniqueParticipants = new Set(
     poll.statements.flatMap((statement) =>
-      statement.votes.map((vote) => vote.participantId)
-    )
+      statement.votes.map((vote) => vote.participantId),
+    ),
   ).size;
-  
+
   return (
     <div className="flex flex-col">
       <ResultsControls poll={poll} />

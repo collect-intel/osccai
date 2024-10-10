@@ -18,7 +18,8 @@ export default async function PollCard({ poll }: { poll: Poll }) {
     where: { statementId: { in: statements.map(({ uid }) => uid) } },
   });
 
-  const participantCount = new Set(votes.map(vote => vote.participantId)).size;
+  const participantCount = new Set(votes.map((vote) => vote.participantId))
+    .size;
 
   function StatusIndicator({
     isPublished,
@@ -63,7 +64,10 @@ export default async function PollCard({ poll }: { poll: Poll }) {
         <div className="flex gap-3">
           <IconCounter count={participantCount} icon={<ParticipantIcon />} />
           <IconCounter count={statements.length} icon={<StatementIcon />} />
-          <IconCounter count={votes.length} icon={<VoteIcon className="fill-gray" />} />
+          <IconCounter
+            count={votes.length}
+            icon={<VoteIcon className="fill-gray" />}
+          />
         </div>
         {isUserCreator && <PollCardControls poll={poll} />}
       </div>

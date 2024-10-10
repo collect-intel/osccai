@@ -66,7 +66,11 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
     // redirect(`${pollPath}/create`);
   }
 
-  const participantCount = new Set(poll.statements.flatMap(statement => statement.votes.map(vote => vote.participantId))).size;
+  const participantCount = new Set(
+    poll.statements.flatMap((statement) =>
+      statement.votes.map((vote) => vote.participantId),
+    ),
+  ).size;
 
   const voteCount = poll.statements.reduce(
     (acc, statement) => acc + statement.votes.length,

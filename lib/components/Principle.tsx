@@ -27,7 +27,7 @@ const Principle: React.FC<PrincipleProps> = ({
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   };
@@ -41,9 +41,9 @@ const Principle: React.FC<PrincipleProps> = ({
   }, [text]);
 
   useEffect(() => {
-    window.addEventListener('resize', adjustTextareaHeight);
+    window.addEventListener("resize", adjustTextareaHeight);
     return () => {
-      window.removeEventListener('resize', adjustTextareaHeight);
+      window.removeEventListener("resize", adjustTextareaHeight);
     };
   }, []);
 
@@ -51,7 +51,10 @@ const Principle: React.FC<PrincipleProps> = ({
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
       // Move cursor to the end of the text
-      textareaRef.current.setSelectionRange(editedText.length, editedText.length);
+      textareaRef.current.setSelectionRange(
+        editedText.length,
+        editedText.length,
+      );
     }
   }, [isEditing, editedText.length]);
 
@@ -108,7 +111,9 @@ const Principle: React.FC<PrincipleProps> = ({
       {!isLoading && (
         <div className="flex items-center space-x-2 ml-2">
           {gacScore !== undefined && (
-            <span className="text-sm text-gray-500">Score: {Number(gacScore.toFixed(2))}</span>
+            <span className="text-sm text-gray-500">
+              Score: {Number(gacScore.toFixed(2))}
+            </span>
           )}
           <button
             onClick={() => setShowDeleteModal(true)}
