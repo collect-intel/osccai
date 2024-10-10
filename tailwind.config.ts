@@ -23,10 +23,10 @@ const config: Config = {
         peach: "#F3CE99",
         "light-beige": "#E3E3D6",
         danger: "#e53e3e",
-        "agree-green": "#4CAF50",    // Color for agree
-        "disagree-red": "#F44336",   // Color for disagree
-        "skip-amber": "#FFA000",     // New amber color for skip
-        "slate-blue": "#475569",     // Color for constitutionable
+        "agree-green": "#4CAF50", // Color for agree
+        "disagree-red": "#F44336", // Color for disagree
+        "skip-amber": "#FFA000", // New amber color for skip
+        "slate-blue": "#475569", // Color for constitutionable
       },
       buttons: {
         primary: "bg-blue-500 text-white hover:bg-blue-600",

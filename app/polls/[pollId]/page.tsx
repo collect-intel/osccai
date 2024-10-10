@@ -45,9 +45,5 @@ export default function PollPageWrapper({
 
   if (!poll) return <div>Loading...</div>;
 
-  return <PollPage
-    poll={poll}
-    isLoggedIn={isLoggedIn}
-    userVotes={userVotes}
-  />;
+  return <PollPage poll={poll} isLoggedIn={isLoggedIn} userVotes={userVotes} />;
 }

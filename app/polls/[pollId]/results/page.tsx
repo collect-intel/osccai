@@ -5,6 +5,7 @@ import PageTitle from "@/lib/components/PageTitle";
 import IconCounter from "@/lib/components/IconCounter";
 import ParticipantIcon from "@/lib/components/icons/ParticipantIcon";
 import StatementIcon from "@/lib/components/icons/StatementIcon";
+import VoteIcon from "@/lib/components/icons/VoteIcon";
 import { isPollOwner } from "@/lib/actions";
 import { pollUrl } from "@/lib/links";
 import ResultsControls from "@/lib/components/ResultsControls";
@@ -38,18 +39,28 @@ export default async function Page({ params }: { params: { pollId: string } }) {
     0,
   );
 
+  const uniqueParticipants = new Set(
+    poll.statements.flatMap((statement) =>
+      statement.votes.map((vote) => vote.participantId),
+    ),
+  ).size;
+
   return (
     <div className="flex flex-col">
       <ResultsControls poll={poll} />
       <PageTitle title={poll.title} />
       <div className="flex gap-3 my-4">
         <IconCounter
-          count={totalVotes}
+          count={uniqueParticipants}
           icon={<ParticipantIcon className="fill-none stroke-gray" />}
         />
         <IconCounter
           count={poll.statements.length}
           icon={<StatementIcon className="fill-none stroke-gray" />}
+        />
+        <IconCounter
+          count={totalVotes}
+          icon={<VoteIcon className="fill-gray" />}
         />
       </div>
       <div className="mt-6">

@@ -351,7 +351,7 @@ export default function CommunityModelFlow({
             </div>
             <div ref={zoneRefs.poll} id="poll">
               <PollZone
-                key={modelData?.polls?.[0]?.uid || 'no-poll'}
+                key={modelData?.polls?.[0]?.uid || "no-poll"}
                 isActive={activeZones.includes("poll")}
                 onComplete={() =>
                   !isExistingModel &&
@@ -383,13 +383,20 @@ export default function CommunityModelFlow({
                         if (!prevData) return null;
                         return {
                           ...prevData,
-                          polls: [fetchedPollData, ...(prevData.polls?.slice(1) || [])],
+                          polls: [
+                            fetchedPollData,
+                            ...(prevData.polls?.slice(1) || []),
+                          ],
                         } as ExtendedAboutZoneData;
                       });
                       setSavingStatus((prev) => ({ ...prev, poll: "saved" }));
                       setTimeout(
-                        () => setSavingStatus((prev) => ({ ...prev, poll: "idle" })),
-                        2000
+                        () =>
+                          setSavingStatus((prev) => ({
+                            ...prev,
+                            poll: "idle",
+                          })),
+                        2000,
                       );
                     } catch (error) {
                       console.error("Error updating poll:", error);

@@ -268,10 +268,13 @@ export async function getOrCreateParticipant(
         participant = await prisma.participant.create({
           data: { anonymousId },
         });
-      } catch (error:any) {
+      } catch (error: any) {
         // If the creation fails due to a unique constraint violation,
         // try to fetch the existing participant again
-        if (error?.code === 'P2002' && error?.meta?.target?.includes('anonymousId')) {
+        if (
+          error?.code === "P2002" &&
+          error?.meta?.target?.includes("anonymousId")
+        ) {
           participant = await prisma.participant.findUnique({
             where: { anonymousId },
           });
@@ -291,14 +294,14 @@ export async function getOrCreateParticipant(
 async function retryOperation<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
-  delay: number = 1000
+  delay: number = 1000,
 ): Promise<T> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await operation();
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   throw new Error("Max retries reached");
@@ -340,10 +343,10 @@ export async function submitVote(
     } else {
       // Create a new vote
       try {
-        await retryOperation(() => 
+        await retryOperation(() =>
           prisma.vote.create({
             data: { statementId, voteValue, participantId },
-          })
+          }),
         );
 
         // Increment the new vote count
@@ -365,16 +368,19 @@ export async function submitVote(
 async function updateVoteCounts(
   statementId: string,
   previousVote: VoteValue,
-  newVote: VoteValue
+  newVote: VoteValue,
 ) {
   const updateData: any = {};
 
-  if (previousVote === VoteValue.AGREE) updateData.agreeCount = { decrement: 1 };
-  if (previousVote === VoteValue.DISAGREE) updateData.disagreeCount = { decrement: 1 };
+  if (previousVote === VoteValue.AGREE)
+    updateData.agreeCount = { decrement: 1 };
+  if (previousVote === VoteValue.DISAGREE)
+    updateData.disagreeCount = { decrement: 1 };
   if (previousVote === VoteValue.PASS) updateData.passCount = { decrement: 1 };
 
   if (newVote === VoteValue.AGREE) updateData.agreeCount = { increment: 1 };
-  if (newVote === VoteValue.DISAGREE) updateData.disagreeCount = { increment: 1 };
+  if (newVote === VoteValue.DISAGREE)
+    updateData.disagreeCount = { increment: 1 };
   if (newVote === VoteValue.PASS) updateData.passCount = { increment: 1 };
 
   await prisma.statement.update({
@@ -383,14 +389,12 @@ async function updateVoteCounts(
   });
 }
 
-async function incrementVoteCount(
-  statementId: string,
-  voteValue: VoteValue
-) {
+async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
   const updateData: any = {};
 
   if (voteValue === VoteValue.AGREE) updateData.agreeCount = { increment: 1 };
-  if (voteValue === VoteValue.DISAGREE) updateData.disagreeCount = { increment: 1 };
+  if (voteValue === VoteValue.DISAGREE)
+    updateData.disagreeCount = { increment: 1 };
   if (voteValue === VoteValue.PASS) updateData.passCount = { increment: 1 };
 
   await prisma.statement.update({
@@ -804,7 +808,7 @@ export async function updatePoll(
         ...(statements && {
           statements: {
             upsert: statements.map((statement) => ({
-              where: { uid: statement.uid || 'new' },
+              where: { uid: statement.uid || "new" },
               update: { text: statement.text },
               create: {
                 text: statement.text ?? "",
@@ -826,11 +830,12 @@ export async function updatePoll(
         title: pollDataWithoutStatements.title || `Poll for ${modelId}`,
         published: pollDataWithoutStatements.published ?? false,
         statements: {
-          create: statements?.map((statement) => ({
-            text: statement.text ?? "",
-            participantId: statement.participantId ?? "",
-            status: "PENDING",
-          })) || [],
+          create:
+            statements?.map((statement) => ({
+              text: statement.text ?? "",
+              participantId: statement.participantId ?? "",
+              status: "PENDING",
+            })) || [],
         },
       },
       include: { statements: true },
@@ -864,7 +869,14 @@ export async function updateCommunityModel(
     activeConstitutionId?: string | null;
   },
 ): Promise<CommunityModel & { polls: Poll[] }> {
-  const { principles, requireAuth, allowContributions, constitutions, activeConstitutionId, ...modelData } = data;
+  const {
+    principles,
+    requireAuth,
+    allowContributions,
+    constitutions,
+    activeConstitutionId,
+    ...modelData
+  } = data;
 
   try {
     const updatedModel = await prisma.$transaction(async (prisma) => {
@@ -873,7 +885,10 @@ export async function updateCommunityModel(
         where: { uid: modelId },
         data: {
           ...modelData,
-          activeConstitutionId: activeConstitutionId !== undefined ? activeConstitutionId : undefined,
+          activeConstitutionId:
+            activeConstitutionId !== undefined
+              ? activeConstitutionId
+              : undefined,
         },
         include: { polls: true, owner: true },
       });
@@ -884,7 +899,9 @@ export async function updateCommunityModel(
           where: { communityModelId: modelId },
           data: {
             ...(requireAuth !== undefined && { requireAuth }),
-            ...(allowContributions !== undefined && { allowParticipantStatements: allowContributions }),
+            ...(allowContributions !== undefined && {
+              allowParticipantStatements: allowContributions,
+            }),
           },
         });
       }
@@ -954,7 +971,7 @@ export async function updateCommunityModel(
       // Fetch the updated model with polls and constitutions
       return prisma.communityModel.findUnique({
         where: { uid: modelId },
-        include: { 
+        include: {
           polls: { include: { statements: true } },
           constitutions: true,
         },
@@ -1002,18 +1019,21 @@ export async function getCommunityModel(modelId: string): Promise<
 
   return {
     ...model,
-    principles: firstPoll?.statements.map(s => ({
-      id: s.uid,
-      text: s.text,
-      gacScore: s.gacScore || undefined,
-    })) || [],
+    principles:
+      firstPoll?.statements.map((s) => ({
+        id: s.uid,
+        text: s.text,
+        gacScore: s.gacScore || undefined,
+      })) || [],
     requireAuth: firstPoll?.requireAuth || false,
     allowContributions: firstPoll?.allowParticipantStatements || false,
     constitutions: model.constitutions,
   };
 }
 
-export async function fetchPollData(modelId: string): Promise<Poll & { statements: Statement[] }> {
+export async function fetchPollData(
+  modelId: string,
+): Promise<Poll & { statements: Statement[] }> {
   const poll = await prisma.poll.findFirst({
     where: {
       communityModelId: modelId,
@@ -1026,7 +1046,7 @@ export async function fetchPollData(modelId: string): Promise<Poll & { statement
           votes: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc",
         },
       },
     },
@@ -1037,15 +1057,19 @@ export async function fetchPollData(modelId: string): Promise<Poll & { statement
   }
 
   // Calculate isConstitutionable for each statement
-  const statementsWithConstitutionable = poll.statements.map(statement => {
+  const statementsWithConstitutionable = poll.statements.map((statement) => {
     const totalVotes = statement.votes.length;
-    const agreeVotes = statement.votes.filter(vote => vote.voteValue === 'AGREE').length;
-    const agreePercentage = totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
-    
+    const agreeVotes = statement.votes.filter(
+      (vote) => vote.voteValue === "AGREE",
+    ).length;
+    const agreePercentage =
+      totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
+
     return {
       ...statement,
       // If isConstitutionable is not explicitly set, use the agreePercentage threshold
-      isConstitutionable: statement.isConstitutionable ?? agreePercentage >= 66.67,
+      isConstitutionable:
+        statement.isConstitutionable ?? agreePercentage >= 66.67,
     };
   });
 

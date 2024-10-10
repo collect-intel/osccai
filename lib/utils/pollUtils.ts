@@ -1,6 +1,8 @@
 import { Statement, Vote, VoteValue } from "@prisma/client";
 
-export function isStatementConstitutionable(statement: Statement & { votes?: Vote[] }): boolean {
+export function isStatementConstitutionable(
+  statement: Statement & { votes?: Vote[] },
+): boolean {
   if (statement.isConstitutionable === true) {
     return statement.isConstitutionable;
   } else {
@@ -8,8 +10,11 @@ export function isStatementConstitutionable(statement: Statement & { votes?: Vot
     // MVP-only! (TODO: remove)
     const votes = statement.votes || [];
     const totalVotes = votes.length;
-    const agreeVotes = votes.filter(vote => vote.voteValue === VoteValue.AGREE).length;
-    const agreePercentage = totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
+    const agreeVotes = votes.filter(
+      (vote) => vote.voteValue === VoteValue.AGREE,
+    ).length;
+    const agreePercentage =
+      totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
     return agreePercentage >= 66.67;
   }
 }

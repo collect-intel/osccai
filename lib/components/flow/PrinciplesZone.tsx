@@ -47,7 +47,10 @@ export default function PrinciplesZone({
   const [principles, setPrinciples] = useState<PrincipleData[]>(() => {
     return Array.isArray(modelData.principles)
       ? modelData.principles.map((p) => ({
-          id: typeof p === "string" ? `principle-${Date.now()}-${Math.random()}` : p.id,
+          id:
+            typeof p === "string"
+              ? `principle-${Date.now()}-${Math.random()}`
+              : p.id,
           text: typeof p === "string" ? p : p.text,
           isLoading: false,
           isEditing: false,
@@ -56,7 +59,9 @@ export default function PrinciplesZone({
       : [];
   });
   const [requireAuth, setRequireAuth] = useState(modelData.requireAuth);
-  const [allowContributions, setAllowContributions] = useState(modelData.allowContributions);
+  const [allowContributions, setAllowContributions] = useState(
+    modelData.allowContributions,
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGeneratedPrinciples, setHasGeneratedPrinciples] = useState(false);
 
@@ -64,7 +69,7 @@ export default function PrinciplesZone({
     debounce((data: Partial<PrinciplesZoneProps["modelData"]>) => {
       updateModelData(data);
     }, 500),
-    [updateModelData]
+    [updateModelData],
   );
 
   const addPrinciple = () => {
@@ -80,17 +85,19 @@ export default function PrinciplesZone({
   const updatePrinciple = (id: string, value: string) => {
     setPrinciples((prevPrinciples) => {
       const newPrinciples = prevPrinciples.map((p) =>
-        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p
+        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p,
       );
-      
-      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
-        id,
-        text,
-        gacScore,
-      }));
-      
+
+      const formattedPrinciples = newPrinciples.map(
+        ({ id, text, gacScore }) => ({
+          id,
+          text,
+          gacScore,
+        }),
+      );
+
       debouncedUpdateModelData({ principles: formattedPrinciples });
-      
+
       return newPrinciples;
     });
   };
@@ -98,28 +105,30 @@ export default function PrinciplesZone({
   const removePrinciple = (id: string) => {
     setPrinciples((prevPrinciples) => {
       const newPrinciples = prevPrinciples.filter((p) => p.id !== id);
-      
-      const formattedPrinciples = newPrinciples.map(({ id, text, gacScore }) => ({
-        id,
-        text,
-        gacScore,
-      }));
-      
+
+      const formattedPrinciples = newPrinciples.map(
+        ({ id, text, gacScore }) => ({
+          id,
+          text,
+          gacScore,
+        }),
+      );
+
       debouncedUpdateModelData({ principles: formattedPrinciples });
-      
+
       return newPrinciples;
     });
   };
 
   const setIsEditing = (id: string, isEditing: boolean) => {
     setPrinciples((prevPrinciples) =>
-      prevPrinciples.map((p) => (p.id === id ? { ...p, isEditing } : p))
+      prevPrinciples.map((p) => (p.id === id ? { ...p, isEditing } : p)),
     );
   };
 
   const handleToggleChange = (
     field: "requireAuth" | "allowContributions",
-    value: boolean
+    value: boolean,
   ) => {
     if (field === "requireAuth") {
       setRequireAuth(value);
@@ -137,7 +146,7 @@ export default function PrinciplesZone({
     try {
       const generatedPrinciples = await generateStatementsFromIdea(
         modelData.goal,
-        modelData.bio
+        modelData.bio,
       );
 
       const newPrinciples = generatedPrinciples.map((text) => ({
@@ -146,19 +155,19 @@ export default function PrinciplesZone({
         isLoading: false,
         isEditing: false,
       }));
-      
+
       setPrinciples((prevPrinciples) => {
         const updatedPrinciples = [...prevPrinciples, ...newPrinciples];
-        
+
         const formattedPrinciples = updatedPrinciples.map(({ id, text }) => ({
           id,
-          text
+          text,
         }));
         debouncedUpdateModelData({ principles: formattedPrinciples });
-        
+
         return updatedPrinciples;
       });
-      
+
       setHasGeneratedPrinciples(true);
     } catch (error) {
       console.error("Error generating principles:", error);
