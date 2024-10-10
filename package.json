@@ -49,7 +49,10 @@
     "slugify": "^1.6.6",
     "uuid": "^10.0.0",
     "xmllm": "^0.0.13",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "ml-matrix": "^6.10.4",
+    "ml-pca": "^4.0.0",
+    "ml-kmeans": "^6.0.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.9",
@@ -65,7 +68,8 @@
     "prisma": "^5.19.1",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@vercel/node": "^2.0.0"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
