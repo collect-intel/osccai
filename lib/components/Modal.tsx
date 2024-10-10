@@ -4,16 +4,15 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  minHeight?: number; // Add this line
+  minHeight?: number;
 }
 
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   children,
-  minHeight = 400,
+  minHeight,
 }) => {
-  // Add minHeight parameter
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,8 +49,8 @@ const Modal: React.FC<ModalProps> = ({
         className="bg-white rounded-lg p-8 max-w-4xl w-full overflow-auto relative"
         style={{
           maxHeight: "90vh",
-          minHeight: `min(${minHeight}px, 90vh)`, // Add this line
-          height: `min(${minHeight}px, 90vh)`, // Add this line
+          // Only apply minHeight if it's provided
+          ...(minHeight && { minHeight: `${minHeight}px` }),
         }}
       >
         <button

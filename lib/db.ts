@@ -1,3 +1,4 @@
+
 import { PrismaClient, VoteValue } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
@@ -6,6 +7,13 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
+// Middleware has been commented out and vote counting logic
+// moved to submitVote() in actions.ts. This change was made
+// to simplify the voting process and resolve issues with
+// multi-account voting. The direct approach in submitVote()
+// provides better control and easier debugging, for now. -JP
+
+/*
 // middleware to update statement vote counts on vote creation
 prisma.$use(async (params, next) => {
   if (params.model === "Vote") {
@@ -90,6 +98,7 @@ prisma.$use(async (params, next) => {
   }
   return next(params);
 });
+*/
 
 // Prevent hot reloading from creating new instances of prisma client
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

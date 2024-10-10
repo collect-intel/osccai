@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ZoneWrapper from "./ZoneWrapper";
 import Link from "next/link";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 import IconCounter from "@/lib/components/IconCounter";
-import { FaUser, FaCommentAlt, FaShareAlt } from "react-icons/fa";
-import { Poll, Statement } from "@prisma/client"; // Import these types
+import { FaUser, FaCommentAlt, FaShareAlt, FaSync } from "react-icons/fa";
+import { Poll, Statement } from "@prisma/client";
 import Button from "@/lib/components/Button";
+import { fetchPollData } from "@/lib/actions";
+import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 
 interface PollZoneProps {
   isActive: boolean;
@@ -15,6 +17,8 @@ interface PollZoneProps {
     name: string;
     bio: string;
     principles: string[];
+    requireAuth: boolean;
+    allowContributions: boolean;
   };
   pollData?: Poll & { statements: Statement[] }; // Update this type
   isExistingModel: boolean;
@@ -35,22 +39,42 @@ export default function PollZone({
   onUpdate,
 }: PollZoneProps) {
   const [isCopied, setIsCopied] = useState(false);
+  const [localPollData, setLocalPollData] = useState(pollData);
+  const [showAllStatements, setShowAllStatements] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    if (!pollData && modelId) {
+    if (pollData) {
+      setLocalPollData(pollData);
+    } else if (modelId && !localPollData) {
       handleCreatePoll();
     }
   }, [pollData, modelId]);
 
-  useEffect(() => {
-    if (pollData) {
-      console.log("Poll data updated:", pollData);
-      // You can add any additional logic here to update the component's state or trigger re-renders
+  const fetchUpdatedPollData = useCallback(async () => {
+    if (modelId) {
+      setIsRefreshing(true);
+      try {
+        // Implement this function in your actions file
+        const updatedPollData = await fetchPollData(modelId);
+        setLocalPollData(updatedPollData);
+      } catch (error) {
+        console.error("Error fetching updated poll data:", error);
+      } finally {
+        setIsRefreshing(false);
+      }
     }
-  }, [pollData]);
+  }, [modelId]);
+
+  useEffect(() => {
+    if (isActive) {
+      const intervalId = setInterval(fetchUpdatedPollData, 30000); // 30 seconds
+      return () => clearInterval(intervalId);
+    }
+  }, [isActive, fetchUpdatedPollData]);
 
   const totalVotes =
-    pollData?.statements?.reduce(
+    localPollData?.statements?.reduce(
       (sum: number, statement: Statement) =>
         sum +
         statement.agreeCount +
@@ -60,30 +84,11 @@ export default function PollZone({
     ) ?? 0;
 
   const handleShare = () => {
-    if (pollData?.uid) {
-      const pollUrl = `${window.location.origin}/polls/${pollData.uid}`;
+    if (localPollData?.uid) {
+      const pollUrl = `${window.location.origin}/polls/${localPollData.uid}`;
       copyToClipboard(pollUrl);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
-    }
-  };
-
-  const handlePollUpdate = async (updatedData: Partial<Poll>) => {
-    if (!pollData) {
-      // If there's no existing poll, we're creating a new one
-      await onUpdate({
-        ...updatedData,
-        title: updatedData.title || `Poll for ${modelData.name}`,
-        description:
-          updatedData.description ||
-          `This poll is for the community model: ${modelData.name}`,
-      });
-    } else {
-      // If there's an existing poll, we're updating it
-      await onUpdate({
-        ...pollData,
-        ...updatedData,
-      });
     }
   };
 
@@ -92,27 +97,30 @@ export default function PollZone({
       title: `Poll for ${modelData.name}`,
       description: `This poll is for the community model: ${modelData.name}`,
       published: false,
-      requireAuth: true,
-      allowParticipantStatements: true,
+      requireAuth: modelData.requireAuth,
+      allowParticipantStatements: modelData.allowContributions,
     };
-    await onUpdate(newPoll);
-  };
-
-  const handleViewPoll = () => {
-    // This function is no longer needed as we'll use a Link component
-  };
-
-  const handleViewResults = () => {
-    if (pollData?.uid) {
-      window.open(`/community-models/flow/${modelId}#poll`, "_blank");
+    const createdPoll = await onUpdate(newPoll);
+    if (createdPoll !== undefined) {
+      setLocalPollData(createdPoll);
     }
   };
 
+  const sortedStatements = localPollData?.statements?.sort((a, b) => {
+    const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
+    const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
+    return totalVotesB - totalVotesA; // Sort in descending order
+  }) || [];
+
+  const statementsToShow = showAllStatements
+    ? sortedStatements
+    : sortedStatements.slice(0, 5);
+
   const renderPollContent = () => {
-    if (!pollData) {
+    if (!localPollData?.uid) {
       return (
         <div
-          className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4"
+          className="bg-yellow border-l-4 border-teal text-charcoal p-4"
           role="alert"
         >
           <p className="font-bold">No Poll Available</p>
@@ -130,21 +138,31 @@ export default function PollZone({
     return (
       <>
         <div className="bg-light-blue p-4 rounded-md">
-          <p className="font-semibold mb-2">Poll: {pollData.title}</p>
+          <div className="flex justify-between items-center mb-2">
+            <p className="font-semibold">Poll: {localPollData.title}</p>
+            <Button
+              onClick={fetchUpdatedPollData}
+              variant="secondary"
+              icon={<FaSync className={isRefreshing ? "animate-spin" : ""} />}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? "Refreshing..." : "Refresh Poll Data"}
+            </Button>
+          </div>
           <div className="flex gap-3 mb-4">
             <IconCounter
               count={totalVotes}
               icon={<FaUser className="text-gray-600" />}
             />
             <IconCounter
-              count={pollData.statements?.length || 0}
+              count={localPollData.statements?.length || 0}
               icon={<FaCommentAlt className="text-gray-600" />}
             />
           </div>
           <div className="flex space-x-2">
-            {pollData.uid && (
+            {localPollData.uid && (
               <Link
-                href={`/polls/${pollData.uid}`}
+                href={`/polls/${localPollData.uid}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 passHref
@@ -161,32 +179,84 @@ export default function PollZone({
             </Button>
           </div>
         </div>
-        {pollData.statements && pollData.statements.length > 0 ? (
+        {localPollData.statements && localPollData.statements.length > 0 ? (
           <div className="bg-white p-4 rounded-md shadow mt-4">
-            <h3 className="text-xl font-semibold mb-4">Top Statements</h3>
+            <h3 className="text-xl font-semibold mb-4">
+              {showAllStatements ? "All Statements" : "Most Voted-Upon Statements"}
+            </h3>
             <ul className="space-y-4">
-              {pollData.statements.slice(0, 5).map((statement, index) => (
-                <li key={index} className="border p-4 rounded-lg">
-                  <p className="mb-2">{statement.text}</p>
-                  <div className="flex gap-4 text-sm text-gray-600">
-                    <span>Agree: {statement.agreeCount}</span>
-                    <span>Disagree: {statement.disagreeCount}</span>
-                    <span>Pass: {statement.passCount}</span>
-                    <span>
-                      GAC Score: {statement.gacScore?.toFixed(2) ?? "N/A"}
-                    </span>
-                    <span>
-                      Constitutionable:{" "}
-                      {statement.isConstitutionable ? "Yes" : "No"}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {statementsToShow.map((statement, index) => {
+                const total = statement.agreeCount + statement.disagreeCount + statement.passCount;
+                const agreeRatio = total > 0 ? statement.agreeCount / total : 0;
+                const disagreeRatio = total > 0 ? statement.disagreeCount / total : 0;
+                const skipRatio = total > 0 ? statement.passCount / total : 0;
+                
+                const areAllEqual = agreeRatio === disagreeRatio && disagreeRatio === skipRatio;
+                const flexBasis = areAllEqual ? '33.33%' : '0%';
+                
+                const isConstitutionable = isStatementConstitutionable(statement);
+                
+                return (
+                  <li key={index} className="shadow rounded-lg flex flex-col overflow-hidden">
+                    <div className="p-4 bg-soft-gray">
+                      <p>{statement.text}</p>
+                    </div>
+                    <div className="flex text-white text-sm">
+                      <div className="flex flex-grow">
+                        <div 
+                          className="flex bg-agree-green" 
+                          style={{ 
+                            flexGrow: agreeRatio, 
+                            flexBasis: flexBasis,
+                            minWidth: areAllEqual ? 'auto' : '60px'
+                          }}
+                        >
+                          <span className="py-2 px-4 whitespace-nowrap">Agree: {statement.agreeCount}</span>
+                        </div>
+                        <div 
+                          className="flex bg-disagree-red" 
+                          style={{ 
+                            flexGrow: disagreeRatio, 
+                            flexBasis: flexBasis,
+                            minWidth: areAllEqual ? 'auto' : '60px'
+                          }}
+                        >
+                          <span className="py-2 px-4 whitespace-nowrap">Disagree: {statement.disagreeCount}</span>
+                        </div>
+                        <div 
+                          className="flex bg-skip-amber" 
+                          style={{ 
+                            flexGrow: skipRatio, 
+                            flexBasis: flexBasis,
+                            minWidth: areAllEqual ? 'auto' : '60px'
+                          }}
+                        >
+                          <span className="py-2 px-4 whitespace-nowrap">Skip: {statement.passCount}</span>
+                        </div>
+                      </div>
+                      <div className={`w-1/4 py-2 px-4 text-center ${
+                        isConstitutionable ? 'bg-slate-blue' : 'bg-medium-gray'
+                      }`}>
+                        {isConstitutionable ? 'Constitutionable' : 'Not Constitutionable'}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
+            {localPollData.statements.length > 5 && (
+              <Button
+                onClick={() => setShowAllStatements(!showAllStatements)}
+                variant="secondary"
+                className="mt-4"
+              >
+                {showAllStatements ? "Show Top 5 Most Voted-Upon Statements" : "Show All Statements"}
+              </Button>
+            )}
           </div>
         ) : (
           <div
-            className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mt-4"
+            className="bg-light-blue border-l-4 border-teal text-charcoal p-4 mt-4"
             role="alert"
           >
             <p className="font-bold">Poll Created</p>
@@ -211,12 +281,12 @@ export default function PollZone({
       <div className="flex">
         <div className="w-1/3 pr-4">
           <p className="text-gray-600">
-            View and manage your community poll results here.
+            View and manage your community poll results here. Results update automatically every 30 seconds.
           </p>
         </div>
         <div className="w-2/3 space-y-4">
           {renderPollContent()}
-          {!isExistingModel && pollData && (
+          {!isExistingModel && localPollData && (
             <Button onClick={onComplete} variant="primary" className="mt-4">
               Next
             </Button>

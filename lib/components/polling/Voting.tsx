@@ -32,7 +32,6 @@ export default function Voting({
   initialVotes: Record<string, VoteValue>;
   allowParticipantStatements: boolean;
 }) {
-  console.log("<Voting> initialVotes", initialVotes);
 
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
@@ -54,6 +53,11 @@ export default function Voting({
       setCurrentStatementIx(firstUnvotedIndex >= 0 ? firstUnvotedIndex : null);
     }
   }, [pollId, canVote, statements, votes]);
+
+  // Ensure that votes state reflects new initialVotes
+  useEffect(() => {
+    setVotes({ ...votes, ...initialVotes });
+  }, [initialVotes]);
 
   const handleVote = async (vote: VoteValue) => {
     if (!canVote || currentStatementIx === null) return;
