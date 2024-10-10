@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     console.error("Error updating GAC scores:", error);
     return NextResponse.json(
       { success: false, message: "Error updating GAC scores" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

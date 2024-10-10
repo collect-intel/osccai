@@ -21,7 +21,7 @@ export default async function updateGACScores() {
       console.log(`Processing poll: ${poll.uid}`);
       const { statements, votes, participants } = await fetchPollData(poll.uid);
       console.log(
-        `Poll data: ${statements.length} statements, ${votes.length} votes, ${participants.length} participants`
+        `Poll data: ${statements.length} statements, ${votes.length} votes, ${participants.length} participants`,
       );
 
       if (
@@ -35,7 +35,7 @@ export default async function updateGACScores() {
 
       const voteMatrix = generateVoteMatrix(statements, votes, participants);
       console.log(
-        `Generated vote matrix: ${voteMatrix.length}x${voteMatrix[0].length}`
+        `Generated vote matrix: ${voteMatrix.length}x${voteMatrix[0].length}`,
       );
 
       if (voteMatrix.length === 0 || voteMatrix[0].length === 0) {
@@ -104,7 +104,7 @@ async function fetchPollData(pollId: string): Promise<{
 function generateVoteMatrix(
   statements: Statement[],
   votes: Vote[],
-  participants: Participant[]
+  participants: Participant[],
 ): number[][] {
   const matrix = Array(participants.length)
     .fill(null)
@@ -131,7 +131,7 @@ function performClustering(voteMatrix: number[][]): number[] {
   const explained = pca.getExplainedVariance();
   const optimalComponents = Math.max(
     1,
-    explained.findIndex((value: number) => value < 0.01) || 2
+    explained.findIndex((value: number) => value < 0.01) || 2,
   );
   console.log(`Optimal PCA components: ${optimalComponents}`);
 
@@ -156,7 +156,7 @@ function performClustering(voteMatrix: number[][]): number[] {
 
 function calculateGACScores(
   voteMatrix: number[][],
-  clusters: number[]
+  clusters: number[],
 ): Map<number, number> {
   const gacScores = new Map<number, number>();
 
@@ -171,7 +171,7 @@ function calculateGACScores(
     const uniqueClusters = Array.from(new Set(clusters));
     for (const cluster of uniqueClusters) {
       const clusterVotes = statementVotes.filter(
-        (_, i) => clusters[i] === cluster
+        (_, i) => clusters[i] === cluster,
       );
       const sumAgrees = clusterVotes.filter((v) => v > 0).length;
       const sumAbsVotes = clusterVotes.filter((v) => v !== 0).length;
@@ -189,7 +189,7 @@ function calculateGACScores(
 
 async function updateStatements(
   statements: Statement[],
-  gacScores: Map<number, number>
+  gacScores: Map<number, number>,
 ) {
   const now = new Date();
 

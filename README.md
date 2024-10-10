@@ -93,7 +93,7 @@ This setup presumes you have the following installed:
    ```
 
 7. **Start the local cron job (in a separate terminal):**
-This ensures that your local environment mimics the production environment, where the cron job runs alongside the main application to update GAC scores periodically.
+   This ensures that your local environment mimics the production environment, where the cron job runs alongside the main application to update GAC scores periodically.
 
    ```bash
    npm run cron:local

@@ -485,14 +485,15 @@ export async function createCommunityModel(
         create: {
           title: `Poll for Community Model: ${data.name}`,
           published: false,
-          statements: data.principles && data.principles.length > 0
-            ? {
-                create: data.principles.map((principle) => ({
-                  text: principle.text,
-                  participantId: owner.participantId!,
-                })),
-              }
-            : undefined,
+          statements:
+            data.principles && data.principles.length > 0
+              ? {
+                  create: data.principles.map((principle) => ({
+                    text: principle.text,
+                    participantId: owner.participantId!,
+                  })),
+                }
+              : undefined,
         },
       },
     },
@@ -773,7 +774,8 @@ export async function updateCommunityModel(
     activeConstitutionId?: string | null;
   },
 ): Promise<CommunityModel & { polls: Poll[] }> {
-  const { principles, constitutions, activeConstitutionId, ...modelData } = data;
+  const { principles, constitutions, activeConstitutionId, ...modelData } =
+    data;
 
   try {
     const currentModel = await prisma.communityModel.findUnique({
@@ -840,7 +842,7 @@ export async function updateCommunityModel(
           },
           include: { statements: true },
         });
-        
+
         // Return the updated model with the updated poll
         return { ...model, polls: [updatedPoll] };
       }
@@ -866,7 +868,10 @@ export async function updateCommunityModel(
       // Fetch the updated model with polls and constitutions
       const updatedModelWithRelations = await prisma.communityModel.findUnique({
         where: { uid: modelId },
-        include: { polls: { include: { statements: true } }, constitutions: true },
+        include: {
+          polls: { include: { statements: true } },
+          constitutions: true,
+        },
       });
 
       return updatedModelWithRelations!;
@@ -923,4 +928,3 @@ export async function getCommunityModel(modelId: string): Promise<
     polls: model.polls, // Add this line
   };
 }
-

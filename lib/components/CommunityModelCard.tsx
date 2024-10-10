@@ -32,7 +32,7 @@ export default function CommunityModelCard({
         <p className="mt-2 flex-grow">
           {model.goal && model.goal.length > 100
             ? `${model.goal.substring(0, 100)}...`
-            : model.goal || 'No goal set'}
+            : model.goal || "No goal set"}
         </p>
         <p className="text-white font-mono mt-4 text-sm">{formattedDate}</p>
       </div>
