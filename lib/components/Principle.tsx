@@ -108,7 +108,7 @@ const Principle: React.FC<PrincipleProps> = ({
       {!isLoading && (
         <div className="flex items-center space-x-2 ml-2">
           {gacScore !== undefined && (
-            <span className="text-sm text-gray-500">Score: {gacScore}</span>
+            <span className="text-sm text-gray-500">Score: {Number(gacScore.toFixed(2))}</span>
           )}
           <button
             onClick={() => setShowDeleteModal(true)}
