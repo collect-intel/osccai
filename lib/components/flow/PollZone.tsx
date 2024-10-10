@@ -3,7 +3,7 @@ import ZoneWrapper from "./ZoneWrapper";
 import Link from "next/link";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 import IconCounter from "@/lib/components/IconCounter";
-import { FaUser, FaCommentAlt, FaShareAlt, FaSync } from "react-icons/fa";
+import { FaUser, FaCommentAlt, FaShareAlt, FaSync, FaVoteYea } from "react-icons/fa";
 import { Poll, Statement } from "@prisma/client";
 import Button from "@/lib/components/Button";
 import { fetchPollData } from "@/lib/actions";
@@ -74,14 +74,20 @@ export default function PollZone({
   }, [isActive, fetchUpdatedPollData]);
 
   const totalVotes =
-    localPollData?.statements?.reduce(
-      (sum: number, statement: Statement) =>
-        sum +
-        statement.agreeCount +
-        statement.disagreeCount +
-        statement.passCount,
-      0,
-    ) ?? 0;
+  localPollData?.statements?.reduce(
+    (sum: number, statement: Statement) =>
+      sum +
+      statement.agreeCount +
+      statement.disagreeCount +
+      statement.passCount,
+    0,
+  ) ?? 0;
+
+  const uniqueParticipants = new Set(
+    localPollData?.statements?.flatMap((statement) =>
+      statement.votes?.map((vote) => vote.participantId)
+    )
+  ).size ?? 0;
 
   const handleShare = () => {
     if (localPollData?.uid) {
@@ -151,13 +157,17 @@ export default function PollZone({
           </div>
           <div className="flex gap-3 mb-4">
             <IconCounter
-              count={totalVotes}
+              count={uniqueParticipants}
               icon={<FaUser className="text-gray-600" />}
             />
             <IconCounter
               count={localPollData.statements?.length || 0}
               icon={<FaCommentAlt className="text-gray-600" />}
             />
+            <IconCounter
+              count={totalVotes}
+              icon={<FaVoteYea className="text-gray-600" />}
+            />            
           </div>
           <div className="flex space-x-2">
             {localPollData.uid && (
