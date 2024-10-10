@@ -154,14 +154,26 @@ export default function PrinciplesZone({
         modelData.goal,
         modelData.bio,
       );
+
       const newPrinciples = generatedPrinciples.map((text) => ({
         id: `generated-${Date.now()}-${Math.random()}`,
         text,
         isLoading: false,
         isEditing: false,
       }));
-      setPrinciples([...principles, ...newPrinciples]);
-      setHasGeneratedPrinciples(true);
+      
+      setPrinciples((prevPrinciples) => {
+        const updatedPrinciples = [...prevPrinciples, ...newPrinciples];
+        
+        const formattedPrinciples = updatedPrinciples.map(({ id, text }) => ({
+          id,
+          text
+        }));
+        updateModelData({ principles: formattedPrinciples });
+        
+        return updatedPrinciples;
+      });
+            setHasGeneratedPrinciples(true);
     } catch (error) {
       console.error("Error generating principles:", error);
     } finally {

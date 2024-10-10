@@ -13,10 +13,6 @@ export default function PollPageWrapper({
   const [poll, setPoll] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userVotes, setUserVotes] = useState<Record<string, any>>({});
-  const [isUserCreator, setIsUserCreator] = useState(false);
-  const [anonymousUserVotes, setAnonymousUserVotes] = useState<
-    Record<string, any>
-  >({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,14 +35,6 @@ export default function PollPageWrapper({
         setPoll(data.poll);
         setIsLoggedIn(data.isLoggedIn);
         setUserVotes(data.userVotes);
-
-        const isCreator = await isPollOwner(data.poll.uid);
-        setIsUserCreator(isCreator);
-
-        if (!data.isLoggedIn) {
-          const votes = await fetchUserVotes(data.poll.uid, anonymousId);
-          setAnonymousUserVotes(votes);
-        }
       } else {
         console.error("Error fetching poll data:", data.error);
       }
@@ -57,5 +45,9 @@ export default function PollPageWrapper({
 
   if (!poll) return <div>Loading...</div>;
 
-  return <PollPage poll={poll} isLoggedIn={isLoggedIn} userVotes={userVotes} />;
+  return <PollPage
+    poll={poll}
+    isLoggedIn={isLoggedIn}
+    userVotes={userVotes}
+  />;
 }

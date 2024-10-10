@@ -23,80 +23,99 @@ const Principle: React.FC<PrincipleProps> = ({
 }) => {
   const [editedText, setEditedText] = useState(text);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isEditing]);
+    adjustTextareaHeight();
+  }, [editedText, text]);
 
   useEffect(() => {
     setEditedText(text);
   }, [text]);
 
+  useEffect(() => {
+    window.addEventListener('resize', adjustTextareaHeight);
+    return () => {
+      window.removeEventListener('resize', adjustTextareaHeight);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      // Move cursor to the end of the text
+      textareaRef.current.setSelectionRange(editedText.length, editedText.length);
+    }
+  }, [isEditing, editedText.length]);
+
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmedText = editedText.trim();
-    console.log("Submitting principle text:", trimmedText);
     if (trimmedText !== "") {
       onUpdate(trimmedText);
       setIsEditing(false);
-    } else {
-      console.log("Principle text is empty, not updating");
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleSubmit();
     }
   };
 
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedText(e.target.value);
+  };
+
   return (
-    <div className="flex flex-col space-y-2 bg-white p-4 rounded-md shadow">
-      {isEditing ? (
-        <form onSubmit={handleSubmit} className="flex-grow">
-          <input
-            ref={inputRef}
-            type="text"
-            value={editedText}
-            onChange={(e) => setEditedText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full p-2 border rounded"
-          />
-        </form>
-      ) : (
-        <p className="flex-grow text-lg">{editedText}</p>
-      )}
+    <div className="flex items-start bg-white p-3 rounded-md shadow">
+      <div className="flex-shrink-0 mr-2">
+        {isEditing ? (
+          <button
+            onClick={handleSubmit}
+            className="text-green-500 hover:text-green-700"
+          >
+            <FaCheck />
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="text-blue-500 hover:text-blue-700"
+          >
+            <FaPencilAlt />
+          </button>
+        )}
+      </div>
+      <div className="flex-grow relative">
+        <textarea
+          ref={textareaRef}
+          value={editedText}
+          onChange={handleTextareaChange}
+          onKeyDown={handleKeyDown}
+          disabled={!isEditing}
+          className={`w-full border-none p-0 resize-none overflow-hidden bg-transparent focus:outline-none transition-shadow duration-200`}
+          rows={1}
+        />
+      </div>
       {!isLoading && (
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center space-x-2">
-            {isEditing ? (
-              <button
-                onClick={handleSubmit}
-                className="text-green-500 hover:text-green-700 p-1"
-              >
-                <FaCheck />
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-blue-500 hover:text-blue-700 p-1"
-              >
-                <FaPencilAlt />
-              </button>
-            )}
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="text-red-500 hover:text-red-700 p-1"
-            >
-              <FaTrash />
-            </button>
-          </div>
+        <div className="flex items-center space-x-2 ml-2">
           {gacScore !== undefined && (
             <span className="text-sm text-gray-500">Score: {gacScore}</span>
           )}
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <FaTrash />
+          </button>
         </div>
       )}
       <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>

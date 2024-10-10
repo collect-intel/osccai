@@ -34,9 +34,9 @@ export default function ConstitutionZone({
   onUpdate,
   savingStatus,
 }: ConstitutionZoneProps) {
-  // Sort constitutions in reverse order (newest first)
+  // Sort constitutions by createdAt in descending order (newest first)
   const sortedConstitutions = [...modelData.constitutions].sort(
-    (a, b) => b.version - a.version,
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   const [selectedConstitution, setSelectedConstitution] =

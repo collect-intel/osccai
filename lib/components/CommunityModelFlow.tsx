@@ -10,13 +10,14 @@ import {
   createCommunityModel,
   updateCommunityModel,
   getCommunityModel,
+  updatePoll,
+  fetchPollData,
 } from "@/lib/actions";
 import { AboutZoneData } from "./flow/AboutZone";
 import Toast from "./Toast";
 import { debounce } from "lodash";
 import { Constitution, Poll, Statement } from "@prisma/client";
 import Spinner from "./Spinner";
-import { updatePoll } from "@/lib/actions";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
   principles: Array<{ id: string; text: string; gacScore?: number }>;
@@ -57,10 +58,7 @@ export default function CommunityModelFlow({
 
   const isExistingModel = !!initialModelId;
 
-  // Add this new state for tracking loading status
   const [isLoading, setIsLoading] = useState(!!initialModelId);
-
-  // Add this new state for tracking page loading status
   const [isPageLoading, setIsPageLoading] = useState(true);
 
   const zoneRefs: ZoneRefs = {
@@ -71,7 +69,7 @@ export default function CommunityModelFlow({
   };
 
   const handleHashChange = useCallback(() => {
-    const hash = window.location.hash.slice(1); // Remove the '#' character
+    const hash = window.location.hash.slice(1);
     if (hash && zoneRefs[hash]?.current) {
       zoneRefs[hash].current?.scrollIntoView({ behavior: "smooth" });
       setActiveZones((prev) => Array.from(new Set([...prev, hash])));
@@ -176,17 +174,24 @@ export default function CommunityModelFlow({
         setSavingStatus((prev) => ({ ...prev, principles: "saving" }));
         const updatedModel = await updateCommunityModel(modelId, {
           principles: data.principles,
+          requireAuth: data.requireAuth,
+          allowContributions: data.allowContributions,
         });
         setModelData((prevData) => {
           if (!prevData) return null;
           const newData = {
             ...prevData,
             ...data,
-            polls: updatedModel.polls,
+            polls: [...updatedModel.polls],
           } as ExtendedAboutZoneData;
           console.log("Updated model data:", newData);
           return newData;
         });
+
+        if (updatedModel.polls[0]) {
+          await updatePoll(modelId, updatedModel.polls[0]);
+        }
+
         setSavingStatus((prev) => ({ ...prev, principles: "saved" }));
         setTimeout(
           () => setSavingStatus((prev) => ({ ...prev, principles: "idle" })),
@@ -333,6 +338,8 @@ export default function CommunityModelFlow({
                 modelData={{
                   ...modelData,
                   principles: modelData.principles || [],
+                  requireAuth: modelData.requireAuth || false,
+                  allowContributions: modelData.allowContributions || false,
                 }}
                 updateModelData={(data) => {
                   handleUpdatePrinciples(data);
@@ -344,6 +351,7 @@ export default function CommunityModelFlow({
             </div>
             <div ref={zoneRefs.poll} id="poll">
               <PollZone
+                key={modelData?.polls?.[0]?.uid || 'no-poll'}
                 isActive={activeZones.includes("poll")}
                 onComplete={() =>
                   !isExistingModel &&
@@ -354,6 +362,8 @@ export default function CommunityModelFlow({
                   name: modelData?.name || "",
                   bio: modelData?.bio || "",
                   principles: modelData?.principles?.map((p) => p.text) || [],
+                  requireAuth: modelData?.requireAuth || false,
+                  allowContributions: modelData?.allowContributions || false,
                 }}
                 pollData={
                   modelData?.polls?.[0] as
@@ -368,24 +378,18 @@ export default function CommunityModelFlow({
                     try {
                       setSavingStatus((prev) => ({ ...prev, poll: "saving" }));
                       await updatePoll(modelId, updatedPollData);
+                      const fetchedPollData = await fetchPollData(modelId);
                       setModelData((prevData) => {
                         if (!prevData) return null;
                         return {
                           ...prevData,
-                          polls: [
-                            updatedPollData as Poll,
-                            ...(prevData.polls?.slice(1) || []),
-                          ],
+                          polls: [fetchedPollData, ...(prevData.polls?.slice(1) || [])],
                         } as ExtendedAboutZoneData;
                       });
                       setSavingStatus((prev) => ({ ...prev, poll: "saved" }));
                       setTimeout(
-                        () =>
-                          setSavingStatus((prev) => ({
-                            ...prev,
-                            poll: "idle",
-                          })),
-                        2000,
+                        () => setSavingStatus((prev) => ({ ...prev, poll: "idle" })),
+                        2000
                       );
                     } catch (error) {
                       console.error("Error updating poll:", error);
