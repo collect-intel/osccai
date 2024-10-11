@@ -143,9 +143,8 @@ export default function AboutZone({
   };
 
   const getCharCountColor = (current: number, max: number) => {
-    const percentage = (current / max) * 100;
-    if (percentage >= 95) return "text-red-500";
-    if (percentage >= 90) return "text-amber-500";
+    if (current === max) return "text-red-500";
+    if (current >= max * 0.9) return "text-amber-500";
     return "text-gray-500";
   };
 
@@ -209,6 +208,7 @@ export default function AboutZone({
               onChange={(e) => handleChange("bio", e.target.value)}
               onBlur={() => handleBlur("bio")}
               rows={3}
+              maxLength={2000}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
@@ -227,6 +227,7 @@ export default function AboutZone({
               onChange={(e) => handleChange("goal", e.target.value)}
               onBlur={() => handleBlur("goal")}
               rows={3}
+              maxLength={2000}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
