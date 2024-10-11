@@ -46,6 +46,7 @@
     "ml-matrix": "^6.10.4",
     "ml-pca": "^4.0.0",
     "next": "14.2.5",
+    "pino": "^9.4.0",
     "Prettier": "npm:prettier@^3.3.3",
     "react": "^18",
     "react-dom": "^18",
