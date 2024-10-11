@@ -150,7 +150,7 @@ export default function PrinciplesZone({
       );
 
       const newPrinciples = generatedPrinciples.map((text) => ({
-        id: `generated-${Date.now()}-${Math.random()}`,
+        id: `new-${Date.now()}-${Math.random()}`,
         text,
         isLoading: false,
         isEditing: false,

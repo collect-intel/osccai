@@ -910,13 +910,10 @@ export async function updateCommunityModel(
       if (principles) {
         const poll = await prisma.poll.findFirst({
           where: { communityModelId: modelId },
+          include: { statements: true },
         });
 
         if (poll) {
-          await prisma.statement.deleteMany({
-            where: { pollId: poll.uid },
-          });
-
           // Ensure the owner has a linked participant
           let participantId = model.owner.participantId;
           if (!participantId) {
@@ -932,14 +929,46 @@ export async function updateCommunityModel(
             });
           }
 
-          await prisma.statement.createMany({
-            data: principles.map((principle) => ({
-              pollId: poll.uid,
-              text: principle.text,
-              gacScore: principle.gacScore,
-              participantId: participantId,
-            })),
-          });
+          const updatedPrinciples = [];
+
+          // Update existing principles and add new ones
+          for (const principle of principles) {
+            if (principle.id.startsWith('new-')) {
+              // This is a new principle, create it
+              const newStatement = await prisma.statement.create({
+                data: {
+                  pollId: poll.uid,
+                  text: principle.text,
+                  gacScore: principle.gacScore,
+                  participantId: participantId,
+                },
+              });
+              updatedPrinciples.push(newStatement);
+            } else {
+              // This is an existing principle, update it
+              const updatedStatement = await prisma.statement.update({
+                where: { uid: principle.id },
+                data: {
+                  text: principle.text,
+                  gacScore: principle.gacScore,
+                },
+              });
+              updatedPrinciples.push(updatedStatement);
+            }
+          }
+
+          // Get all principle IDs, including newly created ones
+          const allPrincipleIds = updatedPrinciples.map(p => p.uid);
+
+          // Find principles that are no longer in the list
+          const statementsToDelete = poll.statements.filter(s => !allPrincipleIds.includes(s.uid));
+
+          // Delete principles that are no longer in the list
+          for (const statement of statementsToDelete) {
+            await prisma.statement.delete({
+              where: { uid: statement.uid },
+            });
+          }
         }
       }
 
