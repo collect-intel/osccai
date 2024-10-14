@@ -14,7 +14,6 @@ interface PrinciplesZoneProps {
     principles: Array<{
       id: string;
       text: string;
-      gacScore?: number;
     }>;
     requireAuth: boolean;
     allowContributions: boolean;
@@ -31,7 +30,6 @@ interface PrincipleData {
   id: string;
   text: string;
   isLoading: boolean;
-  gacScore?: number;
   isEditing: boolean;
 }
 
@@ -54,7 +52,6 @@ export default function PrinciplesZone({
           text: typeof p === "string" ? p : p.text,
           isLoading: false,
           isEditing: false,
-          gacScore: typeof p === "object" ? p.gacScore : undefined,
         }))
       : [];
   });
@@ -89,10 +86,9 @@ export default function PrinciplesZone({
       );
 
       const formattedPrinciples = newPrinciples.map(
-        ({ id, text, gacScore }) => ({
+        ({ id, text }) => ({
           id,
           text,
-          gacScore,
         }),
       );
 
@@ -107,10 +103,9 @@ export default function PrinciplesZone({
       const newPrinciples = prevPrinciples.filter((p) => p.id !== id);
 
       const formattedPrinciples = newPrinciples.map(
-        ({ id, text, gacScore }) => ({
+        ({ id, text }) => ({
           id,
           text,
-          gacScore,
         }),
       );
 
@@ -201,7 +196,6 @@ export default function PrinciplesZone({
                 key={principle.id}
                 text={principle.text}
                 isLoading={principle.isLoading}
-                gacScore={principle.gacScore}
                 onUpdate={(value) => updatePrinciple(principle.id, value)}
                 onDelete={() => removePrinciple(principle.id)}
                 isEditing={principle.isEditing}

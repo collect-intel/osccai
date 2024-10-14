@@ -15,7 +15,6 @@ interface PrincipleProps {
 const Principle: React.FC<PrincipleProps> = ({
   text,
   isLoading,
-  gacScore,
   onUpdate,
   onDelete,
   isEditing,
@@ -103,11 +102,6 @@ const Principle: React.FC<PrincipleProps> = ({
       </div>
       {!isLoading && (
         <div className="flex items-center space-x-2 ml-2">
-          {gacScore !== undefined && (
-            <span className="text-sm text-gray-500">
-              Score: {Number(gacScore.toFixed(2))}
-            </span>
-          )}
           <button
             onClick={() => setShowDeleteModal(true)}
             className="text-red-500 hover:text-red-700"
