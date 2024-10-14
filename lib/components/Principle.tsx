@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaPencilAlt, FaTrash, FaCheck } from "react-icons/fa";
+import { FaTrash, FaCheck } from "react-icons/fa";
 import Modal from "./Modal";
 
 interface PrincipleProps {
@@ -81,19 +81,12 @@ const Principle: React.FC<PrincipleProps> = ({
   return (
     <div className="flex items-start bg-white p-3 rounded-md shadow">
       <div className="flex-shrink-0 mr-2">
-        {isEditing ? (
+        {isEditing && (
           <button
             onClick={handleSubmit}
             className="text-green-500 hover:text-green-700"
           >
             <FaCheck />
-          </button>
-        ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-blue-500 hover:text-blue-700"
-          >
-            <FaPencilAlt />
           </button>
         )}
       </div>
