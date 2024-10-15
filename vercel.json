@@ -1,4 +1,20 @@
 {
+  "builds": [
+    {
+      "src": "python_api/**/*.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "next.config.js",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/cron/update-gac-scores",
+      "dest": "python_api/cron/update-gac-scores.py"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/update-gac-scores",

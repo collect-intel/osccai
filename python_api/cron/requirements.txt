@@ -2,4 +2,4 @@ psycopg2-binary==2.9.6
 numpy==2.1.2
 pandas==2.2.3
 scikit-learn==1.5.2
-
+kneed==0.8.5
