@@ -8,20 +8,35 @@ import {
 import { Matrix } from "ml-matrix";
 import { PCA } from "ml-pca";
 import { kmeans } from "ml-kmeans";
+import pino from "pino";
 
 const prisma = new PrismaClient();
 
+// Create a logger instance
+const logger = pino({
+  level: process.env.LOG_LEVEL || "info",
+  timestamp: pino.stdTimeFunctions.isoTime,
+});
+
 export default async function updateGACScores() {
-  console.log("Starting updateGACScores function", new Date().toISOString());
+  const startTime = Date.now();
+  logger.info("Starting updateGACScores function");
   try {
     const polls = await fetchPollsWithChanges();
-    console.log(`Found ${polls.length} polls with changes`);
+    logger.info({ pollCount: polls.length }, "Fetched polls with changes");
 
     for (const poll of polls) {
-      console.log(`Processing poll: ${poll.uid}`);
+      const pollStartTime = Date.now();
+      logger.info({ pollId: poll.uid }, "Processing poll");
       const { statements, votes, participants } = await fetchPollData(poll.uid);
-      console.log(
-        `Poll data: ${statements.length} statements, ${votes.length} votes, ${participants.length} participants`,
+      logger.info(
+        {
+          pollId: poll.uid,
+          statementCount: statements.length,
+          voteCount: votes.length,
+          participantCount: participants.length,
+        },
+        "Fetched poll data",
       );
 
       if (
@@ -29,17 +44,27 @@ export default async function updateGACScores() {
         votes.length === 0 ||
         participants.length === 0
       ) {
-        console.log(`Skipping poll ${poll.uid} due to insufficient data`);
+        logger.warn(
+          { pollId: poll.uid },
+          "Skipping poll due to insufficient data",
+        );
         continue;
       }
 
       const voteMatrix = generateVoteMatrix(statements, votes, participants);
-      console.log(
-        `Generated vote matrix: ${voteMatrix.length}x${voteMatrix[0].length}`,
+      logger.info(
+        {
+          pollId: poll.uid,
+          matrixSize: `${voteMatrix.length}x${voteMatrix[0].length}`,
+        },
+        "Generated vote matrix",
       );
 
       if (voteMatrix.length === 0 || voteMatrix[0].length === 0) {
-        console.log(`Skipping poll ${poll.uid} due to empty vote matrix`);
+        logger.warn(
+          { pollId: poll.uid },
+          "Skipping poll due to empty vote matrix",
+        );
         continue;
       }
 
@@ -47,15 +72,29 @@ export default async function updateGACScores() {
       const gacScores = calculateGACScores(voteMatrix, clusters);
 
       await updateStatements(statements, gacScores);
+
+      const pollEndTime = Date.now();
+      logger.info(
+        {
+          pollId: poll.uid,
+          processingTime: pollEndTime - pollStartTime,
+        },
+        "Finished processing poll",
+      );
     }
 
-    console.log("GAC scores updated successfully");
+    const endTime = Date.now();
+    logger.info(
+      {
+        processingTime: endTime - startTime,
+      },
+      "GAC scores updated successfully",
+    );
   } catch (error) {
-    console.error("Error updating GAC scores:", error);
-    throw error; // Re-throw the error so it can be caught in the API route
+    logger.error(error, "Error updating GAC scores");
+    throw error;
   } finally {
     await prisma.$disconnect();
-    console.log("Finished updateGACScores function", new Date().toISOString());
   }
 }
 
@@ -66,6 +105,8 @@ async function fetchPollsWithChanges(): Promise<Poll[]> {
       select: { lastCalculatedAt: true },
     })
     .then((result) => result?.lastCalculatedAt ?? new Date(0));
+
+  logger.debug({ lastCalculatedAt }, "Fetching polls with changes since");
 
   return prisma.poll.findMany({
     where: {
@@ -126,25 +167,30 @@ function generateVoteMatrix(
 }
 
 function performClustering(voteMatrix: number[][]): number[] {
-  console.log("Performing clustering...");
+  logger.debug("Performing clustering");
   const pca = new PCA(new Matrix(voteMatrix));
   const explained = pca.getExplainedVariance();
   const optimalComponents = Math.max(
     1,
     explained.findIndex((value: number) => value < 0.01) || 2,
   );
-  console.log(`Optimal PCA components: ${optimalComponents}`);
+  logger.debug({ optimalComponents }, "Determined optimal PCA components");
 
   const projection = pca.predict(new Matrix(voteMatrix), {
     nComponents: optimalComponents,
   });
-  console.log(`PCA projection shape: ${projection.rows}x${projection.columns}`);
+  logger.debug(
+    {
+      projectionShape: `${projection.rows}x${projection.columns}`,
+    },
+    "PCA projection completed",
+  );
 
   const numClusters = Math.min(5, Math.floor(projection.rows / 10));
-  console.log(`Number of clusters: ${numClusters}`);
+  logger.debug({ numClusters }, "Determined number of clusters");
 
   if (numClusters < 2) {
-    console.log("Not enough data for clustering, returning single cluster");
+    logger.debug("Not enough data for clustering, returning single cluster");
     return Array(voteMatrix.length).fill(0);
   }
 
@@ -206,6 +252,14 @@ async function updateStatements(
           isConstitutionable: gacScore >= 0.66,
         },
       });
+      logger.debug(
+        {
+          statementId: statement.uid,
+          gacScore,
+          isConstitutionable: gacScore >= 0.66,
+        },
+        "Updated statement GAC score",
+      );
     }
   }
 }
