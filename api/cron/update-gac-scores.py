@@ -13,6 +13,8 @@ from sklearn.metrics import jaccard_score
 from sklearn.preprocessing import MultiLabelBinarizer
 import pandas as pd
 
+print("Starting update_gac_scores.py")
+
 # Configure logging to output to stdout
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def handler(request):
+    print("handler(request)")
     logger.info("Received request to update GAC scores")
     try:
         main()
@@ -36,6 +39,7 @@ def handler(request):
         }
 
 def main():
+    print("main")
     logger.info("Starting update_gac_scores.py script")
     
     # Connect to the database
@@ -320,3 +324,5 @@ def update_statements(cursor, conn, statements, gac_scores):
                 WHERE uid = %s;
             """, (gac_score, is_constitutionable, statement_id))
     conn.commit()
+
+print("Finished update_gac_scores.py")

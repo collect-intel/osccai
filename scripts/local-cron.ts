@@ -9,13 +9,18 @@ function runCron() {
       console.error(`Error executing Python script: ${error}`);
       return;
     }
-    console.log(`Stdout: ${stdout}`);
+    if (stdout) {
+      console.log(`Stdout: ${stdout}`);
+    }
     if (stderr) {
       console.error(`Stderr: ${stderr}`);
+    }
+    if (!stdout && !stderr) {
+      console.log("No output from Python script");
     }
   });
 }
 
-console.log("Starting local cron job for update_gac_scores.py");
+console.log("Starting local cron job for update-gac-scores.py");
 setInterval(runCron, INTERVAL_MS);
 runCron(); // Run once immediately on startup
