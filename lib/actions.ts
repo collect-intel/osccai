@@ -933,7 +933,7 @@ export async function updateCommunityModel(
 
           // Update existing principles and add new ones
           for (const principle of principles) {
-            if (principle.id.startsWith('new-')) {
+            if (principle.id.startsWith("new-")) {
               // This is a new principle, create it
               const newStatement = await prisma.statement.create({
                 data: {
@@ -958,10 +958,12 @@ export async function updateCommunityModel(
           }
 
           // Get all principle IDs, including newly created ones
-          const allPrincipleIds = updatedPrinciples.map(p => p.uid);
+          const allPrincipleIds = updatedPrinciples.map((p) => p.uid);
 
           // Find principles that are no longer in the list
-          const statementsToDelete = poll.statements.filter(s => !allPrincipleIds.includes(s.uid));
+          const statementsToDelete = poll.statements.filter(
+            (s) => !allPrincipleIds.includes(s.uid),
+          );
 
           // Delete principles that are no longer in the list
           for (const statement of statementsToDelete) {
