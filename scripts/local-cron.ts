@@ -1,13 +1,21 @@
-import updateGACScores from "../functions/update-gac-scores.js";
+import { exec } from 'child_process';
 
 const INTERVAL_MS = 60000; // 1 minute in milliseconds
 
-async function runCron() {
-  console.log("Running updateGACScores...");
-  await updateGACScores();
-  console.log("Finished running updateGACScores");
+function runCron() {
+  console.log("Running update_gac_scores.py...");
+  exec('python api/cron/update-gac-scores.py', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error executing Python script: ${error}`);
+      return;
+    }
+    console.log(`Stdout: ${stdout}`);
+    if (stderr) {
+      console.error(`Stderr: ${stderr}`);
+    }
+  });
 }
 
-console.log("Starting local cron job for updateGACScores");
+console.log("Starting local cron job for update_gac_scores.py");
 setInterval(runCron, INTERVAL_MS);
 runCron(); // Run once immediately on startup
