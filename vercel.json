@@ -1,13 +1,9 @@
 {
-  "builds": [
-    {
-      "src": "python_api/**/*.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9"
-      }
+  "functions": {
+    "api/cron/update-gac-scores.py": {
+      "runtime": "python3.9"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/cron/update-gac-scores",
