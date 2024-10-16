@@ -1,26 +1,32 @@
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
+import path from 'path';
 
-const INTERVAL_MS = 60000; // 1 minute in milliseconds
+console.log('Starting local cron job simulation for update_gac_scores.py');
 
-function runCron() {
-  console.log("Running update_gac_scores.py...");
-  exec('python api/cron/update-gac-scores.py', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Error executing Python script: ${error}`);
-      return;
-    }
-    if (stdout) {
-      console.log(`Stdout: ${stdout}`);
-    }
-    if (stderr) {
-      console.error(`Stderr: ${stderr}`);
-    }
-    if (!stdout && !stderr) {
-      console.log("No output from Python script");
-    }
+const pythonScriptPath = path.join(process.cwd(), 'api', 'cron', 'update-gac-scores.py');
+
+function runPythonScript() {
+  console.log(`Running update_gac_scores.py at ${new Date().toISOString()}`);
+
+  const pythonProcess = spawn('python', [pythonScriptPath]);
+
+  pythonProcess.stdout.on('data', (data) => {
+    console.log(`Stdout: ${data}`);
+  });
+
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`Stderr: ${data}`);
+  });
+
+  pythonProcess.on('close', (code) => {
+    console.log(`Python script exited with code ${code}`);
   });
 }
 
-console.log("Starting local cron job for update-gac-scores.py");
-setInterval(runCron, INTERVAL_MS);
-runCron(); // Run once immediately on startup
+// Run the script immediately
+runPythonScript();
+
+// Schedule the script to run every minute
+setInterval(runPythonScript, 20000);
+
+console.log('Cron job simulation is running. Press Ctrl+C to stop.');
