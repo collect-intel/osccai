@@ -259,7 +259,7 @@ def perform_kmeans(data, k, max_iterations=100):
     """
     Perform KMeans clustering using numpy.
     """
-    logger.info("Performing KMeans clustering")
+    logger.info(f"Performing KMeans clustering with k={k}")
     # Randomly initialize centroids
     centroids = data[np.random.choice(data.shape[0], k, replace=False)]
     for i in range(max_iterations):
@@ -269,7 +269,7 @@ def perform_kmeans(data, k, max_iterations=100):
         # Update centroids
         new_centroids = np.array([data[labels == j].mean(axis=0) for j in range(k)])
         # Check for convergence
-        if np.allclose(centroids, new_centroids):
+        if np.allclose(centroids, new_centroids, atol=1e-6):
             break
         centroids = new_centroids
     return labels
@@ -301,25 +301,32 @@ def perform_clustering(imputed_vote_matrix):
     Returns cluster labels.
     """
     logger.info("Performing PCA and K-means clustering")
-
-    n_samples, n_features = imputed_vote_matrix.shape
-    logger.info(f"Vote matrix has {n_samples} samples and {n_features} features")
-
-    data = imputed_vote_matrix.fillna(0).values
-
-    # Determine the optimal number of PCA components
-    max_components = min(n_samples, n_features)
+    
+    n_participants, n_statements = imputed_vote_matrix.shape
+    logger.info(f"Vote matrix has {n_participants} participants and {n_statements} statements")
+    # Log the imputed vote matrix without index and header
+    logger.info(f"Imputed vote matrix:\n{imputed_vote_matrix.to_string(index=False, header=False)}")
+    
+    if n_participants == 1:
+        # Only one participant, assign to a single cluster
+        cluster_labels = [0]
+        return np.array(cluster_labels)
+    
+    # Determine the maximum number of PCA components
+    max_components = min(n_participants, n_statements)
     optimal_components = min(2, max_components)
-
+    logger.info(f"Using {optimal_components} PCA components")
+    
+    data = imputed_vote_matrix.fillna(0).values
     principal_components = perform_pca(data, optimal_components)
-
+    
     # Determine optimal number of clusters using silhouette score
     silhouette_scores = []
-    max_k = min(5, n_samples)
-    K = range(2, max_k + 1)
+    max_k = min(5, n_participants)
+    K = range(2, max_k+1)
     best_k = 2
     best_score = -1
-
+    
     for k in K:
         labels = perform_kmeans(principal_components, k)
         score = compute_silhouette_score(principal_components, labels)
@@ -328,10 +335,12 @@ def perform_clustering(imputed_vote_matrix):
         if score > best_score:
             best_score = score
             best_k = k
-
+    
+    logger.info(f"Optimal number of clusters determined to be {best_k}")
+    
     # Perform final KMeans clustering with optimal k
     cluster_labels = perform_kmeans(principal_components, best_k)
-
+    
     return cluster_labels
 
 def calculate_gac_scores(imputed_vote_matrix, clusters):
@@ -342,25 +351,39 @@ def calculate_gac_scores(imputed_vote_matrix, clusters):
 
     gac_scores = {}
     unique_clusters = np.unique(clusters)
+    n_participants = imputed_vote_matrix.shape[0]
 
     for statement in imputed_vote_matrix.columns:
         statement_votes = imputed_vote_matrix[statement].values
-        gac = 1.0
 
-        for cluster in unique_clusters:
-            cluster_votes = statement_votes[np.array(clusters) == cluster]
-            # Exclude 'PASS' votes
-            relevant_votes = cluster_votes[cluster_votes != 0]
-
-            sum_agrees = np.sum(relevant_votes > 0)
-            sum_abs_votes = np.sum(np.abs(relevant_votes))
-
-            if sum_abs_votes == 0:
-                p_agree = 0.5  # Neutral if no votes
+        if n_participants == 1:
+            # Only one participant
+            vote = statement_votes[0]
+            if vote == 1:
+                gac = 1.0
+            elif vote == -1:
+                gac = 0.0
+            elif vote == 0:
+                gac = 0.5
             else:
-                p_agree = (1 + sum_agrees) / (2 + sum_abs_votes)
+                # Should not happen
+                gac = 0.5
+        else:
+            gac = 1.0
+            for cluster in unique_clusters:
+                cluster_votes = statement_votes[clusters == cluster]
+                # Exclude 'PASS' votes
+                relevant_votes = cluster_votes[cluster_votes != 0]
 
-            gac *= p_agree
+                sum_agrees = np.sum(relevant_votes > 0)
+                sum_abs_votes = np.sum(np.abs(relevant_votes))
+
+                if sum_abs_votes == 0:
+                    p_agree = 0.5  # Neutral if no votes
+                else:
+                    p_agree = (1 + sum_agrees) / (2 + sum_abs_votes)
+
+                gac *= p_agree
 
         gac_scores[statement] = gac
 
