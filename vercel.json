@@ -6,16 +6,16 @@
       "config": {
         "runtime": "python3.9"
       }
-    },
-    {
-      "src": "next.config.js",
-      "use": "@vercel/next"
     }
   ],
   "routes": [
     {
       "src": "/api/cron/update-gac-scores",
       "dest": "python_api/cron/update-gac-scores.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ],
   "crons": [
