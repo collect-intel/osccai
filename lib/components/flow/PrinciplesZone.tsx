@@ -85,12 +85,10 @@ export default function PrinciplesZone({
         p.id === id ? { ...p, text: value.trim(), isEditing: false } : p,
       );
 
-      const formattedPrinciples = newPrinciples.map(
-        ({ id, text }) => ({
-          id,
-          text,
-        }),
-      );
+      const formattedPrinciples = newPrinciples.map(({ id, text }) => ({
+        id,
+        text,
+      }));
 
       debouncedUpdateModelData({ principles: formattedPrinciples });
 
@@ -102,12 +100,10 @@ export default function PrinciplesZone({
     setPrinciples((prevPrinciples) => {
       const newPrinciples = prevPrinciples.filter((p) => p.id !== id);
 
-      const formattedPrinciples = newPrinciples.map(
-        ({ id, text }) => ({
-          id,
-          text,
-        }),
-      );
+      const formattedPrinciples = newPrinciples.map(({ id, text }) => ({
+        id,
+        text,
+      }));
 
       debouncedUpdateModelData({ principles: formattedPrinciples });
 

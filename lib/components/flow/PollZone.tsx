@@ -238,25 +238,34 @@ export default function PollZone({
                     className="shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start p-4">
-                      <div className="flex-grow pr-0 sm:pr-4 mb-4 sm:mb-0 min-h-[80px] sm:min-h-[60px] w-full sm:w-2/3"> 
+                      <div className="flex-grow pr-0 sm:pr-4 mb-4 sm:mb-0 min-h-[80px] sm:min-h-[60px] w-full sm:w-2/3">
                         <p>{statement.text}</p>
                       </div>
                       <div className="w-full sm:w-1/3 text-sm flex flex-row sm:flex-col items-start sm:items-end space-x-2 sm:space-x-0 sm:space-y-1">
                         <span className="bg-slate-blue text-white px-2 py-1 rounded text-center w-1/2 sm:w-full">
-                          {total > 0 ? "Consensus Score: " + Number(statement.gacScore?.toFixed(2) || 0) : "No Votes Yet"}
+                          {total > 0
+                            ? "Consensus Score: " +
+                              Number(statement.gacScore?.toFixed(2) || 0)
+                            : "No Votes Yet"}
                         </span>
                         <span
                           className={`px-2 py-1 rounded text-center w-1/2 sm:w-full ${
-                            isConstitutionable ? "bg-slate-blue text-white" : "bg-black bg-opacity-10 text-black text-opacity-50"
+                            isConstitutionable
+                              ? "bg-slate-blue text-white"
+                              : "bg-black bg-opacity-10 text-black text-opacity-50"
                           } cursor-pointer flex items-center justify-center`}
                           onClick={() => setIsExplanationModalOpen(true)}
                         >
-                          {isConstitutionable ? "Constitutionable" : "Not Constitutionable"}
+                          {isConstitutionable
+                            ? "Constitutionable"
+                            : "Not Constitutionable"}
                           <FaQuestionCircle className="ml-1 text-xs" />
                         </span>
                       </div>
                     </div>
-                    <div className={`flex flex-col sm:flex-row text-white text-sm mt-1 ml-4 mr-4 mb-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}>
+                    <div
+                      className={`flex flex-col sm:flex-row text-white text-sm mt-1 ml-4 mr-4 mb-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}
+                    >
                       <div className="flex flex-col sm:flex-row flex-grow">
                         <div
                           className="flex bg-agree-green"
