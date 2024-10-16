@@ -5,11 +5,7 @@ from datetime import datetime
 import pg8000
 from urllib.parse import urlparse
 import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
 import pandas as pd
-from kneed import KneeLocator
 
 print("Starting update_gac_scores.py")
 
@@ -238,6 +234,67 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
                     imputed_matrix.at[participant, statement] = 0
     return imputed_matrix
 
+def perform_pca(data, n_components):
+    """
+    Perform PCA using numpy.
+    """
+    logger.info("Performing PCA")
+    # Center the data
+    data_meaned = data - np.mean(data , axis = 0)
+    # Compute covariance matrix
+    cov_mat = np.cov(data_meaned , rowvar = False)
+    # Compute eigenvalues and eigenvectors
+    eigen_values , eigen_vectors = np.linalg.eigh(cov_mat)
+    # Sort eigenvalues and eigenvectors
+    sorted_index = np.argsort(eigen_values)[::-1]
+    sorted_eigenvalues = eigen_values[sorted_index]
+    sorted_eigenvectors = eigen_vectors[:,sorted_index]
+    # Select the first n_components eigenvectors
+    eigenvector_subset = sorted_eigenvectors[:,0:n_components]
+    # Transform the data
+    data_reduced = np.dot(eigenvector_subset.transpose(), data_meaned.transpose()).transpose()
+    return data_reduced
+
+def perform_kmeans(data, k, max_iterations=100):
+    """
+    Perform KMeans clustering using numpy.
+    """
+    logger.info("Performing KMeans clustering")
+    # Randomly initialize centroids
+    centroids = data[np.random.choice(data.shape[0], k, replace=False)]
+    for i in range(max_iterations):
+        # Calculate distances and assign clusters
+        distances = np.linalg.norm(data[:, np.newaxis] - centroids, axis=2)
+        labels = np.argmin(distances, axis=1)
+        # Update centroids
+        new_centroids = np.array([data[labels == j].mean(axis=0) for j in range(k)])
+        # Check for convergence
+        if np.allclose(centroids, new_centroids):
+            break
+        centroids = new_centroids
+    return labels
+
+def compute_silhouette_score(data, labels):
+    """
+    Compute silhouette score manually.
+    """
+    logger.info("Computing silhouette score")
+    from collections import defaultdict
+    a = np.zeros(data.shape[0])
+    b = np.zeros(data.shape[0])
+    clusters = np.unique(labels)
+    for i in range(data.shape[0]):
+        same_cluster = data[labels == labels[i]]
+        other_clusters = data[labels != labels[i]]
+        a[i] = np.mean(np.linalg.norm(same_cluster - data[i], axis=1))
+        if len(other_clusters) > 0:
+            b[i] = np.min([np.mean(np.linalg.norm(data[labels == label] - data[i], axis=1)) for label in clusters if label != labels[i]])
+        else:
+            b[i] = 0
+    s = (b - a) / np.maximum(a, b)
+    s = np.nan_to_num(s)  # Handle division by zero
+    return np.mean(s)
+
 def perform_clustering(imputed_vote_matrix):
     """
     Perform PCA and K-means clustering on the imputed vote matrix.
@@ -247,59 +304,33 @@ def perform_clustering(imputed_vote_matrix):
 
     n_samples, n_features = imputed_vote_matrix.shape
     logger.info(f"Vote matrix has {n_samples} samples and {n_features} features")
-    # Log the imputed vote matrix without index or column labels
-    logger.info(f"Imputed vote matrix: {imputed_vote_matrix.to_string(index=False, header=False)}")
 
-    # Determine the maximum number of PCA components
-    max_pca_components = min(n_samples, n_features, 10)
-    if max_pca_components < 1:
-        max_pca_components = 1
+    data = imputed_vote_matrix.fillna(0).values
 
-    # Perform PCA with maximum components to get explained variance ratio
-    pca_full = PCA(n_components=max_pca_components)
-    pca_full.fit(imputed_vote_matrix.fillna(0))
-    explained_variance_ratio = pca_full.explained_variance_ratio_
-    n_components_range = range(1, max_pca_components + 1)
+    # Determine the optimal number of PCA components
+    max_components = min(n_samples, n_features)
+    optimal_components = min(2, max_components)
 
-    # Use elbow method to determine optimal number of components
-    kneedle = KneeLocator(n_components_range, explained_variance_ratio, S=1.0, curve="convex", direction="decreasing")
-    optimal_components = kneedle.elbow or max_pca_components
-    logger.info(f"Optimal number of PCA components determined to be {optimal_components}")
+    principal_components = perform_pca(data, optimal_components)
 
-    # Ensure optimal_components is valid
-    optimal_components = min(max(optimal_components, 1), max_pca_components)
-
-    # Perform PCA with optimal number of components
-    pca = PCA(n_components=optimal_components)
-    principal_components = pca.fit_transform(imputed_vote_matrix.fillna(0))
-    logger.info(f"PCA explained variance ratio: {pca.explained_variance_ratio_}")
-
-    # Determine optimal number of clusters using Silhouette Score
+    # Determine optimal number of clusters using silhouette score
     silhouette_scores = []
-    max_k = min(10, n_samples)
+    max_k = min(5, n_samples)
     K = range(2, max_k + 1)
+    best_k = 2
+    best_score = -1
+
     for k in K:
-        if n_samples >= k:
-            kmeans = KMeans(n_clusters=k, random_state=42, n_init='auto')
-            labels = kmeans.fit_predict(principal_components)
-            score = silhouette_score(principal_components, labels)
-            silhouette_scores.append(score)
-            logger.info(f"Silhouette Score for k={k}: {score}")
-        else:
-            break
+        labels = perform_kmeans(principal_components, k)
+        score = compute_silhouette_score(principal_components, labels)
+        silhouette_scores.append(score)
+        logger.info(f"Silhouette Score for k={k}: {score}")
+        if score > best_score:
+            best_score = score
+            best_k = k
 
-    if silhouette_scores:
-        optimal_k = K[np.argmax(silhouette_scores)]
-    else:
-        optimal_k = 1
-    logger.info(f"Optimal number of clusters determined to be {optimal_k}")
-
-    # Perform K-means with optimal K
-    if n_samples >= optimal_k:
-        kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init='auto')
-        cluster_labels = kmeans.fit_predict(principal_components)
-    else:
-        cluster_labels = [0] * n_samples
+    # Perform final KMeans clustering with optimal k
+    cluster_labels = perform_kmeans(principal_components, best_k)
 
     return cluster_labels
 
