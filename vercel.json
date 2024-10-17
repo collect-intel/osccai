@@ -2,9 +2,14 @@
   "functions": {
     "api/update-gac-scores.py": {
       "runtime": "python3.9",
-      "cron": "* * * * *",
       "memory": 512,
       "maxDuration": 900
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/update-gac-scores.py",
+      "schedule": "* * * * *"
+    }
+  ]
 }
