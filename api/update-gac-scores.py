@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Database connection settings
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-class Handler(BaseHTTPRequestHandler):
+class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             main()
@@ -31,9 +31,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b'Error updating GAC scores')
+        return
 
-def handler(event, context):
-    return Handler(event, None, None).do_GET()
 
 def create_connection():
     # Parse the DATABASE_URL
@@ -419,8 +418,5 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                 WHERE uid = %s;
             """, (statement_id,))
     conn.commit()
-
-if __name__ == "__main__":
-    handler(None, None)
 
 print("Finished update-gac-scores.py")
