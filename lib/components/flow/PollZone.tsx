@@ -9,11 +9,18 @@ import {
   FaShareAlt,
   FaSync,
   FaVoteYea,
+  FaQuestionCircle,
 } from "react-icons/fa";
 import { Poll, Statement } from "@prisma/client";
 import Button from "@/lib/components/Button";
 import { fetchPollData } from "@/lib/actions";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
+import Modal from "@/lib/components/Modal";
+import ConstitutionableExplanation from "@/lib/components/ConstitutionableExplanation";
+
+interface ExtendedPoll extends Poll {
+  statements: Statement[];
+}
 
 interface PollZoneProps {
   isActive: boolean;
@@ -26,7 +33,7 @@ interface PollZoneProps {
     requireAuth: boolean;
     allowContributions: boolean;
   };
-  pollData?: Poll & { statements: Statement[] }; // Update this type
+  pollData?: ExtendedPoll;
   isExistingModel: boolean;
   onToggle: () => void;
   savingStatus: "idle" | "saving" | "saved";
@@ -48,6 +55,7 @@ export default function PollZone({
   const [localPollData, setLocalPollData] = useState(pollData);
   const [showAllStatements, setShowAllStatements] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isExplanationModalOpen, setIsExplanationModalOpen] = useState(false);
 
   useEffect(() => {
     if (pollData) {
@@ -227,22 +235,47 @@ export default function PollZone({
                 return (
                   <li
                     key={index}
-                    className="shadow rounded-lg flex flex-col overflow-hidden"
+                    className="shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray"
                   >
-                    <div className="p-4 bg-soft-gray">
-                      <p>{statement.text}</p>
+                    <div className="flex flex-col sm:flex-row justify-between items-start p-4">
+                      <div className="flex-grow pr-0 sm:pr-4 mb-4 sm:mb-0 min-h-[80px] sm:min-h-[60px] w-full sm:w-2/3">
+                        <p>{statement.text}</p>
+                      </div>
+                      <div className="w-full sm:w-1/3 text-sm flex flex-row sm:flex-col items-start sm:items-end space-x-2 sm:space-x-0 sm:space-y-1">
+                        <span className="bg-slate-blue text-white px-2 py-1 rounded text-center w-1/2 sm:w-full">
+                          {total > 0
+                            ? "Consensus Score: " +
+                              Number(statement.gacScore?.toFixed(2) || 0)
+                            : "No Votes Yet"}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-center w-1/2 sm:w-full ${
+                            isConstitutionable
+                              ? "bg-slate-blue text-white"
+                              : "bg-black bg-opacity-10 text-black text-opacity-50"
+                          } cursor-pointer flex items-center justify-center`}
+                          onClick={() => setIsExplanationModalOpen(true)}
+                        >
+                          {isConstitutionable
+                            ? "Constitutionable"
+                            : "Not Constitutionable"}
+                          <FaQuestionCircle className="ml-1 text-xs" />
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex text-white text-sm">
-                      <div className="flex flex-grow">
+                    <div
+                      className={`flex flex-col sm:flex-row text-white text-sm mt-1 ml-4 mr-4 mb-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}
+                    >
+                      <div className="flex flex-col sm:flex-row flex-grow">
                         <div
                           className="flex bg-agree-green"
                           style={{
                             flexGrow: agreeRatio,
                             flexBasis: flexBasis,
-                            minWidth: areAllEqual ? "auto" : "60px",
+                            minWidth: "7em",
                           }}
                         >
-                          <span className="py-2 px-4 whitespace-nowrap">
+                          <span className="py-1 px-2 whitespace-nowrap w-full text-center">
                             Agree: {statement.agreeCount}
                           </span>
                         </div>
@@ -251,10 +284,10 @@ export default function PollZone({
                           style={{
                             flexGrow: disagreeRatio,
                             flexBasis: flexBasis,
-                            minWidth: areAllEqual ? "auto" : "60px",
+                            minWidth: "7em",
                           }}
                         >
-                          <span className="py-2 px-4 whitespace-nowrap">
+                          <span className="py-1 px-2 whitespace-nowrap w-full text-center">
                             Disagree: {statement.disagreeCount}
                           </span>
                         </div>
@@ -263,24 +296,13 @@ export default function PollZone({
                           style={{
                             flexGrow: skipRatio,
                             flexBasis: flexBasis,
-                            minWidth: areAllEqual ? "auto" : "60px",
+                            minWidth: "7em",
                           }}
                         >
-                          <span className="py-2 px-4 whitespace-nowrap">
+                          <span className="py-1 px-2 whitespace-nowrap w-full text-center">
                             Skip: {statement.passCount}
                           </span>
                         </div>
-                      </div>
-                      <div
-                        className={`w-1/4 py-2 px-4 text-center ${
-                          isConstitutionable
-                            ? "bg-slate-blue"
-                            : "bg-medium-gray"
-                        }`}
-                      >
-                        {isConstitutionable
-                          ? "Constitutionable"
-                          : "Not Constitutionable"}
                       </div>
                     </div>
                   </li>
@@ -339,6 +361,12 @@ export default function PollZone({
           )}
         </div>
       </div>
+      <Modal
+        isOpen={isExplanationModalOpen}
+        onClose={() => setIsExplanationModalOpen(false)}
+      >
+        <ConstitutionableExplanation />
+      </Modal>
     </ZoneWrapper>
   );
 }
