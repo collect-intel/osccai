@@ -4,8 +4,8 @@ import sys
 from datetime import datetime
 import pg8000
 from urllib.parse import urlparse
-# import numpy as np
-# import pandas as pd
+import numpy as np
+import pandas as pd
 
 print("Starting update_gac_scores.py")
 
