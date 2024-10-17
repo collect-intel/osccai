@@ -5,8 +5,7 @@ console.log("Starting local cron job simulation for update_gac_scores.py");
 
 const pythonScriptPath = path.join(
   process.cwd(),
-  "python_api",
-  "cron",
+  "api",
   "update-gac-scores.py",
 );
 
