@@ -1,4 +1,5 @@
 import logging
+from http.server import BaseHTTPRequestHandler
 import os
 import sys
 from datetime import datetime
@@ -16,21 +17,23 @@ logger = logging.getLogger(__name__)
 # Database connection settings
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-def handler(request):
-    print("handler(request)")
-    logger.info("Received request to update GAC scores")
-    try:
-        main()
-        return {
-            "statusCode": 200,
-            "body": "GAC scores updated successfully"
-        }
-    except Exception as e:
-        logger.error(f"Error updating GAC scores: {e}")
-        return {
-            "statusCode": 500,
-            "body": "Error updating GAC scores"
-        }
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        try:
+            main()
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'GAC scores updated successfully')
+        except Exception as e:
+            logger.error(f"Error updating GAC scores: {e}")
+            self.send_response(500)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'Error updating GAC scores')
+
+def handler(event, context):
+    return Handler(event, None, None).do_GET()
 
 def create_connection():
     # Parse the DATABASE_URL
