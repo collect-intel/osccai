@@ -2,7 +2,12 @@
   "functions": {
     "api/update-gac-scores.py": {
       "memory": 512,
-      "maxDuration": 300
+      "maxDuration": 300,
+      "excludeFiles": "**/*",
+      "includeFiles": [
+        "api/update-gac-scores.py",
+        "api/requirements.txt"
+      ]
     }
   },
   "crons": [
