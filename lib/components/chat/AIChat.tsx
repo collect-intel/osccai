@@ -18,6 +18,7 @@ interface AIChatProps {
   icon?: React.ReactNode;
   color?: string;
   renderMessage?: (message: MessageWithFields) => React.ReactNode;
+  renderLoadingMessage?: (message: MessageWithFields) => React.ReactNode;
   genStream: (
     messages: MessageWithFields[],
   ) => Promise<
@@ -47,6 +48,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
       color,
       renderMessage,
       genStream,
+      renderLoadingMessage,
     },
     ref,
   ) => {
@@ -128,7 +130,6 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
               Object.assign(currentMessageRef.current, chunk);
             }
 
-            console.log("[AIChat] currentMessage", currentMessageRef.current);
             if (onAIMessage) {
               onAIMessage(currentMessageRef.current, false);
             }
@@ -195,11 +196,6 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
     );
 
     const renderMessages = useCallback(() => {
-      console.log(
-        "[AIChat] renderMessages",
-        messages,
-        currentMessageRef.current,
-      );
       return messages.map((message) => ({
         ...message,
         isComplete: !message.isStreaming && message.role === "assistant",
@@ -221,6 +217,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
             icon={icon}
             color={color}
             renderMessage={renderMessage}
+            renderLoadingMessage={renderLoadingMessage}
           />
         )}
       </div>

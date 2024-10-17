@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { FaRobot, FaUserAlt } from "react-icons/fa";
+import { FaUserAlt } from "react-icons/fa";
 import ConstitutionIcon from "../icons/ConstitutionIcon";
 import { MessageWithFields } from "../../types";
 
@@ -13,29 +13,32 @@ interface ChatInterfaceProps {
   interactive?: boolean;
   icon?: React.ReactNode;
   color?: string;
-  renderMessage?: (message: MessageWithFields) => React.ReactNode;
+  renderMessage?: (message: MessageWithFields) => React.ReactNode,
+  renderLoadingMessage?: (message: MessageWithFields) => React.ReactNode;
 }
 
-const LoadingBubble: React.FC = () => {
+const LoadingBubble: React.FC<{ content: React.ReactNode, animate: boolean }> = ({ content, animate }) => {
   const [dots, setDots] = useState("");
-
+  
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prevDots) => {
-        if (prevDots.length === 3) {
-          return "";
-        } else {
-          return prevDots + ".";
-        }
-      });
-    }, 500);
+    if (animate) {
+      const interval = setInterval(() => {
+        setDots((prevDots) => {
+          if (prevDots.length === 3) {
+            return "";
+          } else {
+            return prevDots + ".";
+          }
+        });
+      }, 500);
 
-    return () => clearInterval(interval);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  }, [animate]);
 
   return (
     <div className="my-2 p-2 rounded-md bg-gray-200 text-black shadow-md">
-      <span>Thinking{dots}</span>
+      <span>{content}{dots}</span>
     </div>
   );
 };
@@ -52,6 +55,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   icon,
   color = "teal",
   renderMessage = defaultMessageRender,
+  renderLoadingMessage = null,
 }) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -90,7 +94,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {icon || <ConstitutionIcon />}
                   </div>
                   {message.isStreaming && !hasVisibleContent ? (
-                    <LoadingBubble />
+                    <LoadingBubble content={
+                      renderLoadingMessage
+                        ? renderLoadingMessage(message)
+                        : null
+                      }
+                      animate={true}
+                    />
                   ) : hasVisibleContent ? (
                     <div
                       className={`my-2 p-2 rounded-md bg-${color} text-white shadow-md`}

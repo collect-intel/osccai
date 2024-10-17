@@ -102,7 +102,12 @@ I observe a peculiar atmospheric phenomenon...
         return await xmllm(({ prompt }: { prompt: any }) => {
           return [
             prompt({
-              model: "claude:good",
+              model: [
+                'claude:good',
+                'openai:good',
+                'claude:fast',
+                'openai:fast'
+              ],
               messages: convertedMessages,
               schema: {
                 thinking: String,
@@ -136,9 +141,18 @@ I observe a peculiar atmospheric phenomenon...
     const [selectedMessage, setSelectedMessage] =
       useState<MessageWithFields | null>(null);
 
-    const renderMessage = (message: MessageWithFields) => {
-      console.log("[ConstitutionalAIChat] renderMessage", message);
+    const MarkdownComponents: Partial<Components> = {
+      p: ({ children }) => <p className="mb-2">{children}</p>,
+      ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+      ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+      li: ({ children }) => <li className="mb-1">{children}</li>,
+      h1: ({ children }) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
+      h2: ({ children }) => <h2 className="text-xl font-bold mb-2">{children}</h2>,
+      h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+      blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-2">{children}</blockquote>,
+    };
 
+    const renderMessage = (message: MessageWithFields) => {
       const isComplete = !message.isStreaming;
       const hasVisibleContent =
         (message.final_response && message.final_response.trim() !== "") ||
@@ -159,21 +173,14 @@ I observe a peculiar atmospheric phenomenon...
         message.isStreaming &&
         !hasVisibleContent
       ) {
-        return <div className={`${messageStyle || ""}`}>Thinking...</div>;
+        return (
+          <div className={`${messageStyle || ""}`}>Preparing...</div>
+        );
       }
 
       if (!hasVisibleContent) {
         return null;
       }
-
-      const markdownComponents: Partial<Components> = {
-        pre: ({ children }: { children?: React.ReactNode }) => (
-          <p>{children}</p>
-        ),
-        code: ({ children }: { children?: React.ReactNode }) => (
-          <span>{children}</span>
-        ),
-      };
 
       return (
         <div
@@ -181,7 +188,7 @@ I observe a peculiar atmospheric phenomenon...
         >
           {message.role === "assistant" && isComplete && hasAdditionalInfo && (
             <FaInfoCircle
-              className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-blue-500"}`}
+              className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-white-500"}`}
               onClick={() => {
                 setSelectedMessage(message);
                 setModalOpen(true);
@@ -190,7 +197,7 @@ I observe a peculiar atmospheric phenomenon...
           )}
           <ReactMarkdown
             className="prose max-w-none"
-            components={markdownComponents}
+            components={MarkdownComponents}
           >
             {message.final_response || message.content}
           </ReactMarkdown>
@@ -211,6 +218,17 @@ I observe a peculiar atmospheric phenomenon...
           color={constitution.color}
           renderMessage={renderMessage}
           genStream={genStream}
+          renderLoadingMessage={message => {
+            return message.final_response
+              ? "Finalizing"
+              : message.improvement_strategy
+              ? "Improving"
+              : message.response_metrics
+              ? "Analyzing"
+              : message.draft_response
+              ? "Drafting"
+              : "Thinking";
+          }}
         />
         <AIResponseModal
           isOpen={modalOpen}
