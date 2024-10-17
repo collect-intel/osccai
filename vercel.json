@@ -3,7 +3,7 @@
     "api/update-gac-scores.py": {
       "memory": 512,
       "maxDuration": 300,
-      "excludeFiles": "**/*",
+      "excludeFiles": "**/{.next,node_modules,public}/**",
       "includeFiles": "api/**"
     }
   },
