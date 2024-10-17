@@ -421,6 +421,6 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
     conn.commit()
 
 if __name__ == "__main__":
-    main()
+    handler(None, None)
 
 print("Finished update-gac-scores.py")
