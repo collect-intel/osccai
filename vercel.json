@@ -1,23 +1,10 @@
 {
   "functions": {
-    "api/cron/update-gac-scores.py": {
-      "runtime": "@vercel/python@3.9"
+    "api/update-gac-scores.py": {
+      "runtime": "python3.9",
+      "sourceFile": "python_api/cron/update-gac-scores.py",
+      "includeFiles": "python_api/cron/**",
+      "cron": "* * * * *"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/cron/update-gac-scores",
-      "dest": "python_api/cron/update-gac-scores.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/update-gac-scores",
-      "schedule": "* * * * *"
-    }
-  ]
+  }
 }
