@@ -1,9 +1,7 @@
 {
   "functions": {
     "api/update-gac-scores.py": {
-      "runtime": "python3.9",
-      "memory": 512,
-      "maxDuration": 900
+      "runtime": "python3.9"
     }
   },
   "crons": [
