@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
 
-print("Starting update_gac_scores.py")
+print("Starting update-gac-scores.py")
 
 # Configure logging to output to stdout
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -46,7 +46,7 @@ def create_connection():
 
 def main():
     print("main")
-    logger.info("Starting update_gac_scores.py script")
+    logger.info("Starting update-gac-scores.py script")
 
     # Connect to the database
     try:
@@ -102,7 +102,7 @@ def main():
     # Close database connection
     cursor.close()
     conn.close()
-    logger.info("Completed update_gac_scores.py script successfully")
+    logger.info("Completed update-gac-scores.py script successfully")
 
 def fetch_polls_with_changes(cursor):
     query = """
@@ -420,4 +420,4 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
 if __name__ == "__main__":
     main()
 
-print("Finished update_gac_scores.py")
+print("Finished update-gac-scores.py")
