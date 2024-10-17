@@ -9,7 +9,7 @@
   },
   "crons": [
     {
-      "path": "/api/update-gac-scores.py",
+      "path": "/api/update-gac-scores",
       "schedule": "* * * * *"
     }
   ]
