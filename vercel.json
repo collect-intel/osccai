@@ -1,4 +1,14 @@
 {
+  "projects": [
+    {
+      "src": "app/",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "api/",
+      "use": "@vercel/python"
+    }
+  ],
   "functions": {
     "api/update-gac-scores.py": {
       "memory": 512,
