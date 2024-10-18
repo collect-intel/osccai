@@ -1,4 +1,5 @@
 import logging
+from http.server import BaseHTTPRequestHandler
 import os
 import sys
 from datetime import datetime
@@ -7,7 +8,8 @@ from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
 
-print("Starting update_gac_scores.py")
+VERSION = "1.0.1"  # Update this when making changes
+print(f"Starting update-gac-scores.py version {VERSION}")
 
 # Configure logging to output to stdout
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -16,21 +18,22 @@ logger = logging.getLogger(__name__)
 # Database connection settings
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-def handler(request):
-    print("handler(request)")
-    logger.info("Received request to update GAC scores")
-    try:
-        main()
-        return {
-            "statusCode": 200,
-            "body": "GAC scores updated successfully"
-        }
-    except Exception as e:
-        logger.error(f"Error updating GAC scores: {e}")
-        return {
-            "statusCode": 500,
-            "body": "Error updating GAC scores"
-        }
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        try:
+            main()
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'GAC scores updated successfully')
+        except Exception as e:
+            logger.error(f"Error updating GAC scores: {e}")
+            self.send_response(500)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'Error updating GAC scores')
+        return
+
 
 def create_connection():
     # Parse the DATABASE_URL
@@ -46,7 +49,7 @@ def create_connection():
 
 def main():
     print("main")
-    logger.info("Starting update_gac_scores.py script")
+    logger.info("Starting update-gac-scores.py script")
 
     # Connect to the database
     try:
@@ -102,7 +105,7 @@ def main():
     # Close database connection
     cursor.close()
     conn.close()
-    logger.info("Completed update_gac_scores.py script successfully")
+    logger.info("Completed update-gac-scores.py script successfully")
 
 def fetch_polls_with_changes(cursor):
     query = """
@@ -417,7 +420,4 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
             """, (statement_id,))
     conn.commit()
 
-if __name__ == "__main__":
-    main()
-
-print("Finished update_gac_scores.py")
+print("Finished update-gac-scores.py")
