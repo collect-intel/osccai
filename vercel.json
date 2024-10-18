@@ -1,15 +1,15 @@
 {
   "functions": {
-    "api/update-gac-scores.py": {
+    "functions/update-gac-scores.py": {
       "memory": 512,
       "maxDuration": 300,
       "excludeFiles": "**/{.next,node_modules,public}/**",
-      "includeFiles": "api/**"
+      "includeFiles": "functions/update-gac-scores.py"
     }
   },
   "crons": [
     {
-      "path": "/api/update-gac-scores.py",
+      "path": "/functions/update-gac-scores.py",
       "schedule": "* * * * *"
     }
   ]
