@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
 
-VERSION = "1.0.1"  # Update this when making changes
+VERSION = "1.0.2"  # Update this when making changes
 print(f"Starting update-gac-scores.py version {VERSION}")
 
 # Configure logging to output to stdout
