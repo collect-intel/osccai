@@ -1,13 +1,20 @@
 {
-    "buildCommand": "pip install -r requirements.txt && next build",
-    "devCommand": "next dev",
-    "installCommand": "npm install",
-    "framework": "nextjs",
-    "outputDirectory": ".next",
-    "crons": [
-      {
-        "path": "/api/update-gac-scores",
-        "schedule": "* * * * *"
-      }
-    ]
-  }
+  "version": 2,
+  "functions": {
+    "api/update-gac-scores.py": {
+      "runtime": "python3.12"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/cron",
+      "dest": "/api/update-gac-scores.py"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
