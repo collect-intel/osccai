@@ -1,7 +1,15 @@
 {
-  "builds":
-    {
-      "src": "next.config.mjs",
-      "use": "@vercel/next"
-    }
-}
+    "framework": "nextjs",
+    "functions": {
+      "api/update-gac-scores.py": {
+        "runtime": "@vercel/python"
+      }
+    },
+    "crons": [
+      {
+        "path": "/api/update-gac-scores",
+        "schedule": "0 * * * *"
+      }
+    ]
+  }
+  
