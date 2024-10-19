@@ -1,11 +1,9 @@
 {
+    "buildCommand": "pip install -r requirements.txt && next build",
+    "devCommand": "next dev",
+    "installCommand": "npm install",
     "framework": "nextjs",
-    "routes": [
-      {
-        "src": "/api/update-gac-scores",
-        "dest": "scripts/update-gac-scores.py"
-      }
-    ],
+    "outputDirectory": ".next",
     "crons": [
       {
         "path": "/api/update-gac-scores",
@@ -13,4 +11,3 @@
       }
     ]
   }
-  
