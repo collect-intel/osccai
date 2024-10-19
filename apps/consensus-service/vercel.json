@@ -1,16 +1,22 @@
 {
-  "functions": {
-    "api/update-gac-scores.py": {
-      "memory": 512,
-      "maxDuration": 300,
-      "excludeFiles": "**/{.next,node_modules,public}/**",
-      "includeFiles": "api/update-gac-scores.py"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/update-gac-scores.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
+  "routes": [
+    {
+      "src": "/api/update-gac-scores",
+      "dest": "api/update-gac-scores.py"
+    }
+  ],
   "crons": [
     {
-      "path": "/api/update-gac-scores.py",
+      "path": "/api/update-gac-scores",
       "schedule": "* * * * *"
     }
-  ]
+  ],
+  "buildCommand": "pip install -r requirements.txt"
 }
