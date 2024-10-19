@@ -1,0 +1,8 @@
+{
+    "name": "osccai-consensus-service",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+      "start": "python update-gac-scores.py"
+    }
+  }

@@ -1,0 +1,13 @@
+{
+  "name": "osccai-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "cd apps/web && npm run dev",
+    "build:web": "cd apps/web && npm run build",
+    "start:web": "cd apps/web && npm run start"
+  }
+}
