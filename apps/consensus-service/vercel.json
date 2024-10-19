@@ -1,9 +1,8 @@
 {
   "functions": {
     "api/update-gac-scores.py": {
-      "runtime": "python3.9",
       "memory": 1024,
-      "maxDuration": 300
+      "maxDuration": 30
     }
   },
   "crons": [
@@ -12,7 +11,5 @@
       "schedule": "* * * * *"
     }
   ],
-  "buildCommand": null,
-  "installCommand": null,
-  "framework": null
+  "buildCommand": "echo 'Starting build process' && pip install -r api/requirements.txt --target ./python_packages && echo 'Requirements installed'"
 }
