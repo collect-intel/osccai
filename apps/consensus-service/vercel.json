@@ -5,15 +5,9 @@
       "runtime": "python3.12"
     }
   },
-  "routes": [
-    {
-      "src": "/api/cron",
-      "dest": "/api/update-gac-scores.py"
-    }
-  ],
   "crons": [
     {
-      "path": "/api/cron",
+      "path": "/api/update-gac-scores",
       "schedule": "* * * * *"
     }
   ]
