@@ -1,10 +1,9 @@
 {
   "functions": {
     "api/update-gac-scores.py": {
-      "memory": 512,
-      "maxDuration": 300,
-      "excludeFiles": "**/{.next,node_modules,public}/**",
-      "includeFiles": "api/update-gac-scores.py"
+      "runtime": "python3.9",
+      "memory": 1024,
+      "maxDuration": 300
     }
   },
   "crons": [
@@ -12,5 +11,8 @@
       "path": "/api/update-gac-scores.py",
       "schedule": "* * * * *"
     }
-  ]
+  ],
+  "buildCommand": null,
+  "installCommand": null,
+  "framework": null
 }
