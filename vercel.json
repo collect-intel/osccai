@@ -1,4 +1,16 @@
 {
-    "framework": "nextjs"
-}
+    "framework": "nextjs",
+    "routes": [
+      {
+        "src": "/api/update-gac-scores",
+        "dest": "scripts/update-gac-scores.py"
+      }
+    ],
+    "crons": [
+      {
+        "path": "/api/update-gac-scores",
+        "schedule": "* * * * *"
+      }
+    ]
+  }
   
