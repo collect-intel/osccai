@@ -1,13 +1,7 @@
 {
-  "version": 2,
-  "functions": {
-    "api/update-gac-scores.py": {
-      "runtime": "python3.12"
-    }
-  },
   "crons": [
     {
-      "path": "/api/update-gac-scores",
+      "path": "/api/update-gac-score.py",
       "schedule": "* * * * *"
     }
   ]
