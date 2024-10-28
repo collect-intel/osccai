@@ -6,8 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:web": "cd apps/web && npm run dev",
-    "build:web": "cd apps/web && npm run build",
-    "start:web": "cd apps/web && npm run start"
+    "web": "pnpm --filter osccai-web",
+    "consensus-service": "pnpm --filter osccai-consensus-service"
   }
 }
