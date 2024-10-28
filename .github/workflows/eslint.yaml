@@ -31,12 +31,15 @@ jobs:
 
       - name: Prisma generate
         if: github.event_name == 'push' || github.event_name == 'pull_request'
+        working-directory: apps/web
         run: pnpm prisma generate
 
       - name: Typecheck
+        working-directory: apps/web
         run: pnpm tsc
 
       - name: Run ESLint
+        working-directory: apps/web
         run: |
           if [[ "${{ github.event_name }}" == "push" ]]; then
             pnpm lint --fix
