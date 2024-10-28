@@ -1,0 +1,9 @@
+{
+  "name": "osccai-consensus-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "python api/update-gac-scores.py",
+    "build": "echo 'Starting build process from package.json' && pip install -r api/requirements.txt --target ./python_packages && echo 'Requirements installed'"
+  }
+}
