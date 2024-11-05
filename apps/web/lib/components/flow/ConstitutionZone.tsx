@@ -17,6 +17,7 @@ interface ConstitutionZoneProps {
     name: string;
     bio: string;
     constitutions: Constitution[];
+    activeConstitutionId?: string | null;
     published?: boolean;
   };
   isExistingModel: boolean;
