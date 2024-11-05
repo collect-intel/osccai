@@ -9,10 +9,10 @@ import ConstitutionZone from "./flow/ConstitutionZone";
 import {
   createCommunityModel,
   updateCommunityModel,
-  getCommunityModel,
   updatePoll,
   fetchPollData,
 } from "@/lib/actions";
+import { getCommunityModel } from "@/lib/data";
 import { AboutZoneData } from "./flow/AboutZone";
 import Toast from "./Toast";
 import { debounce } from "lodash";
@@ -26,6 +26,7 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   constitutions: Constitution[];
   activeConstitutionId?: string;
   polls: Poll[];
+  published?: boolean;
 }
 
 interface CommunityModelFlowProps {
@@ -117,6 +118,7 @@ export default function CommunityModelFlow({
               activeConstitutionId:
                 fetchedModelData.activeConstitutionId || undefined,
               polls: fetchedModelData.polls || [],
+              published: fetchedModelData.published || false,
             });
             setActiveZones(["about", "principles", "poll", "communityModel"]);
 
@@ -415,6 +417,7 @@ export default function CommunityModelFlow({
                   bio: modelData?.bio || "",
                   constitutions: modelData?.constitutions || [],
                   activeConstitutionId: modelData?.activeConstitutionId,
+                  published: modelData?.published,
                 }}
                 isExistingModel={isExistingModel}
                 onToggle={() => toggleZone("communityModel")}
@@ -434,10 +437,10 @@ export default function CommunityModelFlow({
                   });
                   if (isExistingModel) {
                     // Only update constitutions and activeConstitutionId
-                    const { constitutions, activeConstitutionId } = data;
-                    if (constitutions || activeConstitutionId !== undefined) {
+                    const { constitutions, activeConstitutionId, published } = data;
+                    if (constitutions || activeConstitutionId !== undefined || published !== undefined) {
                       debouncedSaveModelData(
-                        { constitutions, activeConstitutionId },
+                        { constitutions, activeConstitutionId, published },
                         "communityModel",
                       );
                     }

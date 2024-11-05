@@ -67,39 +67,46 @@ export async function getPollData(pollId: string) {
 
 export async function getCommunityModel(
   modelId: string,
-): Promise<ExtendedCommunityModel | null> {
-  const { userId: clerkUserId } = auth();
-
-  if (!clerkUserId) {
-    return null;
-  }
-
-  const communityModel = await prisma.communityModel.findUnique({
-    where: { uid: modelId, deleted: false },
+): Promise<
+  | (CommunityModel & {
+      principles: Array<{ id: string; text: string; gacScore?: number }>;
+      requireAuth: boolean;
+      allowContributions: boolean;
+      constitutions: Constitution[];
+      polls: Poll[];
+      published: boolean;
+    })
+  | null
+> {
+  const model = await prisma.communityModel.findUnique({
+    where: { uid: modelId },
     include: {
-      owner: true,
-      activeConstitution: true,
-      constitutions: {
-        where: { deleted: false },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
       polls: {
-        where: { deleted: false },
+        include: {
+          statements: true,
+        },
       },
+      constitutions: true,
     },
   });
 
-  if (!communityModel) {
+  if (!model) {
     return null;
   }
 
-  if (
-    communityModel.owner.clerkUserId !== "seeded_user" &&
-    communityModel.owner.clerkUserId !== clerkUserId
-  ) {
-    return null;
-  }
+  const firstPoll = model.polls[0];
 
-  return communityModel as ExtendedCommunityModel;
+  return {
+    ...model,
+    principles:
+      firstPoll?.statements.map((s) => ({
+        id: s.uid,
+        text: s.text,
+        gacScore: s.gacScore || undefined,
+      })) || [],
+    requireAuth: firstPoll?.requireAuth || false,
+    allowContributions: firstPoll?.allowParticipantStatements || false,
+    constitutions: model.constitutions,
+    published: model.published || false,
+  };
 }

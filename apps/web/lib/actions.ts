@@ -1020,19 +1020,17 @@ export async function updateCommunityModel(
   }
 }
 
-export async function getCommunityModel(modelId: string): Promise<
-  | (CommunityModel & {
-      principles: Array<{ id: string; text: string; gacScore?: number }>;
-      requireAuth: boolean;
-      allowContributions: boolean;
-      constitutions: Constitution[];
-      polls: Poll[];
-    })
-  | null
-> {
+export async function getCommunityModel(modelId: string) {
   const model = await prisma.communityModel.findUnique({
     where: { uid: modelId },
-    include: {
+    select: {
+      uid: true,
+      name: true,
+      bio: true,
+      goal: true,
+      logoUrl: true,
+      published: true,
+      activeConstitutionId: true,
       polls: {
         include: {
           statements: true,
