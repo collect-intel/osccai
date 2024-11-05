@@ -73,6 +73,7 @@ export async function getCommunityModel(
       requireAuth: boolean;
       allowContributions: boolean;
       constitutions: Constitution[];
+      activeConstitution: Constitution | null;
       polls: Poll[];
       published: boolean;
     })
@@ -87,6 +88,7 @@ export async function getCommunityModel(
         },
       },
       constitutions: true,
+      activeConstitution: true,
     },
   });
 

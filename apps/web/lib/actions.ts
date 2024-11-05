@@ -1020,46 +1020,6 @@ export async function updateCommunityModel(
   }
 }
 
-export async function getCommunityModel(modelId: string) {
-  const model = await prisma.communityModel.findUnique({
-    where: { uid: modelId },
-    select: {
-      uid: true,
-      name: true,
-      bio: true,
-      goal: true,
-      logoUrl: true,
-      published: true,
-      activeConstitutionId: true,
-      polls: {
-        include: {
-          statements: true,
-        },
-      },
-      constitutions: true,
-    },
-  });
-
-  if (!model) {
-    return null;
-  }
-
-  const firstPoll = model.polls[0];
-
-  return {
-    ...model,
-    principles:
-      firstPoll?.statements.map((s) => ({
-        id: s.uid,
-        text: s.text,
-        gacScore: s.gacScore || undefined,
-      })) || [],
-    requireAuth: firstPoll?.requireAuth || false,
-    allowContributions: firstPoll?.allowParticipantStatements || false,
-    constitutions: model.constitutions,
-  };
-}
-
 export async function fetchPollData(
   modelId: string,
 ): Promise<Poll & { statements: Statement[] }> {

@@ -24,7 +24,7 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   requireAuth: boolean;
   allowContributions: boolean;
   constitutions: Constitution[];
-  activeConstitutionId?: string;
+  activeConstitutionId?: string | null;
   polls: Poll[];
   published?: boolean;
 }
