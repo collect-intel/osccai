@@ -116,7 +116,7 @@ export async function getCommunityModel(
     ownerId: model.ownerId,
     owner: {
       uid: model.owner.uid,
-      clerkUserId: model.owner.clerkUserId,
+      clerkUserId: model.owner.clerkUserId || "",
     },
   };
 }
