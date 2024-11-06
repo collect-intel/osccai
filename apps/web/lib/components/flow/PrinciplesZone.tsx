@@ -5,6 +5,7 @@ import { generateStatementsFromIdea } from "@/lib/aiActions";
 import Principle from "@/lib/components/Principle";
 import { FaMagic } from "react-icons/fa";
 import { debounce } from "lodash";
+import Modal from "@/lib/components/Modal";
 
 interface PrinciplesZoneProps {
   isActive: boolean;
@@ -61,6 +62,8 @@ export default function PrinciplesZone({
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGeneratedPrinciples, setHasGeneratedPrinciples] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const debouncedUpdateModelData = useCallback(
     debounce((data: Partial<PrinciplesZoneProps["modelData"]>) => {
@@ -167,6 +170,21 @@ export default function PrinciplesZone({
     }
   };
 
+  const handleDeleteAll = async () => {
+    setIsDeleting(true);
+    try {
+      setPrinciples([]);
+      const formattedPrinciples: Array<{ id: string; text: string }> = [];
+      await debouncedUpdateModelData({ principles: formattedPrinciples });
+    } catch (error) {
+      console.error("Error deleting principles:", error);
+      // Optionally add error handling UI here
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteAllModal(false);
+    }
+  };
+
   return (
     <ZoneWrapper
       title="Configure Principles"
@@ -183,9 +201,19 @@ export default function PrinciplesZone({
           </p>
         </div>
         <div className="w-2/3 space-y-4">
-          <label className="block text-sm font-medium text-gray-700">
-            Add at least 5 principles for your community to vote on
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium text-gray-700">
+              Add at least 5 principles for your community to vote on
+            </label>
+            {principles.length > 0 && (
+              <button
+                onClick={() => setShowDeleteAllModal(true)}
+                className="text-red-500 hover:text-red-700 text-sm"
+              >
+                Delete All
+              </button>
+            )}
+          </div>
           {principles.map((principle) => {
             return (
               <Principle
@@ -261,6 +289,53 @@ export default function PrinciplesZone({
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={showDeleteAllModal}
+        onClose={() => setShowDeleteAllModal(false)}
+      >
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-red-600">Delete All Principles</h2>
+          <div className="space-y-2">
+            <p className="text-gray-600">
+              Are you sure you want to delete all principles? This action cannot be undone.
+            </p>
+            <p className="text-red-500 bg-red-50 p-3 rounded-md">
+              Warning: This will also delete all associated poll data, including:
+              <ul className="list-disc ml-5 mt-2">
+                <li>All votes on these principles</li>
+                <li>All community feedback</li>
+                <li>All consensus tracking data</li>
+              </ul>
+            </p>
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowDeleteAllModal(false)}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAll}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+            >
+              {isDeleting ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Deleting...
+                </span>
+              ) : (
+                "Yes, Delete Everything"
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </ZoneWrapper>
   );
 }

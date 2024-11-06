@@ -11,7 +11,7 @@ export default async function CommunityModelsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
+    <>
       <h1 className="text-3xl font-bold mb-6">My Community Models</h1>
 
       <div className="bg-white border border-yellow rounded-lg p-6 mb-8">
@@ -54,6 +54,6 @@ export default async function CommunityModelsPage() {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

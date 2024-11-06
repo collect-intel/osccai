@@ -8,7 +8,7 @@ import ConstitutionIcon from "../icons/ConstitutionIcon";
 import Spinner from "@/lib/components/Spinner";
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
-import { FaTrash, FaExternalLinkAlt, FaLink } from "react-icons/fa";
+import { FaTrash, FaExternalLinkAlt, FaLink, FaEye } from "react-icons/fa";
 
 interface ConstitutionZoneProps {
   isActive: boolean;
@@ -210,19 +210,42 @@ export default function ConstitutionZone({
                 <h3 className="text-xl font-semibold">
                   Constitution v{selectedConstitution.version}
                 </h3>
-                <button
-                  onClick={() => setIsChatModalOpen(true)}
-                  className={`bg-yellow text-black px-4 py-2 rounded transition-colors
-                    ${
-                      selectedConstitution.uid.startsWith("temp-")
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-yellow-600"
-                    }`}
-                  disabled={selectedConstitution.uid.startsWith("temp-")}
-                >
-                  Try out Constitution v{selectedConstitution.version}
-                </button>
+                <div className="flex items-center divide-x divide-white/20">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/community-models/chat/${modelId}`);
+                      setShowCopiedToast(true);
+                      setTimeout(() => setShowCopiedToast(false), 2000);
+                    }}
+                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                  >
+                    <FaLink className="w-3 h-3" />
+                    <span>Copy Public Link</span>
+                  </button>
+                  <a
+                    href={`/community-models/chat/${modelId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                  >
+                    <FaExternalLinkAlt className="w-3 h-3" />
+                    <span>Open Public Chat</span>
+                  </a>
+                  <button
+                    onClick={() => setIsChatModalOpen(true)}
+                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                    disabled={selectedConstitution.uid.startsWith("temp-")}
+                  >
+                    <FaEye className="w-3 h-3" />
+                    <span>Quick Preview</span>
+                  </button>
+                </div>
               </div>
+              {showCopiedToast && (
+                <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 rounded text-sm">
+                  Link copied!
+                </div>
+              )}
               <div className="bg-white p-4 rounded overflow-auto flex-grow text-black border-2 border-white">
                 <ReactMarkdown>
                   {selectedConstitution.uid.startsWith("temp-")
@@ -245,35 +268,6 @@ export default function ConstitutionZone({
           minHeight={500}
         >
           <div className="w-full h-full max-w-4xl">
-            <div className="mb-4 flex items-center justify-between bg-gray-100 p-3 rounded">
-              <div className="flex items-center space-x-4">
-                <a
-                  href={`/community-models/chat/${modelId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 text-teal hover:text-teal-dark transition-colors"
-                >
-                  <FaExternalLinkAlt />
-                  <span>Open in new tab</span>
-                </a>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/community-models/chat/${modelId}`);
-                    setShowCopiedToast(true);
-                    setTimeout(() => setShowCopiedToast(false), 2000);
-                  }}
-                  className="flex items-center space-x-2 text-teal hover:text-teal-dark transition-colors"
-                >
-                  <FaLink />
-                  <span>Copy link</span>
-                </button>
-              </div>
-              {showCopiedToast && (
-                <div className="absolute top-2 right-2 bg-black text-white px-3 py-1 rounded text-sm">
-                  Link copied!
-                </div>
-              )}
-            </div>
             <ConstitutionalAIChat
               constitution={{
                 text: selectedConstitution.content,

@@ -1,9 +1,15 @@
+'use client';
+
 import DefaultLayout from "@/lib/components/DefaultLayout";
+import { usePathname } from "next/navigation";
 
 export default function CommunityModelsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DefaultLayout>{children}</DefaultLayout>;
+  const pathname = usePathname();
+  const isChatRoute = pathname?.includes('/chat/');
+  
+  return <DefaultLayout fullWidth={isChatRoute}>{children}</DefaultLayout>;
 }

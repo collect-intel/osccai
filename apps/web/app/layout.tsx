@@ -19,9 +19,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.className} pb-16`}>
+        <body className={`${inter.className} grid grid-rows-[auto_1fr]`}>
           <Navbar />
-          <main className="min-h-screen">{children}</main>
+          <main>{children}</main>
           <UserDebug />
         </body>
       </html>

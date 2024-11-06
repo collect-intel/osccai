@@ -176,14 +176,14 @@ export default function AboutZone({
               value={name}
               onChange={(e) => handleChange("name", e.target.value)}
               onBlur={() => handleBlur("name")}
-              maxLength={20}
+              maxLength={50}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
             <p
-              className={`text-sm mt-1 text-right ${getCharCountColor(name.length, 20)}`}
+              className={`text-sm mt-1 text-right ${getCharCountColor(name.length, 50)}`}
             >
-              {name.length}/20
+              {name.length}/50
             </p>
           </div>
           <div>

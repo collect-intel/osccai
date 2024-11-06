@@ -967,6 +967,14 @@ export async function updateCommunityModel(
 
           // Delete principles that are no longer in the list
           for (const statement of statementsToDelete) {
+            await prisma.vote.deleteMany({
+              where: { statementId: statement.uid },
+            });
+            
+            await prisma.flag.deleteMany({
+              where: { statementId: statement.uid },
+            });
+            
             await prisma.statement.delete({
               where: { uid: statement.uid },
             });

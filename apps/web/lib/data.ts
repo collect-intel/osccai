@@ -76,6 +76,8 @@ export async function getCommunityModel(
       activeConstitution: Constitution | null;
       polls: Poll[];
       published: boolean;
+      ownerId: string;
+      owner: { uid: string; clerkUserId: string };
     })
   | null
 > {
@@ -89,6 +91,7 @@ export async function getCommunityModel(
       },
       constitutions: true,
       activeConstitution: true,
+      owner: true,
     },
   });
 
@@ -110,5 +113,10 @@ export async function getCommunityModel(
     allowContributions: firstPoll?.allowParticipantStatements || false,
     constitutions: model.constitutions,
     published: model.published || false,
+    ownerId: model.ownerId,
+    owner: {
+      uid: model.owner.uid,
+      clerkUserId: model.owner.clerkUserId,
+    },
   };
 }

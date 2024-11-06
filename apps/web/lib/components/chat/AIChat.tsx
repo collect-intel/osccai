@@ -62,7 +62,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
     const currentMessageRef = useRef<MessageWithFields | null>(null);
 
     const proxyUrl =
-      process.env.PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+      process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
 
     const clientProvider = new ClientProvider(proxyUrl);
 
@@ -94,9 +94,9 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
     );
 
     const submitMessages = useCallback(
-      async (messages: MessageWithFields[]) => {
-        console.log("[AIChat] submitMessages", messages);
-        if (messages.length === 0) return;
+      async (messagesToSubmit: MessageWithFields[]) => {
+        console.log("[AIChat] submitMessages", messagesToSubmit);
+        if (messagesToSubmit.length === 0) return;
 
         // Cancel any ongoing stream when submitting new messages
         if (streamRef.current) {
@@ -107,7 +107,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
         setIsLoading(true);
 
         try {
-          const stream = await genStream(messages);
+          const stream = await genStream(messagesToSubmit);
           streamRef.current = stream;
           currentMessageRef.current = {
             role: "assistant",
@@ -115,11 +115,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
             isStreaming: true,
           };
 
-          setMessages((prevMessages) =>
-            currentMessageRef.current
-              ? [...prevMessages, currentMessageRef.current]
-              : prevMessages,
-          );
+          setMessages((prevMessages) => [...messagesToSubmit, currentMessageRef.current!]);
 
           for await (const chunk of stream) {
             if (typeof chunk === "string") {
@@ -133,7 +129,6 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
               onAIMessage(currentMessageRef.current, false);
             }
 
-            // Force update to re-render with new content
             forceUpdate();
           }
 
