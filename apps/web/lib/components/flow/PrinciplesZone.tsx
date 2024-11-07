@@ -188,106 +188,100 @@ export default function PrinciplesZone({
   return (
     <ZoneWrapper
       title="Configure Principles"
+      subtitle="Define the core principles that will guide your community AI model.
+            These principles will be used to create polls for your community to
+            vote on."
       isActive={isActive}
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-      <div className="flex">
-        <div className="w-1/3 pr-4">
-          <p className="text-gray-600">
-            Define the core principles that will guide your community AI model.
-            These principles will be used to create polls for your community to
-            vote on.
-          </p>
-        </div>
-        <div className="w-2/3 space-y-4">
-          <div className="flex justify-between items-center">
-            <label className="block text-sm font-medium text-gray-700">
-              Add at least 5 principles for your community to vote on
-            </label>
-            {principles.length > 0 && (
-              <button
-                onClick={() => setShowDeleteAllModal(true)}
-                className="text-red-500 hover:text-red-700 text-sm"
-              >
-                Delete All
-              </button>
-            )}
-          </div>
-          {principles.map((principle) => {
-            return (
-              <Principle
-                key={principle.id}
-                text={principle.text}
-                isLoading={principle.isLoading}
-                onUpdate={(value) => updatePrinciple(principle.id, value)}
-                onDelete={() => removePrinciple(principle.id)}
-                isEditing={principle.isEditing}
-                setIsEditing={(isEditing) =>
-                  setIsEditing(principle.id, isEditing)
-                }
-              />
-            );
-          })}
-          <div className="space-y-2">
-            {!hasGeneratedPrinciples && (
-              <button
-                onClick={handleGeneratePrinciples}
-                className="text-white bg-teal flex items-center px-3 py-1 rounded text-m"
-                disabled={isGenerating || hasGeneratedPrinciples}
-              >
-                {isGenerating ? (
-                  "Generating..."
-                ) : (
-                  <>
-                    <FaMagic className="h-4 w-4 mr-1" />
-                    Generate some principles automatically
-                  </>
-                )}
-              </button>
-            )}
-            <button onClick={addPrinciple} className="text-teal block">
-              {principles.length === 0
-                ? "+ Add a principle"
-                : "+ Add another principle"}
-            </button>
-          </div>
-          <Toggle
-            label="Require Authentication"
-            enabled={requireAuth}
-            setEnabled={(value) => handleToggleChange("requireAuth", value)}
-            details="Require community voters to authenticate"
-          />
-          <Toggle
-            label="Allow Participant Contributions"
-            enabled={allowContributions}
-            setEnabled={(value) =>
-              handleToggleChange("allowContributions", value)
-            }
-            details="Allow community voters to contribute their own principles"
-          />
-          {!isExistingModel && (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <label className="block text-sm font-medium text-gray-700">
+            Add at least 5 principles for your community to vote on
+          </label>
+          {principles.length > 0 && (
             <button
-              onClick={onComplete}
-              className="bg-teal text-white px-4 py-2 rounded flex items-center"
-              disabled={principles.filter((p) => !p.isLoading).length < 5}
+              onClick={() => setShowDeleteAllModal(true)}
+              className="text-red-500 hover:text-red-700 text-sm"
             >
-              Next
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 ml-2"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              Delete All
             </button>
           )}
         </div>
+        {principles.map((principle) => {
+          return (
+            <Principle
+              key={principle.id}
+              text={principle.text}
+              isLoading={principle.isLoading}
+              onUpdate={(value) => updatePrinciple(principle.id, value)}
+              onDelete={() => removePrinciple(principle.id)}
+              isEditing={principle.isEditing}
+              setIsEditing={(isEditing) =>
+                setIsEditing(principle.id, isEditing)
+              }
+            />
+          );
+        })}
+        <div className="space-y-2">
+          {!hasGeneratedPrinciples && (
+            <button
+              onClick={handleGeneratePrinciples}
+              className="text-white bg-teal flex items-center px-3 py-1 rounded text-m"
+              disabled={isGenerating || hasGeneratedPrinciples}
+            >
+              {isGenerating ? (
+                "Generating..."
+              ) : (
+                <>
+                  <FaMagic className="h-4 w-4 mr-1" />
+                  Generate some principles automatically
+                </>
+              )}
+            </button>
+          )}
+          <button onClick={addPrinciple} className="text-teal block">
+            {principles.length === 0
+              ? "+ Add a principle"
+              : "+ Add another principle"}
+          </button>
+        </div>
+        <Toggle
+          label="Require Authentication"
+          enabled={requireAuth}
+          setEnabled={(value) => handleToggleChange("requireAuth", value)}
+          details="Require community voters to authenticate"
+        />
+        <Toggle
+          label="Allow Participant Contributions"
+          enabled={allowContributions}
+          setEnabled={(value) =>
+            handleToggleChange("allowContributions", value)
+          }
+          details="Allow community voters to contribute their own principles"
+        />
+        {!isExistingModel && (
+          <button
+            onClick={onComplete}
+            className="bg-teal text-white px-4 py-2 rounded flex items-center"
+            disabled={principles.filter((p) => !p.isLoading).length < 5}
+          >
+            Next
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 ml-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        )}
       </div>
 
       <Modal

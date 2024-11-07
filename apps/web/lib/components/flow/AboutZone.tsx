@@ -155,18 +155,12 @@ export default function AboutZone({
   return (
     <ZoneWrapper
       title="About"
+      subtitle="Tell us about your community and what you hope to achieve with your AI model."
       isActive={isActive}
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-      <div className="flex">
-        <div className="w-1/3 pr-4">
-          <p className="text-sm text-gray-600">
-            Tell us about your community and what you hope to achieve with your
-            AI model.
-          </p>
-        </div>
-        <div className="w-2/3 space-y-4">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
               What is your community called?
@@ -247,7 +241,6 @@ export default function AboutZone({
             </button>
           )}
         </div>
-      </div>
     </ZoneWrapper>
   );
 }

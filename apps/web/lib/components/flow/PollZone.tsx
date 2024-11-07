@@ -341,18 +341,13 @@ export default function PollZone({
   return (
     <ZoneWrapper
       title="Poll Results"
+      subtitle="View and manage your community poll results here. Results update
+            automatically every 30 seconds."
       isActive={isActive}
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-      <div className="flex">
-        <div className="w-1/3 pr-4">
-          <p className="text-gray-600">
-            View and manage your community poll results here. Results update
-            automatically every 30 seconds.
-          </p>
-        </div>
-        <div className="w-2/3 space-y-4">
+        <div>
           {renderPollContent()}
           {!isExistingModel && localPollData && (
             <Button onClick={onComplete} variant="primary" className="mt-4">
@@ -360,7 +355,6 @@ export default function PollZone({
             </Button>
           )}
         </div>
-      </div>
       <Modal
         isOpen={isExplanationModalOpen}
         onClose={() => setIsExplanationModalOpen(false)}
