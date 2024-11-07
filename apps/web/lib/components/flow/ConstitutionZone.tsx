@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ZoneWrapper from "./ZoneWrapper";
-import { createConstitution, deleteConstitution } from "@/lib/actions";
+import { createConstitution, deleteConstitution, publishModel, unpublishModel } from "@/lib/actions";
 import ConstitutionalAIChat from "@/lib/components/chat/ConstitutionalAIChat";
 import Modal from "@/lib/components/Modal";
 import { Constitution } from "@prisma/client";
@@ -8,7 +8,7 @@ import ConstitutionIcon from "../icons/ConstitutionIcon";
 import Spinner from "@/lib/components/Spinner";
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaExternalLinkAlt, FaLink, FaEye } from "react-icons/fa";
 
 interface ConstitutionZoneProps {
   isActive: boolean;
@@ -17,7 +17,8 @@ interface ConstitutionZoneProps {
     name: string;
     bio: string;
     constitutions: Constitution[];
-    activeConstitutionId?: string; // Add this line
+    activeConstitutionId?: string | null;
+    published?: boolean;
   };
   isExistingModel: boolean;
   onToggle: () => void;
@@ -45,6 +46,8 @@ export default function ConstitutionZone({
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [constitutionToDelete, setConstitutionToDelete] =
     useState<Constitution | null>(null);
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const handleGenerateConstitution = async () => {
     setIsGenerating(true);
@@ -106,6 +109,31 @@ export default function ConstitutionZone({
     setConstitutionToDelete(null);
   };
 
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      const formData = new FormData();
+      formData.append("modelId", modelId);
+      await publishModel(formData);
+      onUpdate({ ...modelData, published: true });
+    } catch (error) {
+      console.error("Failed to publish model:", error);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("modelId", modelId);
+      await unpublishModel(formData);
+      onUpdate({ ...modelData, published: false });
+    } catch (error) {
+      console.error("Failed to unpublish model:", error);
+    }
+  };
+
   return (
     <ZoneWrapper
       title="Constitutions"
@@ -150,12 +178,7 @@ export default function ConstitutionZone({
                   `}
                 >
                   <div>
-                    Constitution v{constitution.version}{" "}
-                    {constitution.uid === sortedConstitutions[0].uid && (
-                      <span className="text-xs font-semibold ml-2">
-                        (latest)
-                      </span>
-                    )}
+                    Constitution v{constitution.version}
                   </div>
                   <div className="text-xs text-teal-200">
                     {formatDistanceToNow(new Date(constitution.createdAt), {
@@ -187,19 +210,42 @@ export default function ConstitutionZone({
                 <h3 className="text-xl font-semibold">
                   Constitution v{selectedConstitution.version}
                 </h3>
-                <button
-                  onClick={() => setIsChatModalOpen(true)}
-                  className={`bg-yellow text-black px-4 py-2 rounded transition-colors
-                    ${
-                      selectedConstitution.uid.startsWith("temp-")
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-yellow-600"
-                    }`}
-                  disabled={selectedConstitution.uid.startsWith("temp-")}
-                >
-                  Try out Constitution v{selectedConstitution.version}
-                </button>
+                <div className="flex items-center divide-x divide-white/20">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/community-models/chat/${modelId}`);
+                      setShowCopiedToast(true);
+                      setTimeout(() => setShowCopiedToast(false), 2000);
+                    }}
+                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                  >
+                    <FaLink className="w-3 h-3" />
+                    <span>Copy Public Link</span>
+                  </button>
+                  <a
+                    href={`/community-models/chat/${modelId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                  >
+                    <FaExternalLinkAlt className="w-3 h-3" />
+                    <span>Open Public Chat</span>
+                  </a>
+                  <button
+                    onClick={() => setIsChatModalOpen(true)}
+                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                    disabled={selectedConstitution.uid.startsWith("temp-")}
+                  >
+                    <FaEye className="w-3 h-3" />
+                    <span>Quick Preview</span>
+                  </button>
+                </div>
               </div>
+              {showCopiedToast && (
+                <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 rounded text-sm">
+                  Link copied!
+                </div>
+              )}
               <div className="bg-white p-4 rounded overflow-auto flex-grow text-black border-2 border-white">
                 <ReactMarkdown>
                   {selectedConstitution.uid.startsWith("temp-")
@@ -234,6 +280,11 @@ export default function ConstitutionZone({
                   content: `Hi there. You're chatting with an AI encoded with the constitution of your community model.`,
                 },
               ]}
+              customStyles={{
+                userMessage: "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
+                aiMessage: "bg-teal rounded-lg p-4 mb-4 shadow-sm border border-teal-100 text-white",
+                infoIcon: "text-teal-600 hover:text-teal-700 transition-colors",
+              }}
             />
           </div>
         </Modal>
@@ -267,6 +318,44 @@ export default function ConstitutionZone({
             </div>
           </div>
         </Modal>
+      )}
+
+      {modelData.published ? (
+        <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-green-500">✓</span>
+              <span>Published! Your model is available in the library.</span>
+            </div>
+            <button
+              onClick={handleUnpublish}
+              className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm"
+            >
+              Unpublish
+            </button>
+          </div>
+        </div>
+      ) : (
+        selectedConstitution && (
+          <div className="mt-4 p-4 bg-yellow text-black rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">Ready to publish?</h3>
+                <p className="text-sm">
+                  Publishing will make your model visible in the library and allow others to chat with it.
+                </p>
+              </div>
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className={`bg-teal text-white px-4 py-2 rounded hover:bg-teal-dark transition-colors
+                  ${isPublishing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {isPublishing ? "Publishing..." : "Publish Model"}
+              </button>
+            </div>
+          </div>
+        )
       )}
     </ZoneWrapper>
   );

@@ -48,16 +48,15 @@ const ConstitutionalAIChat = forwardRef<
       return `
 Main system prompt:
 
-Be helpful
-
 === IMPORTANT ===
-
-Constitution of your values that you will self-reflect on prior to every response:
+Here is a constitution of your values that you will self-reflect on prior to every response:
 === CONSTITUTION ===
 ${constitutionText}
 === END CONSTITUTION ===
 
 You will reply in <draft_response/>, then <response_metrics/>, <improvement_strategy>, then finally <final_response/> which will internalize and improve upon the analysis.
+
+You will embody the values of the constitution in your final response. You will ensure that you don't overly insert the community into the response; answer the user's question directly.
 
 In <response_metrics/> you will analyze your draft response's suitability given the Constitution. Pluck out a reasonable diversity of meaningful metrics from the constitution itself (at your own discretion), and then analyze the response giving percentage scores. For example, if the Constitution says: 
 
@@ -89,16 +88,14 @@ I observe a peculiar atmospheric phenomenon...
     const genStream = useCallback(
       async (messages: MessageWithFields[]) => {
         const proxyUrl =
-          process.env.PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+          process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
         const clientProvider = new ClientProvider(proxyUrl);
 
-        // Remove the first two messages
-        const messagesToSend = messages.slice(2);
-        const convertedMessages = messagesToSend.map((message) => ({
+        const convertedMessages = messages.map((message) => ({
           role: message.role,
           content: message.final_response || message.content,
         }));
-
+        
         return await xmllm(({ prompt }: { prompt: any }) => {
           return [
             prompt({
@@ -125,6 +122,7 @@ I observe a peculiar atmospheric phenomenon...
     );
 
     initialMessages = initialMessages || [
+      // Initial seed interaction
       { role: "user", content: "Hello" },
       {
         role: "assistant",
@@ -199,25 +197,27 @@ I observe a peculiar atmospheric phenomenon...
     };
 
     return (
-      <>
-        <AIChat
-          ref={ref}
-          onUserMessage={onUserMessage}
-          onAIMessage={onAIMessage}
-          system={system}
-          initialMessages={initialMessages}
-          interactive={interactive}
-          icon={constitution.icon}
-          color={constitution.color}
-          renderMessage={renderMessage}
-          genStream={genStream}
-        />
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto">
+          <AIChat
+            ref={ref}
+            onUserMessage={onUserMessage}
+            onAIMessage={onAIMessage}
+            system={system}
+            initialMessages={initialMessages}
+            interactive={interactive}
+            icon={constitution.icon}
+            color={constitution.color}
+            renderMessage={renderMessage}
+            genStream={genStream}
+          />
+        </div>
         <AIResponseModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           message={selectedMessage}
         />
-      </>
+      </div>
     );
   },
 );

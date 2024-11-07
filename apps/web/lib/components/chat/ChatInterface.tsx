@@ -79,7 +79,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             >
               {message.role === "user" ? (
                 <div className="flex mr-2">
-                  <div className="my-2 p-2 rounded-md bg-white text-black shadow-md">
+                  <div>
                     {renderedMessage}
                   </div>
                   <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
@@ -92,9 +92,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   {message.isStreaming && !hasVisibleContent ? (
                     <LoadingBubble />
                   ) : hasVisibleContent ? (
-                    <div
-                      className={`my-2 p-2 rounded-md bg-${color} text-white shadow-md`}
-                    >
+                    <div>
                       {renderedMessage}
                     </div>
                   ) : null}

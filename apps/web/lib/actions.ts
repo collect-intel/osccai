@@ -967,6 +967,14 @@ export async function updateCommunityModel(
 
           // Delete principles that are no longer in the list
           for (const statement of statementsToDelete) {
+            await prisma.vote.deleteMany({
+              where: { statementId: statement.uid },
+            });
+            
+            await prisma.flag.deleteMany({
+              where: { statementId: statement.uid },
+            });
+            
             await prisma.statement.delete({
               where: { uid: statement.uid },
             });
@@ -1018,48 +1026,6 @@ export async function updateCommunityModel(
     console.error("Error updating community model:", error);
     throw error;
   }
-}
-
-export async function getCommunityModel(modelId: string): Promise<
-  | (CommunityModel & {
-      principles: Array<{ id: string; text: string; gacScore?: number }>;
-      requireAuth: boolean;
-      allowContributions: boolean;
-      constitutions: Constitution[];
-      polls: Poll[];
-    })
-  | null
-> {
-  const model = await prisma.communityModel.findUnique({
-    where: { uid: modelId },
-    include: {
-      polls: {
-        include: {
-          statements: true,
-        },
-      },
-      constitutions: true,
-    },
-  });
-
-  if (!model) {
-    return null;
-  }
-
-  const firstPoll = model.polls[0];
-
-  return {
-    ...model,
-    principles:
-      firstPoll?.statements.map((s) => ({
-        id: s.uid,
-        text: s.text,
-        gacScore: s.gacScore || undefined,
-      })) || [],
-    requireAuth: firstPoll?.requireAuth || false,
-    allowContributions: firstPoll?.allowParticipantStatements || false,
-    constitutions: model.constitutions,
-  };
 }
 
 export async function fetchPollData(
