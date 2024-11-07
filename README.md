@@ -75,16 +75,10 @@ This setup presumes you have the following installed:
 
    Create a `.env.local` file in `/apps/web` and fill in the environment variables as shown above.
 
-4. **Within `/apps/web`, run Prisma migrations:**
+4. **Within `/apps/web`, set up your database:**
 
    ```bash
-   pnpm run db:migrate
-   ```
-
-5. **Seed the database:**
-
-   ```bash
-   pnpm run db:seed
+   pnpm run db:reset
    ```
 
 6. **Start the development server:**
