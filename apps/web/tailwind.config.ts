@@ -18,12 +18,12 @@ const config: Config = {
         "light-blue": "#EEF5FF",
         teal: "#185849",
         "dark-green": "#0E342B",
-        "light-green": "#BAD2BA",
         yellow: "#ECC156",
         green: "#008302",
         peach: "#F3CE99",
         "light-beige": "#E3E3D6",
         danger: "#e53e3e",
+        "statement-green": "#BAD2BA", // Color for statement background
         "agree-green": "#185849", // Color for agree
         "disagree-green": "#517852", // Color for disagree
         "slate-blue": "#475569", // Color for constitutionable

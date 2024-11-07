@@ -238,7 +238,7 @@ export default function PollZone({
                 return (
                   <li
                     key={index}
-                    className="bg-light-green shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray"
+                    className="bg-statement-green shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start p-4">
                       <div className="flex-grow pr-0 sm:pr-4 mb-4 sm:mb-0 min-h-[80px] sm:min-h-[60px] w-full sm:w-2/3">
