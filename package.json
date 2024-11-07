@@ -8,5 +8,8 @@
   "scripts": {
     "web": "pnpm --filter osccai-web",
     "consensus-service": "pnpm --filter osccai-consensus-service"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
   }
 }
