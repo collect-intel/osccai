@@ -123,7 +123,6 @@ This setup presumes you have the following installed:
 - `pnpm run start`: Start the production server.
 - `pnpm run lint`: Run ESLint to analyze code for potential errors.
 - `pnpm run prisma:local`: Run Prisma commands with local environment variables (e.g., migrations).
-- `pnpm run db:seed`: Seed the local database.
 - `pnpm run db:migrate`: Run Prisma migrations for local development.
 - `pnpm run db:reset`: Reset the local database (with confirmation prompt).
 - `pnpm run prisma:studio:local`: Open Prisma Studio to interact with your local database.
