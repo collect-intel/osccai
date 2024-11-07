@@ -55,6 +55,7 @@ This setup presumes you have the following installed:
 
 - **Node.js** (with npm)
 - **PostgreSQL** (you can install it using `brew install postgresql` and start it with `brew services start postgresql` on macOS)
+- **pnpm** - We use pnpm as our package manager because it's significantly faster and more efficient than npm, using a content-addressable store to save disk space and speed up installations. [Install pnpm](https://pnpm.io/installation) by running `npm install -g pnpm` or using other available methods.
 
 ### Steps:
 
