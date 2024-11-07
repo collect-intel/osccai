@@ -6,8 +6,10 @@
     "apps/*"
   ],
   "scripts": {
-    "web": "pnpm --filter osccai-web",
-    "consensus-service": "pnpm --filter osccai-consensus-service"
+    "consensus-service": "pnpm --filter osccai-consensus-service",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "web": "pnpm --filter osccai-web"
   },
   "devDependencies": {
     "prettier": "^3.3.3"
