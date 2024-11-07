@@ -88,14 +88,15 @@ I observe a peculiar atmospheric phenomenon...
     const genStream = useCallback(
       async (messages: MessageWithFields[]) => {
         const proxyUrl =
-          process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+          process.env.NEXT_PUBLIC_PROXY_API_URL ||
+          "https://proxyai.cip.org/api/stream";
         const clientProvider = new ClientProvider(proxyUrl);
 
         const convertedMessages = messages.map((message) => ({
           role: message.role,
           content: message.final_response || message.content,
         }));
-        
+
         return await xmllm(({ prompt }: { prompt: any }) => {
           return [
             prompt({

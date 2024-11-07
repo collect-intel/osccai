@@ -62,7 +62,8 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
     const currentMessageRef = useRef<MessageWithFields | null>(null);
 
     const proxyUrl =
-      process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+      process.env.NEXT_PUBLIC_PROXY_API_URL ||
+      "https://proxyai.cip.org/api/stream";
 
     const clientProvider = new ClientProvider(proxyUrl);
 
@@ -115,7 +116,10 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
             isStreaming: true,
           };
 
-          setMessages((prevMessages) => [...messagesToSubmit, currentMessageRef.current!]);
+          setMessages((prevMessages) => [
+            ...messagesToSubmit,
+            currentMessageRef.current!,
+          ]);
 
           for await (const chunk of stream) {
             if (typeof chunk === "string") {

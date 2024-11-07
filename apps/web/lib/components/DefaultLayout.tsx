@@ -10,6 +10,6 @@ export default function DefaultLayout({
   if (fullWidth) {
     return children;
   }
-  
+
   return <div className="max-w-6xl mt-10 mx-auto">{children}</div>;
 }

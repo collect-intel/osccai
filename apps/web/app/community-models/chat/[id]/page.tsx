@@ -2,7 +2,7 @@ import { getCommunityModel } from "@/lib/data";
 import ConstitutionalAIChat from "@/lib/components/chat/ConstitutionalAIChat";
 import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
 import { notFound } from "next/navigation";
-import ExpandableText from '@/lib/components/ExpandableText';
+import ExpandableText from "@/lib/components/ExpandableText";
 import { auth } from "@clerk/nextjs/server";
 
 export default async function PublicModelChatPage({
@@ -11,31 +11,31 @@ export default async function PublicModelChatPage({
   params: { id: string };
 }) {
   const { userId: clerkUserId } = auth();
-  
+
   let model;
   try {
     model = await getCommunityModel(params.id);
   } catch (error) {
-    console.error('Error fetching model:', error);
+    console.error("Error fetching model:", error);
     notFound();
   }
 
   if (!model || !model.constitutions?.length) {
-    console.log('No model or constitutions found:', model);
+    console.log("No model or constitutions found:", model);
     notFound();
   }
 
   // Allow access if model is published OR if current user is the owner
   const isOwner = clerkUserId === model.owner.clerkUserId;
   if (!model.published && !isOwner) {
-    console.log('Model is not published and user is not owner');
+    console.log("Model is not published and user is not owner");
     notFound();
   }
 
   const latestConstitution = model.constitutions[0];
 
   if (!latestConstitution) {
-    console.log('No constitution found');
+    console.log("No constitution found");
     notFound();
   }
 
@@ -44,7 +44,8 @@ export default async function PublicModelChatPage({
     if (!model.published) {
       return (
         <div className="bg-yellow/20 text-black px-4 py-2 mb-4 rounded-lg text-sm">
-          <span className="font-medium">Preview Mode</span> - This model is not yet published and only visible to you, as the community model owner.
+          <span className="font-medium">Preview Mode</span> - This model is not
+          yet published and only visible to you, as the community model owner.
         </div>
       );
     }
@@ -74,10 +75,8 @@ export default async function PublicModelChatPage({
           {/* Desktop info panel content */}
           <div className="hidden lg:block">
             <PreviewBanner />
-            <h1 className="text-2xl font-medium mb-4">
-              {model.name}
-            </h1>
-            
+            <h1 className="text-2xl font-medium mb-4">{model.name}</h1>
+
             <div className="mb-6">
               <h2 className="text-sm font-medium text-gray-900 mb-2">About</h2>
               <p className="text-gray-600 text-sm">{model.bio}</p>
@@ -86,7 +85,9 @@ export default async function PublicModelChatPage({
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <ConstitutionIcon className="w-4 h-4" />
-                <h2 className="text-sm font-medium text-gray-900">Constitution</h2>
+                <h2 className="text-sm font-medium text-gray-900">
+                  Constitution
+                </h2>
                 <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600">
                   v{latestConstitution.version}
                 </span>
@@ -100,7 +101,7 @@ export default async function PublicModelChatPage({
           </div>
         </div>
       </div>
-      
+
       {/* Chat area - natural flow on mobile, fixed on desktop */}
       <div className="flex-1 bg-gray-50 lg:fixed lg:top-16 lg:right-0 lg:bottom-0 lg:left-[400px] xl:left-[480px]">
         <div className="h-full p-4">
@@ -117,8 +118,10 @@ export default async function PublicModelChatPage({
               },
             ]}
             customStyles={{
-              userMessage: "bg-white rounded-lg p-3 mb-4 shadow-sm border border-gray-100",
-              aiMessage: "bg-teal rounded-lg p-3 mb-4 shadow-sm border border-teal-100 text-white",
+              userMessage:
+                "bg-white rounded-lg p-3 mb-4 shadow-sm border border-gray-100",
+              aiMessage:
+                "bg-teal rounded-lg p-3 mb-4 shadow-sm border border-teal-100 text-white",
               infoIcon: "text-teal-600 hover:text-teal-700 transition-colors",
             }}
           />
@@ -126,4 +129,4 @@ export default async function PublicModelChatPage({
       </div>
     </div>
   );
-} 
+}
