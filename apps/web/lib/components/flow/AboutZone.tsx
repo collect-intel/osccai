@@ -161,7 +161,7 @@ export default function AboutZone({
     >
       <div className="flex">
         <div className="w-1/3 pr-4">
-          <p className="text-gray-600">
+          <p className="text-sm text-gray-600">
             Tell us about your community and what you hope to achieve with your
             AI model.
           </p>
@@ -177,7 +177,7 @@ export default function AboutZone({
               onChange={(e) => handleChange("name", e.target.value)}
               onBlur={() => handleBlur("name")}
               maxLength={50}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
+              className="mt-1 bg-off-white block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
             <p
@@ -209,11 +209,11 @@ export default function AboutZone({
               onBlur={() => handleBlur("bio")}
               rows={3}
               maxLength={2000}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
+              className="mt-1 bg-off-white block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
             <p
-              className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-white px-1 ${getCharCountColor(bio.length, 2000)}`}
+              className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-off-white px-1 ${getCharCountColor(bio.length, 2000)}`}
             >
               {bio.length}/2000
             </p>
@@ -228,11 +228,11 @@ export default function AboutZone({
               onBlur={() => handleBlur("goal")}
               rows={3}
               maxLength={2000}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
+              className="mt-1 bg-off-white block w-full rounded-md border-gray-300 shadow-sm focus:border-teal focus:ring-teal"
               required
             />
             <p
-              className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-white px-1 ${getCharCountColor(goal.length, 2000)}`}
+              className={`text-sm mt-1 text-right absolute bottom-2 right-2 bg-off-white px-1 ${getCharCountColor(goal.length, 2000)}`}
             >
               {goal.length}/2000
             </p>

@@ -17,10 +17,10 @@ export default function ZoneWrapper({
 }: ZoneWrapperProps) {
   return (
     <div
-      className={`bg-white border rounded-lg p-4 ${isActive ? "border-teal" : "border-gray-300"}`}
+      className={`bg-off-white border rounded-lg p-4 ${isActive ? "border-teal" : "border-gray-300"}`}
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-xl">{title}</h2>
       </div>
       {isActive && (
         <>
