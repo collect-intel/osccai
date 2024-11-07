@@ -73,9 +73,9 @@ This setup presumes you have the following installed:
 
 3. **Set up environment variables:**
 
-   Create a `.env.local` file at the root of the project and fill in the environment variables as shown above.
+   Create a `.env.local` file in `/apps/web` and fill in the environment variables as shown above.
 
-4. **Run Prisma migrations:**
+4. **Within `/apps/web`, run Prisma migrations:**
 
    ```bash
    pnpm run db:migrate
