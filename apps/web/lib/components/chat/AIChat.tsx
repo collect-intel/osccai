@@ -17,7 +17,7 @@ interface AIChatProps {
   interactive?: boolean;
   icon?: React.ReactNode;
   color?: string;
-  renderMessage?: (message: MessageWithFields) => React.ReactNode;
+  renderMessage: (message: MessageWithFields) => React.ReactNode;
   genStream: (
     messages: MessageWithFields[],
   ) => Promise<
@@ -52,7 +52,6 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
   ) => {
     const [messages, setMessages] =
       useState<MessageWithFields[]>(initialMessages);
-    console.log("[AIChat] initialMessages", initialMessages);
     const [isLoading, setIsLoading] = useState(false);
     const streamRef = useRef<AsyncGenerator<
       string | { [key: string]: string },
@@ -81,13 +80,10 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
 
     const handleUserMessage = useCallback(
       async (content: string) => {
-        console.log(`[AIChat] handleUserMessage:`, content);
         if (onUserMessage) {
           onUserMessage(content.trim());
         }
         const newMsgs = await addMessage("user", content.trim());
-        console.log(`[AIChat] newMsgs:`, newMsgs);
-        console.log(`[AIChat] now submitting:`, { messages: newMsgs });
         await submitMessages(newMsgs);
       },
       [onUserMessage, addMessage],
@@ -95,10 +91,8 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
 
     const submitMessages = useCallback(
       async (messagesToSubmit: MessageWithFields[]) => {
-        console.log("[AIChat] submitMessages", messagesToSubmit);
         if (messagesToSubmit.length === 0) return;
 
-        // Cancel any ongoing stream when submitting new messages
         if (streamRef.current) {
           streamRef.current.return();
           streamRef.current = null;
@@ -124,18 +118,12 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
               Object.assign(currentMessageRef.current, chunk);
             }
 
-            console.log("[AIChat] currentMessage", currentMessageRef.current);
             if (onAIMessage) {
               onAIMessage(currentMessageRef.current, false);
             }
 
             forceUpdate();
           }
-
-          console.log(
-            "[AIChat] final currentMessage",
-            currentMessageRef.current,
-          );
 
           if (currentMessageRef.current) {
             currentMessageRef.current.isStreaming = false;
@@ -161,7 +149,6 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
       [genStream, onAIMessage],
     );
 
-    // Force update without changing state
     const [, updateState] = useState({});
     const forceUpdate = useCallback(() => updateState({}), []);
 
@@ -173,10 +160,8 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
           content: string,
           submit = false,
         ) => {
-          console.log("[AIChat] addMessage", role, content, submit);
           const updatedMessages = await addMessage(role, content);
           if (submit) {
-            console.log("[AIChat] addMessage submit", updatedMessages);
             await submitMessages(updatedMessages);
           }
           return updatedMessages;
@@ -184,17 +169,12 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
         getMessages: async () => {
           return messages;
         },
-        submitMessages, // Expose the new method
+        submitMessages,
       }),
       [addMessage, submitMessages, messages],
     );
 
     const renderMessages = useCallback(() => {
-      console.log(
-        "[AIChat] renderMessages",
-        messages,
-        currentMessageRef.current,
-      );
       return messages.map((message) => ({
         ...message,
         isComplete: !message.isStreaming && message.role === "assistant",

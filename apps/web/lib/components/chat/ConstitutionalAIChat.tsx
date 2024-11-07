@@ -7,6 +7,8 @@ import { MessageWithFields } from "../../types";
 import { ClientProvider, xmllm } from "xmllm/client";
 import { FaInfoCircle } from "react-icons/fa";
 import AIResponseModal from "./AIResponseModal";
+import LoadingMessage from "./LoadingMessage";
+import StreamingMessage from "./StreamingMessage";
 
 interface ConstitutionalAIChatProps {
   onUserMessage?: (message: string) => void;
@@ -111,8 +113,6 @@ I observe a peculiar atmospheric phenomenon...
               system: system,
             }),
             function* (t: any) {
-              console.log("[ConstitutionalAIChat] Prompt yield t", t);
-              // Yield an object with role 'assistant' to create a new message
               yield { role: "assistant", ...t };
             },
           ];
@@ -121,13 +121,9 @@ I observe a peculiar atmospheric phenomenon...
       [system],
     );
 
-    initialMessages = initialMessages || [
-      // Initial seed interaction
-      { role: "user", content: "Hello" },
-      {
-        role: "assistant",
-        content: `Hi there.`,
-      },
+    initialMessages = initialMessages?.map(msg => ({ ...msg, isInitialMessage: true })) || [
+      { role: "user", content: "Hello", isInitialMessage: true },
+      { role: "assistant", content: `Hi there.`, isInitialMessage: true },
     ];
 
     const [modalOpen, setModalOpen] = useState(false);
@@ -135,9 +131,6 @@ I observe a peculiar atmospheric phenomenon...
       useState<MessageWithFields | null>(null);
 
     const renderMessage = (message: MessageWithFields) => {
-      console.log("[ConstitutionalAIChat] renderMessage", message);
-
-      const isComplete = !message.isStreaming;
       const hasVisibleContent =
         (message.final_response && message.final_response.trim() !== "") ||
         (message.content && message.content.trim() !== "");
@@ -152,32 +145,73 @@ I observe a peculiar atmospheric phenomenon...
           ? customStyles.userMessage
           : customStyles.aiMessage;
 
-      if (
-        message.role === "assistant" &&
-        message.isStreaming &&
-        !hasVisibleContent
-      ) {
-        return <div className={`${messageStyle || ""}`}>Thinking...</div>;
+      // For user messages, use ReactMarkdown with consistent styling
+      if (message.role === "user") {
+        return (
+          <div className={`relative ${messageStyle || ""}`}>
+            <ReactMarkdown
+              className="prose max-w-none"
+              components={{
+                p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc pl-4 mb-4 last:mb-0">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-4 mb-4 last:mb-0">{children}</ol>,
+                li: ({ children }) => <li className="mb-1 last:mb-0">{children}</li>,
+                h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 mt-6 first:mt-0">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-xl font-bold mb-3 mt-5 first:mt-0">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-lg font-bold mb-2 mt-4 first:mt-0">{children}</h3>,
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-gray-200 pl-4 py-1 mb-4 italic">
+                    {children}
+                  </blockquote>
+                ),
+                code: ({ children }) => (
+                  <code className="bg-gray-100 rounded px-1 py-0.5 text-sm">
+                    {children}
+                  </code>
+                ),
+                pre: ({ children }) => (
+                  <pre className="bg-gray-100 rounded p-3 mb-4 overflow-x-auto">
+                    {children}
+                  </pre>
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
+        );
+      }
+
+      // Handle AI messages with loading states
+      if (message.isStreaming && !hasVisibleContent) {
+        if (message.draft_response && !message.response_metrics) {
+          return <LoadingMessage 
+            message="Reflecting" 
+            className={messageStyle || ""} 
+            color="white" 
+          />;
+        } else if (message.response_metrics && !message.final_response) {
+          return <LoadingMessage 
+            message="Improving" 
+            className={messageStyle || ""} 
+            color="white" 
+          />;
+        }
+        return <LoadingMessage 
+          message="Thinking" 
+          className={messageStyle || ""} 
+          color="white" 
+        />;
       }
 
       if (!hasVisibleContent) {
         return null;
       }
 
-      const markdownComponents: Partial<Components> = {
-        pre: ({ children }: { children?: React.ReactNode }) => (
-          <p>{children}</p>
-        ),
-        code: ({ children }: { children?: React.ReactNode }) => (
-          <span>{children}</span>
-        ),
-      };
-
+      // Only AI messages get the streaming effect
       return (
-        <div
-          className={`relative ${messageStyle || ""} ${hasAdditionalInfo ? "pr-8" : ""}`}
-        >
-          {message.role === "assistant" && isComplete && hasAdditionalInfo && (
+        <div className={`relative ${messageStyle || ""} ${hasAdditionalInfo ? "pr-8" : ""}`}>
+          {hasAdditionalInfo && (
             <FaInfoCircle
               className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-blue-500"}`}
               onClick={() => {
@@ -186,12 +220,12 @@ I observe a peculiar atmospheric phenomenon...
               }}
             />
           )}
-          <ReactMarkdown
+          <StreamingMessage
+            content={message.final_response || message.content}
+            speed="normal"
+            streaming={message.role === "assistant" && !message.isInitialMessage}
             className="prose max-w-none"
-            components={markdownComponents}
-          >
-            {message.final_response || message.content}
-          </ReactMarkdown>
+          />
         </div>
       );
     };
