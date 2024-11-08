@@ -36,16 +36,30 @@ class handler(BaseHTTPRequestHandler):
 
 
 def create_connection():
-    # Parse the DATABASE_URL
-    url = urlparse(DATABASE_URL)
-    conn = pg8000.connect(
-        user=url.username,
-        password=url.password,
-        host=url.hostname,
-        port=url.port or 5432,
-        database=url.path[1:]  # Remove the leading '/'
-    )
-    return conn
+    # Reload DATABASE_URL at runtime
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL environment variable is not set")
+    
+    try:
+        url = urlparse(DATABASE_URL)
+        db_info = dict(
+            user=url.username,
+            password=url.password,
+            host=url.hostname,
+            port=url.port or 5432,
+            database='postgres'  # Explicitly set for Supabase
+        )
+        
+        # Remove None values
+        db_info = {k: v for k, v in db_info.items() if v is not None}
+        
+        conn = pg8000.connect(**db_info)
+        return conn
+    except Exception as e:
+        logger.error(f"Failed to parse DATABASE_URL: {e}")
+        raise
 
 def main():
     print("main")

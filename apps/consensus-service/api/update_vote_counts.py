@@ -67,75 +67,76 @@ def update_statement_counts(cursor, statement_id, agree_count, disagree_count, p
     """
     cursor.execute(query, (agree_count, disagree_count, pass_count, statement_id))
 
+def main():
+    try:
+        # Connect to database
+        conn = create_connection()
+        cursor = conn.cursor()
+        
+        # Get statements with mismatched counts
+        mismatched_statements = get_statements_with_mismatched_counts(cursor)
+        
+        updates = []
+        for stmt in mismatched_statements:
+            stmt_id = stmt[0]
+            old_counts = {
+                "agree": stmt[1],
+                "disagree": stmt[2],
+                "pass": stmt[3]
+            }
+            new_counts = {
+                "agree": stmt[4],
+                "disagree": stmt[5],
+                "pass": stmt[6]
+            }
+            
+            # Update the counts
+            update_statement_counts(
+                cursor,
+                stmt_id,
+                new_counts["agree"],
+                new_counts["disagree"],
+                new_counts["pass"]
+            )
+            
+            updates.append({
+                "statementId": stmt_id,
+                "oldCounts": old_counts,
+                "newCounts": new_counts
+            })
+            
+            logger.info(
+                f"Updated statement {stmt_id} counts from "
+                f"({old_counts['agree']}, {old_counts['disagree']}, {old_counts['pass']}) to "
+                f"({new_counts['agree']}, {new_counts['disagree']}, {new_counts['pass']})"
+            )
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return {
+            "message": "No statements needed updating." if not updates else f"Updated {len(updates)} statements.",
+            "updates": updates
+        }
+        
+    except Exception as e:
+        logger.error(f"Error updating vote counts: {e}")
+        raise
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            # Connect to database
-            conn = create_connection()
-            cursor = conn.cursor()
-            
-            # Get statements with mismatched counts
-            mismatched_statements = get_statements_with_mismatched_counts(cursor)
-            
-            updates = []
-            for stmt in mismatched_statements:
-                stmt_id = stmt[0]
-                old_counts = {
-                    "agree": stmt[1],
-                    "disagree": stmt[2],
-                    "pass": stmt[3]
-                }
-                new_counts = {
-                    "agree": stmt[4],
-                    "disagree": stmt[5],
-                    "pass": stmt[6]
-                }
-                
-                # Update the counts
-                update_statement_counts(
-                    cursor,
-                    stmt_id,
-                    new_counts["agree"],
-                    new_counts["disagree"],
-                    new_counts["pass"]
-                )
-                
-                updates.append({
-                    "statementId": stmt_id,
-                    "oldCounts": old_counts,
-                    "newCounts": new_counts
-                })
-                
-                logger.info(
-                    f"Updated statement {stmt_id} counts from "
-                    f"({old_counts['agree']}, {old_counts['disagree']}, {old_counts['pass']}) to "
-                    f"({new_counts['agree']}, {new_counts['disagree']}, {new_counts['pass']})"
-                )
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            # Prepare response
+            result = main()
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            
-            response = {
-                "message": "No statements needed updating." if not updates else f"Updated {len(updates)} statements.",
-                "updates": updates
-            }
-            
-            self.wfile.write(json.dumps(response).encode())
-            
+            self.wfile.write(json.dumps(result).encode())
         except Exception as e:
-            logger.error(f"Error updating vote counts: {e}")
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({
-                "error": str(e)
-            }).encode())
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
         return
 
 print("Finished update-vote-counts.py") 
