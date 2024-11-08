@@ -102,7 +102,13 @@ I observe a peculiar atmospheric phenomenon...
         return await xmllm(({ prompt }: { prompt: any }) => {
           return [
             prompt({
-              model: "claude:good",
+              model: [
+                // Preference order of models
+                'claude:good', // i.e. sonnet 3.5
+                'openai:good', // i.e. gpt-4o
+                'claude:fast', // i.e. haiku 3
+                'openai:fast' // i.e. gpt-4o-mini
+              ],
               messages: convertedMessages,
               schema: {
                 thinking: String,
