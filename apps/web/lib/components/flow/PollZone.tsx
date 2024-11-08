@@ -238,9 +238,9 @@ export default function PollZone({
                 return (
                   <li
                     key={index}
-                    className="bg-statement-green shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray"
+                    className="bg-statement-green shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray p-6"
                   >
-                    <div className="flex flex-col sm:flex-row justify-between items-start p-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start">
                       <div className="flex-grow pr-0 sm:pr-4 mb-4 sm:mb-0 min-h-[80px] sm:min-h-[60px] w-full sm:w-2/3">
                         <p>{statement.text}</p>
                       </div>
@@ -267,7 +267,7 @@ export default function PollZone({
                       </div>
                     </div>
                     <div
-                      className={`flex flex-col sm:flex-row text-white text-sm mt-1 ml-4 mr-4 mb-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}
+                      className={`flex flex-col sm:flex-row text-white text-sm mt-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}
                     >
                       <div className="flex flex-col sm:flex-row flex-grow">
                         <div
