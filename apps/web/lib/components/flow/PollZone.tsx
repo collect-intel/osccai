@@ -347,6 +347,7 @@ export default function PollZone({
       subtitle="View and manage your community poll results here. Results update
             automatically every 30 seconds."
       isActive={isActive}
+      layout="vertical"
       onToggle={onToggle}
       savingStatus={savingStatus}
     >

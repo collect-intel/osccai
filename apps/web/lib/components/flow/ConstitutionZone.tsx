@@ -138,6 +138,7 @@ export default function ConstitutionZone({
     <ZoneWrapper
       title="Constitutions"
       isActive={isActive}
+      layout="vertical"
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
