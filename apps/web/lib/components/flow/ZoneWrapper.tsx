@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
-import { Crimson_Text } from "next/font/google";
+import { Crimson_Text, DM_Sans } from "next/font/google";
 
 const crimson = Crimson_Text({ subsets: ["latin"], weight: "400" });
+const dmSans = DM_Sans({ subsets: ["latin"], weight: "400" });
 
 interface ZoneWrapperProps {
   children: ReactNode;
@@ -26,7 +27,7 @@ export default function ZoneWrapper({
   const flexDirection = showColumnLayout ? 'flex-row' : 'flex-col';
   return (
     <div
-      className={`bg-off-white border rounded-lg p-4 pt-6 ${isActive ? "border-teal" : "border-gray-300"}`}
+      className={`bg-off-white border rounded-lg p-4 pt-6 ${isActive ? "border-teal" : "border-gray-300"} ${dmSans.className}`}
     >
       <div className={`flex ${flexDirection} gap-8`}>
         <div className={`flex flex-col gap-4 ${showColumnLayout ? 'w-1/4' : ''}`}>
