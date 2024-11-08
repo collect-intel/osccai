@@ -26,11 +26,11 @@ export default function ZoneWrapper({
   const flexDirection = showColumnLayout ? 'flex-row' : 'flex-col';
   return (
     <div
-      className={`bg-off-white border rounded-lg p-4 pt-6 ${isActive ? "border-teal" : "border-gray-300" }` + crimson.className}
+      className={`bg-off-white border rounded-lg p-4 pt-6 ${isActive ? "border-teal" : "border-gray-300"}`}
     >
       <div className={`flex ${flexDirection} gap-8`}>
         <div className={`flex flex-col gap-4 ${showColumnLayout ? 'w-1/4' : ''}`}>
-          <h2 className="text-xl">{title}</h2>
+          <h2 className={`text-xl ${crimson.className}`}>{title}</h2>
           {subtitle ? <h3 className="text-sm">{subtitle}</h3> : null}
         </div>
         {isActive && (
