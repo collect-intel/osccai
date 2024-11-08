@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { FaRobot, FaUserAlt } from "react-icons/fa";
 import ConstitutionIcon from "../icons/ConstitutionIcon";
@@ -13,36 +13,8 @@ interface ChatInterfaceProps {
   interactive?: boolean;
   icon?: React.ReactNode;
   color?: string;
-  renderMessage?: (message: MessageWithFields) => React.ReactNode;
+  renderMessage: (message: MessageWithFields) => React.ReactNode;
 }
-
-const LoadingBubble: React.FC = () => {
-  const [dots, setDots] = useState("");
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prevDots) => {
-        if (prevDots.length === 3) {
-          return "";
-        } else {
-          return prevDots + ".";
-        }
-      });
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="my-2 p-2 rounded-md bg-gray-200 text-white shadow-md">
-      <span>Thinking{dots}</span>
-    </div>
-  );
-};
-
-const defaultMessageRender = (message: MessageWithFields) => (
-  <ReactMarkdown>{message.content}</ReactMarkdown>
-);
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
@@ -51,7 +23,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   interactive = true,
   icon,
   color = "teal",
-  renderMessage = defaultMessageRender,
+  renderMessage,
 }) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -65,38 +37,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex bg-teal align-items-space-between flex-col h-full border-2 border-light-gray rounded-lg shadow-sm min-h-50 overflow-hidden">
       <div className="flex-1 p-4 overflow-y-auto">
-        {messages.map((message, index) => {
-          const renderedMessage = renderMessage(message);
-          const hasVisibleContent =
-            message.role === "user" ||
-            (message.content && message.content.trim() !== "") ||
-            (message.final_response && message.final_response.trim() !== "");
-
-          return (
-            <div
-              key={index}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {message.role === "user" ? (
-                <div className="flex mr-2">
-                  <div>{renderedMessage}</div>
-                  <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            {message.role === "user" ? (
+              <div className="flex mr-2">
+                <div>
+                  {renderMessage(message)}
                 </div>
-              ) : (
-                <div className="flex ml-2">
-                  <div className="self-start mt-6 mr-2">
-                    {icon || <ConstitutionIcon />}
-                  </div>
-                  {message.isStreaming && !hasVisibleContent ? (
-                    <LoadingBubble />
-                  ) : hasVisibleContent ? (
-                    <div>{renderedMessage}</div>
-                  ) : null}
+                <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
+              </div>
+            ) : (
+              <div className="flex ml-2">
+                <div className="self-start mt-6 mr-2">
+                  {icon || <ConstitutionIcon />}
                 </div>
-              )}
-            </div>
-          );
-        })}
+                <div>
+                  {renderMessage(message)}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
       {interactive && (
         <form
@@ -109,7 +73,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Say something"
             className="flex-1 p-6 border border-gray-200 bg-off-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal"
-            disabled={isLoading}
           />
           <button
             type="submit"
