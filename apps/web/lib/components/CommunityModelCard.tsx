@@ -27,14 +27,14 @@ export default function CommunityModelCard({
 
   return (
     <Link href={`/community-models/flow/${model.uid}`} className="block h-full">
-      <div className="p-4 border rounded-md bg-dark-green text-white hover:bg-opacity-90 transition-colors h-full flex flex-col">
+      <div className="p-6 border rounded-md bg-dark-green text-white hover:bg-opacity-90 transition-colors h-full flex flex-col">
         <h2 className="text-lg font-medium">{model.name}</h2>
-        <p className="mt-2 flex-grow">
+        <p className="mt-6 flex-grow">
           {model.goal && model.goal.length > 100
             ? `${model.goal.substring(0, 100)}...`
             : model.goal || "No goal set"}
         </p>
-        <p className="text-white font-mono mt-4 text-sm">{formattedDate}</p>
+        <p className="text-white font-mono mt-6 text-sm">{formattedDate}</p>
       </div>
     </Link>
   );
