@@ -73,7 +73,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Say something"
             className="flex-1 p-6 border border-gray-200 bg-off-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal"
-            disabled={isLoading}
           />
           <button
             type="submit"
