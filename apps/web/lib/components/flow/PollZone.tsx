@@ -316,7 +316,7 @@ export default function PollZone({
               <Button
                 onClick={() => setShowAllStatements(!showAllStatements)}
                 variant="secondary"
-                className="mt-4"
+                className="text-white mt-4"
               >
                 {showAllStatements
                   ? "Show Top 5 Most Voted-Upon Statements"
