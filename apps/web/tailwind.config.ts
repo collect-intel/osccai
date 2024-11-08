@@ -26,6 +26,7 @@ const config: Config = {
         "statement-green": "#BAD2BA", // Color for statement background
         "agree-green": "#185849", // Color for agree
         "disagree-green": "#517852", // Color for disagree
+        "disagree-amber": "#FFA000", // Color for disagree
         "slate-blue": "#475569", // Color for constitutionable
       },
       buttons: {

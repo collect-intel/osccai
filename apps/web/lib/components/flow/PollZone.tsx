@@ -283,7 +283,7 @@ export default function PollZone({
                           </span>
                         </div>
                         <div
-                          className="flex bg-disagree-green"
+                          className="flex bg-disagree-amber"
                           style={{
                             flexGrow: disagreeRatio,
                             flexBasis: flexBasis,
