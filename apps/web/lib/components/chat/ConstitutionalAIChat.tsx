@@ -104,10 +104,10 @@ I observe a peculiar atmospheric phenomenon...
             prompt({
               model: [
                 // Preference order of models
-                'claude:good', // i.e. sonnet 3.5
-                'openai:good', // i.e. gpt-4o
-                'claude:fast', // i.e. haiku 3
-                'openai:fast' // i.e. gpt-4o-mini
+                "claude:good", // i.e. sonnet 3.5
+                "openai:good", // i.e. gpt-4o
+                "claude:fast", // i.e. haiku 3
+                "openai:fast", // i.e. gpt-4o-mini
               ],
               messages: convertedMessages,
               schema: {
@@ -128,7 +128,10 @@ I observe a peculiar atmospheric phenomenon...
       [system],
     );
 
-    initialMessages = initialMessages?.map(msg => ({ ...msg, isInitialMessage: true })) || [
+    initialMessages = initialMessages?.map((msg) => ({
+      ...msg,
+      isInitialMessage: true,
+    })) || [
       { role: "user", content: "Hello", isInitialMessage: true },
       { role: "assistant", content: `Hi there.`, isInitialMessage: true },
     ];
@@ -159,13 +162,35 @@ I observe a peculiar atmospheric phenomenon...
             <ReactMarkdown
               className="prose max-w-none"
               components={{
-                p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc pl-4 mb-4 last:mb-0">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal pl-4 mb-4 last:mb-0">{children}</ol>,
-                li: ({ children }) => <li className="mb-1 last:mb-0">{children}</li>,
-                h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 mt-6 first:mt-0">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-xl font-bold mb-3 mt-5 first:mt-0">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-lg font-bold mb-2 mt-4 first:mt-0">{children}</h3>,
+                p: ({ children }) => (
+                  <p className="mb-4 last:mb-0">{children}</p>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc pl-4 mb-4 last:mb-0">{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal pl-4 mb-4 last:mb-0">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => (
+                  <li className="mb-1 last:mb-0">{children}</li>
+                ),
+                h1: ({ children }) => (
+                  <h1 className="text-2xl font-bold mb-4 mt-6 first:mt-0">
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-xl font-bold mb-3 mt-5 first:mt-0">
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-lg font-bold mb-2 mt-4 first:mt-0">
+                    {children}
+                  </h3>
+                ),
                 blockquote: ({ children }) => (
                   <blockquote className="border-l-4 border-gray-200 pl-4 py-1 mb-4 italic">
                     {children}
@@ -192,23 +217,29 @@ I observe a peculiar atmospheric phenomenon...
       // Handle AI messages with loading states
       if (message.isStreaming && !hasVisibleContent) {
         if (message.draft_response && !message.response_metrics) {
-          return <LoadingMessage 
-            message="Reflecting" 
-            className={messageStyle || ""} 
-            color="white" 
-          />;
+          return (
+            <LoadingMessage
+              message="Reflecting"
+              className={messageStyle || ""}
+              color="white"
+            />
+          );
         } else if (message.response_metrics && !message.final_response) {
-          return <LoadingMessage 
-            message="Improving" 
-            className={messageStyle || ""} 
-            color="white" 
-          />;
+          return (
+            <LoadingMessage
+              message="Improving"
+              className={messageStyle || ""}
+              color="white"
+            />
+          );
         }
-        return <LoadingMessage 
-          message="Thinking" 
-          className={messageStyle || ""} 
-          color="white" 
-        />;
+        return (
+          <LoadingMessage
+            message="Thinking"
+            className={messageStyle || ""}
+            color="white"
+          />
+        );
       }
 
       if (!hasVisibleContent) {
@@ -217,7 +248,9 @@ I observe a peculiar atmospheric phenomenon...
 
       // Only AI messages get the streaming effect
       return (
-        <div className={`relative ${messageStyle || ""} ${hasAdditionalInfo ? "pr-8" : ""}`}>
+        <div
+          className={`relative ${messageStyle || ""} ${hasAdditionalInfo ? "pr-8" : ""}`}
+        >
           {hasAdditionalInfo && (
             <FaInfoCircle
               className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-blue-500"}`}
@@ -230,7 +263,9 @@ I observe a peculiar atmospheric phenomenon...
           <StreamingMessage
             content={message.final_response || message.content}
             speed="normal"
-            streaming={message.role === "assistant" && !message.isInitialMessage}
+            streaming={
+              message.role === "assistant" && !message.isInitialMessage
+            }
             className="prose max-w-none"
           />
         </div>

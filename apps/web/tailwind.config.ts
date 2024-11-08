@@ -9,22 +9,22 @@ const config: Config = {
     extend: {
       keyframes: {
         pulse: {
-          '0%, 100%': { opacity: '0.4' },
-          '50%': { opacity: '1' },
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "1" },
         },
         slide: {
-          '0%, 100%': { transform: 'translateX(0)' },
-          '50%': { transform: 'translateX(4px)' },
+          "0%, 100%": { transform: "translateX(0)" },
+          "50%": { transform: "translateX(4px)" },
         },
         fade: {
-          '0%, 100%': { opacity: '0.2' },
-          '50%': { opacity: '0.8' },
-        }
+          "0%, 100%": { opacity: "0.2" },
+          "50%": { opacity: "0.8" },
+        },
       },
       animation: {
-        'pulse': 'pulse 1.5s ease-in-out infinite',
-        'slide': 'slide 1.5s ease-in-out infinite',
-        'fade': 'fade 2s linear infinite',
+        pulse: "pulse 1.5s ease-in-out infinite",
+        slide: "slide 1.5s ease-in-out infinite",
+        fade: "fade 2s linear infinite",
       },
       colors: {
         charcoal: "#121212",
@@ -55,10 +55,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/typography"),
-    require("@tailwindcss/forms")
-  ],
+  plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")],
 };
 
 export default config;

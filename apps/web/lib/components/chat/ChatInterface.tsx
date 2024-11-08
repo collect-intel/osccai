@@ -44,9 +44,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           >
             {message.role === "user" ? (
               <div className="flex mr-2">
-                <div>
-                  {renderMessage(message)}
-                </div>
+                <div>{renderMessage(message)}</div>
                 <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
               </div>
             ) : (
@@ -54,19 +52,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="self-start mt-6 mr-2">
                   {icon || <ConstitutionIcon />}
                 </div>
-                <div>
-                  {renderMessage(message)}
-                </div>
+                <div>{renderMessage(message)}</div>
               </div>
             )}
           </div>
         ))}
       </div>
       {interactive && (
-        <form
-          onSubmit={handleSubmit}
-          className="flex p-4"
-        >
+        <form onSubmit={handleSubmit} className="flex p-4">
           <input
             type="text"
             value={inputValue}
