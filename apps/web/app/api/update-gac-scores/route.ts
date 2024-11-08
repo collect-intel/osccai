@@ -7,7 +7,7 @@ const execAsync = promisify(exec);
 export async function GET() {
   try {
     const { stdout, stderr } = await execAsync(
-      "python scripts/update-gac-scores.py",
+      "python scripts/update_gac_scores.py",
     );
     console.log("Update GAC Scores script output:", stdout);
 
