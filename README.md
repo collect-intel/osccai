@@ -81,20 +81,20 @@ This setup presumes you have the following installed:
    pnpm run db:reset
    ```
 
-6. **Start the development server:**
+5. **Start the development server:**
 
    ```bash
    pnpm run dev:local
    ```
 
-7. **Start the local cron job (in a separate terminal):**
+6. **Start the local cron job (in a separate terminal):**
    This ensures that your local environment mimics the production environment, where the cron job runs alongside the main application to update GAC scores periodically.
 
    ```bash
    pnpm run cron:local
    ```
 
-8. **Access the application:**
+7. **Access the application:**
 
    Open your browser and navigate to `http://localhost:3000`
 

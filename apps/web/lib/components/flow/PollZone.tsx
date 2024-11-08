@@ -351,14 +351,14 @@ export default function PollZone({
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-        <div>
-          {renderPollContent()}
-          {!isExistingModel && localPollData && (
-            <Button onClick={onComplete} variant="primary" className="mt-4">
-              Next
-            </Button>
-          )}
-        </div>
+      <div>
+        {renderPollContent()}
+        {!isExistingModel && localPollData && (
+          <Button onClick={onComplete} variant="primary" className="mt-4">
+            Next
+          </Button>
+        )}
+      </div>
       <Modal
         isOpen={isExplanationModalOpen}
         onClose={() => setIsExplanationModalOpen(false)}
