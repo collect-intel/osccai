@@ -437,8 +437,13 @@ export default function CommunityModelFlow({
                   });
                   if (isExistingModel) {
                     // Only update constitutions and activeConstitutionId
-                    const { constitutions, activeConstitutionId, published } = data;
-                    if (constitutions || activeConstitutionId !== undefined || published !== undefined) {
+                    const { constitutions, activeConstitutionId, published } =
+                      data;
+                    if (
+                      constitutions ||
+                      activeConstitutionId !== undefined ||
+                      published !== undefined
+                    ) {
                       debouncedSaveModelData(
                         { constitutions, activeConstitutionId, published },
                         "communityModel",

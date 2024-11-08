@@ -5,14 +5,14 @@ import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
 
 export default async function LibraryPage() {
   const publishedModels = await prisma.communityModel.findMany({
-    where: { 
-      published: true, 
+    where: {
+      published: true,
       deleted: false,
       constitutions: {
         some: {
-          deleted: false
-        }
-      }
+          deleted: false,
+        },
+      },
     },
     select: {
       uid: true,
@@ -20,12 +20,12 @@ export default async function LibraryPage() {
       bio: true,
       constitutions: {
         where: { deleted: false },
-        orderBy: { version: 'desc' },
+        orderBy: { version: "desc" },
         take: 1,
         select: {
-          version: true
-        }
-      }
+          version: true,
+        },
+      },
     },
   });
 
@@ -33,13 +33,14 @@ export default async function LibraryPage() {
     <div className="container mx-auto px-4 py-8">
       <PageTitle title="Community Model Library" />
       <p className="mt-4 text-lg text-gray-600 max-w-2xl">
-        Explore published community models and chat with AI assistants that are aligned with their constitutional values.
+        Explore published community models and chat with AI assistants that are
+        aligned with their constitutional values.
       </p>
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {publishedModels.map((model) => {
           const version = model.constitutions[0]?.version;
-          
+
           return (
             <Link
               key={model.uid}
@@ -55,15 +56,13 @@ export default async function LibraryPage() {
               <h2 className="mb-2 text-xl font-semibold tracking-tight text-gray-900">
                 {model.name}
               </h2>
-              <p className="text-gray-600 text-sm line-clamp-3">
-                {model.bio}
-              </p>
+              <p className="text-gray-600 text-sm line-clamp-3">{model.bio}</p>
               <div className="mt-4 text-teal text-sm font-medium hover:text-teal-dark">
                 Start chatting →
               </div>
             </Link>
-          )}
-        )}
+          );
+        })}
       </div>
 
       {publishedModels.length === 0 && (

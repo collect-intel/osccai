@@ -34,16 +34,16 @@ export default function UserDebug() {
       >
         Debug
       </button>
-      
+
       {isOpen && (
         <div className="absolute bottom-full left-0 mb-2 bg-blue-600 text-white rounded-lg shadow-lg p-4 w-96 max-h-[80vh] overflow-y-auto">
-          <button 
+          <button
             onClick={() => setIsOpen(false)}
             className="absolute top-2 right-2 text-white hover:text-gray-200"
           >
             ✕
           </button>
-          
+
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-sm">Clerk User:</h3>

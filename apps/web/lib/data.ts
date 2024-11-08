@@ -65,9 +65,7 @@ export async function getPollData(pollId: string) {
   };
 }
 
-export async function getCommunityModel(
-  modelId: string,
-): Promise<
+export async function getCommunityModel(modelId: string): Promise<
   | (CommunityModel & {
       principles: Array<{ id: string; text: string; gacScore?: number }>;
       requireAuth: boolean;
