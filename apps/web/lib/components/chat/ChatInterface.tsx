@@ -35,8 +35,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full border-2 border-light-gray rounded-lg shadow-sm overflow-hidden">
-      <div className="flex-1 p-4 overflow-y-auto bg-white bg-opacity-80">
+    <div className="flex bg-teal align-items-space-between flex-col h-full border-2 border-light-gray rounded-lg shadow-sm min-h-50 overflow-hidden">
+      <div className="flex-1 p-4 overflow-y-auto">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -65,22 +65,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {interactive && (
         <form
           onSubmit={handleSubmit}
-          className="flex p-4 bg-white border-t border-light-gray"
+          className="flex p-4"
         >
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal"
+            placeholder="Say something"
+            className="flex-1 p-6 border border-gray-200 bg-off-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal"
             disabled={isLoading}
           />
           <button
             type="submit"
-            className={`ml-2 px-4 py-2 rounded-md ${
+            className={`ml-2 px-4 py-2 text-white rounded-md ${
               isLoading
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : `bg-${color} text-white hover:bg-black`
+                : `bg-${color} hover:bg-black`
             }`}
             disabled={isLoading}
           >

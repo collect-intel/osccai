@@ -29,7 +29,7 @@ export default function Navbar() {
           <NavbarLink href="/library" text="Explore Public Library" />
         </div>
         <div className="flex items-center gap-5">
-          <NavbarLink href="/community-models" text="My Community Models" />
+          <NavbarLink href="/community-models" text="My Models" />
           <SignedIn>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>

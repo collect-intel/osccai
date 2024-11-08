@@ -33,12 +33,12 @@ export default async function CommunityModelsPage() {
       </div>
 
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Your Models</h2>
+        <h2 className="text-2xl font-semibold">My Models</h2>
         <Link
           href="/community-models/flow"
-          className="bg-teal text-white font-medium py-2 px-4 rounded hover:bg-teal-dark transition-colors"
+          className="bg-teal text-white py-2 px-4 rounded hover:bg-teal-dark transition-colors"
         >
-          Create New Model
+          + New Community Model
         </Link>
       </div>
 

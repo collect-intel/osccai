@@ -55,6 +55,7 @@ This setup presumes you have the following installed:
 
 - **Node.js** (with npm)
 - **PostgreSQL** (you can install it using `brew install postgresql` and start it with `brew services start postgresql` on macOS)
+- **pnpm** - We use pnpm as our package manager because it's significantly faster and more efficient than npm, using a content-addressable store to save disk space and speed up installations. [Install pnpm](https://pnpm.io/installation) by running `npm install -g pnpm` or using other available methods.
 
 ### Steps:
 
@@ -67,36 +68,30 @@ This setup presumes you have the following installed:
 2. **Install dependencies:**
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Set up environment variables:**
 
-   Create a `.env.local` file at the root of the project and fill in the environment variables as shown above.
+   Create a `.env.local` file in `/apps/web` and fill in the environment variables as shown above.
 
-4. **Run Prisma migrations:**
-
-   ```bash
-   npm run db:migrate
-   ```
-
-5. **Seed the database:**
+4. **Within `/apps/web`, set up your database:**
 
    ```bash
-   npm run db:seed
+   pnpm run db:reset
    ```
 
 6. **Start the development server:**
 
    ```bash
-   npm run dev:local
+   pnpm run dev:local
    ```
 
 7. **Start the local cron job (in a separate terminal):**
    This ensures that your local environment mimics the production environment, where the cron job runs alongside the main application to update GAC scores periodically.
 
    ```bash
-   npm run cron:local
+   pnpm run cron:local
    ```
 
 8. **Access the application:**
@@ -108,31 +103,30 @@ This setup presumes you have the following installed:
 - **Reset the database:**
 
   ```bash
-  npm run db:reset
+  pnpm run db:reset
   ```
 
 - **Run Prisma Studio:**
 
   ```bash
-  npm run prisma:studio:local
+  pnpm run prisma:studio:local
   ```
 
   This opens a web interface to explore and manipulate your database records.
 
 ## Available Scripts
 
-- `npm run dev:local`: Start the development server using local environment variables.
-- `npm run dev:prod`: Start the development server using production environment variables.
-- `npm run build`: Generate Prisma client and build the Next.js application.
-- `npm run build:local`: Generate Prisma client and build using local environment variables.
-- `npm run start`: Start the production server.
-- `npm run lint`: Run ESLint to analyze code for potential errors.
-- `npm run prisma:local`: Run Prisma commands with local environment variables (e.g., migrations).
-- `npm run db:seed`: Seed the local database.
-- `npm run db:migrate`: Run Prisma migrations for local development.
-- `npm run db:reset`: Reset the local database (with confirmation prompt).
-- `npm run prisma:studio:local`: Open Prisma Studio to interact with your local database.
-- `npm run cron:local`: Run the local cron job for updating GAC scores.
+- `pnpm run dev:local`: Start the development server using local environment variables.
+- `pnpm run dev:prod`: Start the development server using production environment variables.
+- `pnpm run build`: Generate Prisma client and build the Next.js application.
+- `pnpm run build:local`: Generate Prisma client and build using local environment variables.
+- `pnpm run start`: Start the production server.
+- `pnpm run lint`: Run ESLint to analyze code for potential errors.
+- `pnpm run prisma:local`: Run Prisma commands with local environment variables (e.g., migrations).
+- `pnpm run db:migrate`: Run Prisma migrations for local development.
+- `pnpm run db:reset`: Reset the local database (with confirmation prompt).
+- `pnpm run prisma:studio:local`: Open Prisma Studio to interact with your local database.
+- `pnpm run cron:local`: Run the local cron job for updating GAC scores.
 
 **Note:** Always use caution when running database reset, seeding, or migration scripts, especially in a production environment.
 

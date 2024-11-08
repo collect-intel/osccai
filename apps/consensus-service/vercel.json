@@ -5,12 +5,20 @@
     {
       "src": "api/update-gac-scores.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/update-vote-counts.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/update-gac-scores",
       "dest": "api/update-gac-scores.py"
+    },
+    {
+      "src": "/api/update-vote-counts",
+      "dest": "api/update-vote-counts.py"
     }
   ],
   "crons": [

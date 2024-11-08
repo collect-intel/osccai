@@ -970,11 +970,11 @@ export async function updateCommunityModel(
             await prisma.vote.deleteMany({
               where: { statementId: statement.uid },
             });
-            
+
             await prisma.flag.deleteMany({
               where: { statementId: statement.uid },
             });
-            
+
             await prisma.statement.delete({
               where: { uid: statement.uid },
             });

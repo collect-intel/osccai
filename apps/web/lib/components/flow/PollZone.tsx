@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import ZoneWrapper from "./ZoneWrapper";
+import { Crimson_Text } from "next/font/google";
 import Link from "next/link";
-import { copyToClipboard } from "@/lib/copyToClipboard";
-import IconCounter from "@/lib/components/IconCounter";
 import {
   FaUser,
   FaCommentAlt,
@@ -12,11 +10,16 @@ import {
   FaQuestionCircle,
 } from "react-icons/fa";
 import { Poll, Statement } from "@prisma/client";
+import { copyToClipboard } from "@/lib/copyToClipboard";
+import IconCounter from "@/lib/components/IconCounter";
 import Button from "@/lib/components/Button";
 import { fetchPollData } from "@/lib/actions";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import Modal from "@/lib/components/Modal";
 import ConstitutionableExplanation from "@/lib/components/ConstitutionableExplanation";
+import ZoneWrapper from "./ZoneWrapper";
+
+const crimson = Crimson_Text({ subsets: ["latin"], weight: "400" });
 
 interface ExtendedPoll extends Poll {
   statements: Statement[];
@@ -208,8 +211,8 @@ export default function PollZone({
           </div>
         </div>
         {localPollData.statements && localPollData.statements.length > 0 ? (
-          <div className="bg-white p-4 rounded-md shadow mt-4">
-            <h3 className="text-xl font-semibold mb-4">
+          <div className="bg-teal p-4 rounded-md shadow mt-4">
+            <h3 className={"text-xl text-white mb-4 " + crimson.className}>
               {showAllStatements
                 ? "All Statements"
                 : "Most Voted-Upon Statements"}
@@ -235,9 +238,9 @@ export default function PollZone({
                 return (
                   <li
                     key={index}
-                    className="shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray"
+                    className="bg-statement-green shadow rounded-lg flex flex-col overflow-hidden relative bg-soft-gray p-6"
                   >
-                    <div className="flex flex-col sm:flex-row justify-between items-start p-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start">
                       <div className="flex-grow pr-0 sm:pr-4 mb-4 sm:mb-0 min-h-[80px] sm:min-h-[60px] w-full sm:w-2/3">
                         <p>{statement.text}</p>
                       </div>
@@ -264,7 +267,7 @@ export default function PollZone({
                       </div>
                     </div>
                     <div
-                      className={`flex flex-col sm:flex-row text-white text-sm mt-1 ml-4 mr-4 mb-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}
+                      className={`flex flex-col sm:flex-row text-white text-sm mt-4 rounded-md overflow-hidden ${total > 0 ? "opacity-95" : "opacity-70"}`}
                     >
                       <div className="flex flex-col sm:flex-row flex-grow">
                         <div
@@ -280,7 +283,7 @@ export default function PollZone({
                           </span>
                         </div>
                         <div
-                          className="flex bg-disagree-red"
+                          className="flex bg-disagree-amber"
                           style={{
                             flexGrow: disagreeRatio,
                             flexBasis: flexBasis,
@@ -292,7 +295,7 @@ export default function PollZone({
                           </span>
                         </div>
                         <div
-                          className="flex bg-skip-amber"
+                          className="flex bg-gray"
                           style={{
                             flexGrow: skipRatio,
                             flexBasis: flexBasis,
@@ -313,7 +316,7 @@ export default function PollZone({
               <Button
                 onClick={() => setShowAllStatements(!showAllStatements)}
                 variant="secondary"
-                className="mt-4"
+                className="text-white mt-4"
               >
                 {showAllStatements
                   ? "Show Top 5 Most Voted-Upon Statements"
@@ -341,18 +344,14 @@ export default function PollZone({
   return (
     <ZoneWrapper
       title="Poll Results"
+      subtitle="View and manage your community poll results here. Results update
+            automatically every 30 seconds."
       isActive={isActive}
+      layout="vertical"
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-      <div className="flex">
-        <div className="w-1/3 pr-4">
-          <p className="text-gray-600">
-            View and manage your community poll results here. Results update
-            automatically every 30 seconds.
-          </p>
-        </div>
-        <div className="w-2/3 space-y-4">
+        <div>
           {renderPollContent()}
           {!isExistingModel && localPollData && (
             <Button onClick={onComplete} variant="primary" className="mt-4">
@@ -360,7 +359,6 @@ export default function PollZone({
             </Button>
           )}
         </div>
-      </div>
       <Modal
         isOpen={isExplanationModalOpen}
         onClose={() => setIsExplanationModalOpen(false)}

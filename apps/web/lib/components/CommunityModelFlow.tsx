@@ -300,7 +300,7 @@ export default function CommunityModelFlow({
           {modelData?.name.trim() ? (
             modelData.name
           ) : (
-            <span className="opacity-50">[Enter model name below]</span>
+            <span className="font-bold text-2xl">New Community Model</span>
           )}
         </h1>
       </div>
@@ -437,8 +437,13 @@ export default function CommunityModelFlow({
                   });
                   if (isExistingModel) {
                     // Only update constitutions and activeConstitutionId
-                    const { constitutions, activeConstitutionId, published } = data;
-                    if (constitutions || activeConstitutionId !== undefined || published !== undefined) {
+                    const { constitutions, activeConstitutionId, published } =
+                      data;
+                    if (
+                      constitutions ||
+                      activeConstitutionId !== undefined ||
+                      published !== undefined
+                    ) {
                       debouncedSaveModelData(
                         { constitutions, activeConstitutionId, published },
                         "communityModel",

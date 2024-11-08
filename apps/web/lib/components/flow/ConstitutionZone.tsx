@@ -1,6 +1,11 @@
 import { useState } from "react";
 import ZoneWrapper from "./ZoneWrapper";
-import { createConstitution, deleteConstitution, publishModel, unpublishModel } from "@/lib/actions";
+import {
+  createConstitution,
+  deleteConstitution,
+  publishModel,
+  unpublishModel,
+} from "@/lib/actions";
 import ConstitutionalAIChat from "@/lib/components/chat/ConstitutionalAIChat";
 import Modal from "@/lib/components/Modal";
 import { Constitution } from "@prisma/client";
@@ -138,6 +143,7 @@ export default function ConstitutionZone({
     <ZoneWrapper
       title="Constitutions"
       isActive={isActive}
+      layout="vertical"
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
@@ -177,9 +183,7 @@ export default function ConstitutionZone({
                     }
                   `}
                 >
-                  <div>
-                    Constitution v{constitution.version}
-                  </div>
+                  <div>Constitution v{constitution.version}</div>
                   <div className="text-xs text-teal-200">
                     {formatDistanceToNow(new Date(constitution.createdAt), {
                       addSuffix: true,
@@ -213,7 +217,9 @@ export default function ConstitutionZone({
                 <div className="flex items-center divide-x divide-white/20">
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/community-models/chat/${modelId}`);
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/community-models/chat/${modelId}`,
+                      );
                       setShowCopiedToast(true);
                       setTimeout(() => setShowCopiedToast(false), 2000);
                     }}
@@ -281,8 +287,10 @@ export default function ConstitutionZone({
                 },
               ]}
               customStyles={{
-                userMessage: "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
-                aiMessage: "bg-teal rounded-lg p-4 mb-4 shadow-sm border border-teal-100 text-white",
+                userMessage:
+                  "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
+                aiMessage:
+                  "bg-teal rounded-lg p-4 mb-4 shadow-sm border border-teal-100 text-white",
                 infoIcon: "text-teal-600 hover:text-teal-700 transition-colors",
               }}
             />
@@ -342,7 +350,8 @@ export default function ConstitutionZone({
               <div>
                 <h3 className="font-semibold">Ready to publish?</h3>
                 <p className="text-sm">
-                  Publishing will make your model visible in the library and allow others to chat with it.
+                  Publishing will make your model visible in the library and
+                  allow others to chat with it.
                 </p>
               </div>
               <button
