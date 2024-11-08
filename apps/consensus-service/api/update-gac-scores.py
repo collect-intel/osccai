@@ -204,8 +204,11 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
     binary_matrix[binary_matrix == -1] = 0
     binary_matrix[binary_matrix != 0] = 0  # Treat 'PASS' and None as 0
 
+    # Fill NA values and infer proper data types
+    filled_binary_matrix = binary_matrix.fillna(0).infer_objects(copy=False)
+    
     # Calculate Jaccard similarity between participants
-    similarity_matrix = binary_matrix.fillna(0).dot(binary_matrix.fillna(0).T)
+    similarity_matrix = filled_binary_matrix.dot(filled_binary_matrix.T)
     norm = np.array([np.sqrt(np.diagonal(similarity_matrix))])
     similarity_matrix = similarity_matrix / (norm.T * norm)
 
