@@ -43,3 +43,5 @@ next-env.d.ts
 # other
 .vscode
 /venv
+/apps/consensus-service/api/__pycache__
+*.pyc
