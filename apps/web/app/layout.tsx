@@ -7,8 +7,8 @@ import Navbar from "@/lib/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "OSCCAI",
-  description: "Open-Source Collective Constitutional AI",
+  title: "Community Models",
+  description: "Create and share community-aligned AI Models",
 };
 
 export default function RootLayout({
