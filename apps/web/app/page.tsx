@@ -80,10 +80,12 @@ export default async function Home() {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-semibold mb-4">About Community Models</h2>
+          <h2 className="text-2xl font-semibold mb-4">
+            About Community Models
+          </h2>
           <p className="mb-4">
-            Community Models enable groups of people to collaboratively create and
-            refine AI models based on collectively defined constitutions.
+            Community Models enable groups of people to collaboratively create
+            and refine AI models based on collectively defined constitutions.
           </p>
           <p className="mb-4">
             Our goal is to democratize AI alignment by allowing diverse groups
