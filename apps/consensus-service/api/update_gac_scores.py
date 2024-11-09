@@ -126,10 +126,16 @@ def fetch_polls_with_changes(cursor):
         SELECT DISTINCT "Poll".uid
         FROM "Poll"
         JOIN "Statement" ON "Poll".uid = "Statement"."pollId"
-        LEFT JOIN "Vote" ON "Statement".uid = "Vote"."statementId"
-        WHERE "Statement"."lastCalculatedAt" IS NULL
-           OR "Statement"."lastCalculatedAt" < "Vote"."createdAt" 
-           OR "Statement"."lastCalculatedAt" < "Vote"."updatedAt";
+        JOIN "Vote" ON "Statement".uid = "Vote"."statementId"
+        WHERE (
+            "Statement"."lastCalculatedAt" IS NULL
+            OR "Statement"."lastCalculatedAt" < "Vote"."createdAt"
+            OR "Statement"."lastCalculatedAt" < "Vote"."updatedAt"
+        )
+        AND EXISTS (
+            SELECT 1 FROM "Vote" v
+            WHERE v."statementId" = "Statement".uid
+        );
     """
     cursor.execute(query)
     columns = [col[0] for col in cursor.description]
