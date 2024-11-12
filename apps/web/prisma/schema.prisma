@@ -56,6 +56,8 @@ model CommunityModel {
 
   deleted                  Boolean                 @default(false)
   published               Boolean                 @default(false)
+  apiEnabled    Boolean    @default(false)  // Feature flag for API access
+  apiKeys       ApiKey[]   // Relation to API keys
   @@index([ownerId])
 }
 
@@ -202,4 +204,22 @@ model Flag {
 
   @@index([participantId])
   @@index([statementId])
+}
+
+// For storing API keys
+model ApiKey {
+  uid           String   @id @default(cuid())
+  key           String   @unique // Hashed API key
+  name          String?  // Optional name/description
+  ownerId       String
+  owner         CommunityModelOwner @relation(fields: [ownerId], references: [uid], onDelete: Cascade)
+  modelId       String
+  model         CommunityModel      @relation(fields: [modelId], references: [uid], onDelete: Cascade)
+  lastUsedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  enabled       Boolean  @default(true)
+
+  @@index([ownerId])
+  @@index([modelId])
 }
