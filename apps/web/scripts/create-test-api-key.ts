@@ -1,14 +1,9 @@
 import { PrismaClient } from '@prisma/client'
-import { hash } from 'bcrypt'
-import crypto from 'crypto'
+import { createApiKey } from '@/lib/actions'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create a test API key
-  const rawApiKey = `sk-test-${crypto.randomBytes(24).toString('hex')}`
-  const hashedKey = await hash(rawApiKey, 10)
-  
   // Replace these IDs with actual values from your local DB
   const ownerId = 'your-test-owner-id'
   const modelId = 'your-test-model-id'
@@ -19,17 +14,10 @@ async function main() {
     data: { apiEnabled: true }
   })
   
-  // Create the API key
-  const apiKey = await prisma.apiKey.create({
-    data: {
-      key: hashedKey,
-      name: 'Test Key',
-      ownerId,
-      modelId,
-    }
-  })
+  // Create the API key using the new function
+  const apiKey = await createApiKey(modelId, ownerId, 'Test Key')
   
-  console.log('Created API key:', rawApiKey)
+  console.log('Created API key:', apiKey.key)
   console.log('Associated with model:', modelId)
 }
 
