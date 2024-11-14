@@ -82,6 +82,7 @@ export async function getCommunityModel(modelId: string): Promise<
   const model = await prisma.communityModel.findUnique({
     where: { uid: modelId },
     include: {
+      owner: true,
       polls: {
         include: {
           statements: true,
@@ -89,7 +90,7 @@ export async function getCommunityModel(modelId: string): Promise<
       },
       constitutions: true,
       activeConstitution: true,
-      owner: true,
+      apiKeys: true,
     },
   });
 

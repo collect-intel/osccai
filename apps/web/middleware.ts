@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/polls/:path*",
   "/api/:path*",
+  "/api/v1/chat/completions",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/how-it-works",
@@ -17,6 +18,10 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware((auth, req) => {
+  if (req.nextUrl.pathname.startsWith('/api/v1/')) {
+    return NextResponse.next();
+  }
+
   if (!isPublicRoute(req)) {
     auth().protect();
     return null;

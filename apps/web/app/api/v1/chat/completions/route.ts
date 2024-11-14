@@ -6,6 +6,14 @@ import { genSystemPrompt, processAIResponse } from "@/lib/constitutional-ai";
 
 export const runtime = "edge";
 
+// skip Clerk authentication for API key-based requests
+export const config = {
+  api: {
+    auth: false
+
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Verify API key from Authorization header

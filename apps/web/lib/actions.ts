@@ -1078,6 +1078,22 @@ export async function fetchPollData(
 }
 
 export async function createApiKey(modelId: string, ownerId: string, name?: string) {
+  console.log('Creating API key:', { modelId, ownerId, name });
+  
+  if (!ownerId || ownerId === "") {
+    throw new Error("Invalid owner ID provided");
+  }
+
+  // Verify the owner exists
+  const owner = await prisma.communityModelOwner.findUnique({
+    where: { uid: ownerId }
+  });
+
+  if (!owner) {
+    console.error(`Owner not found for ID: ${ownerId}`);
+    throw new Error("Owner not found");
+  }
+
   // Generate the API key
   const { raw, hashed } = await generateApiKey('sk');
   
