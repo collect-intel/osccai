@@ -29,6 +29,8 @@ model CommunityModelOwner {
 
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+
+  apiKeys        ApiKey[]
 }
 
 // Represents a community model which is a container for constitutions and polls
@@ -216,10 +218,18 @@ model ApiKey {
   modelId       String
   model         CommunityModel      @relation(fields: [modelId], references: [uid], onDelete: Cascade)
   lastUsedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  enabled       Boolean  @default(true)
-
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  expiresAt     DateTime?    // New: When the key expires
+  status        ApiKeyStatus @default(ACTIVE) // Replace enabled boolean
+  scopes        String[]     // New: Array of permitted actions
+  
   @@index([ownerId])
   @@index([modelId])
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
 }

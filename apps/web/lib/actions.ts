@@ -19,6 +19,7 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import { deleteFile } from "@/lib/utils/uploader";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
+import { generateApiKey } from '@/lib/utils/api-keys';
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -1073,5 +1074,28 @@ export async function fetchPollData(
   return {
     ...poll,
     statements: statementsWithConstitutionable,
+  };
+}
+
+export async function createApiKey(modelId: string, ownerId: string, name?: string) {
+  // Generate the API key
+  const { raw, hashed } = await generateApiKey('sk');
+  
+  // Store only the hashed version in the database
+  const apiKey = await prisma.apiKey.create({
+    data: {
+      key: hashed,
+      name,
+      ownerId,
+      modelId,
+    }
+  });
+  
+  // Return the raw key only once - it will never be accessible again
+  return {
+    id: apiKey.uid,
+    key: raw,
+    name: apiKey.name,
+    createdAt: apiKey.createdAt
   };
 }
