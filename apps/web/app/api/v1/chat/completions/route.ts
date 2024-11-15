@@ -4,12 +4,12 @@ import { prisma } from "@/lib/db";
 import { verifyApiKeyRequest } from "@/lib/api-auth";
 import { genSystemPrompt, processAIResponse } from "@/lib/constitutional-ai";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('Processing chat completion request');
+    console.log("Processing chat completion request");
     // Verify API key from Authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
             type: "invalid_request_error",
           },
         }),
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const apiKey = authHeader.slice(7);
     const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
-    
+
     if (!isValid) {
       return new Response(
         JSON.stringify({
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
             type: "invalid_request_error",
           },
         }),
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
             type: "invalid_request_error",
           },
         }),
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
             type: "invalid_request_error",
           },
         }),
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -112,24 +112,25 @@ export async function POST(req: NextRequest) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   } catch (error) {
-    console.error('Detailed API error:', error);
+    console.error("Detailed API error:", error);
     // Ensure we always return JSON
     return new Response(
       JSON.stringify({
         error: {
-          message: error instanceof Error ? error.message : "Internal server error",
+          message:
+            error instanceof Error ? error.message : "Internal server error",
           type: "internal_server_error",
         },
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
-        }
-      }
+          "Content-Type": "application/json",
+        },
+      },
     );
   }
-} 
+}

@@ -19,7 +19,7 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import { deleteFile } from "@/lib/utils/uploader";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
-import { generateApiKey } from '@/lib/utils/server/api-keys';
+import { generateApiKey } from "@/lib/utils/server/api-keys";
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -1077,9 +1077,13 @@ export async function fetchPollData(
   };
 }
 
-export async function createApiKey(modelId: string, ownerId: string, name: string) {
-  console.log('Creating API key:', { modelId, ownerId, name });
-  
+export async function createApiKey(
+  modelId: string,
+  ownerId: string,
+  name: string,
+) {
+  console.log("Creating API key:", { modelId, ownerId, name });
+
   if (!ownerId || ownerId === "") {
     throw new Error("Invalid owner ID provided");
   }
@@ -1089,7 +1093,7 @@ export async function createApiKey(modelId: string, ownerId: string, name: strin
   }
 
   const owner = await prisma.communityModelOwner.findUnique({
-    where: { uid: ownerId }
+    where: { uid: ownerId },
   });
 
   if (!owner) {
@@ -1098,8 +1102,8 @@ export async function createApiKey(modelId: string, ownerId: string, name: strin
   }
 
   // Generate the API key
-  const { raw, hashed } = await generateApiKey('sk');
-  
+  const { raw, hashed } = await generateApiKey("sk");
+
   // Store only the hashed version in the database
   const apiKey = await prisma.apiKey.create({
     data: {
@@ -1107,14 +1111,14 @@ export async function createApiKey(modelId: string, ownerId: string, name: strin
       name,
       ownerId,
       modelId,
-    }
+    },
   });
-  
+
   // Return the raw key only once - it will never be accessible again
   return {
     id: apiKey.uid,
     key: raw,
     name: apiKey.name!,
-    createdAt: apiKey.createdAt
+    createdAt: apiKey.createdAt,
   };
 }

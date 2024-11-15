@@ -111,7 +111,7 @@ export default function CommunityModelFlow({
         setIsLoading(true);
         try {
           const fetchedModelData = await getCommunityModel(modelId);
-          console.log('Loaded model data:', fetchedModelData);
+          console.log("Loaded model data:", fetchedModelData);
           if (fetchedModelData) {
             setModelData({
               name: fetchedModelData.name || "Default Name",
@@ -134,7 +134,13 @@ export default function CommunityModelFlow({
               apiKeys: fetchedModelData.apiKeys || [],
               owner: fetchedModelData.owner,
             });
-            setActiveZones(["about", "principles", "poll", "communityModel", "advanced"]);
+            setActiveZones([
+              "about",
+              "principles",
+              "poll",
+              "communityModel",
+              "advanced",
+            ]);
 
             // After setting the model data, check for hash
             handleHashChange();

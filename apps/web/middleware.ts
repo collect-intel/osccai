@@ -18,7 +18,7 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware((auth, req) => {
-  if (req.nextUrl.pathname.startsWith('/api/v1/')) {
+  if (req.nextUrl.pathname.startsWith("/api/v1/")) {
     return NextResponse.next();
   }
 
@@ -32,5 +32,5 @@ export default clerkMiddleware((auth, req) => {
 export const config = {
   matcher: [
     "/((?!api/v1/chat/completions|_next/static|_next/image|favicon.ico).*)",
-  ]
+  ],
 };

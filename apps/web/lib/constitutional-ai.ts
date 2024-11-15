@@ -33,18 +33,15 @@ export async function processAIResponse({
   temperature?: number;
   maxTokens?: number;
 }) {
-  const proxyUrl = process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+  const proxyUrl =
+    process.env.NEXT_PUBLIC_PROXY_API_URL ||
+    "https://proxyai.cip.org/api/stream";
   const clientProvider = new ClientProvider(proxyUrl);
 
   const stream = await xmllm(({ prompt }: { prompt: any }) => {
     return [
       prompt({
-        model: [
-          "claude:good",
-          "openai:good",
-          "claude:fast",
-          "openai:fast",
-        ],
+        model: ["claude:good", "openai:good", "claude:fast", "openai:fast"],
         messages,
         schema: {
           thinking: String,
@@ -73,4 +70,4 @@ export async function processAIResponse({
   }
 
   return response;
-} 
+}

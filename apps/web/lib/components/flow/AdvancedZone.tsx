@@ -39,14 +39,14 @@ export default function AdvancedZone({
 
   useEffect(() => {
     if (!ownerId || ownerId === "") {
-      console.error('Invalid owner ID in AdvancedZone:', { modelId, ownerId });
+      console.error("Invalid owner ID in AdvancedZone:", { modelId, ownerId });
     }
   }, [ownerId, modelId]);
 
   const handleCreateKey = async () => {
     setIsCreating(true);
     setError(null);
-    
+
     if (!ownerId || ownerId === "") {
       setError("Invalid owner configuration. Please contact support.");
       setIsCreating(false);
@@ -90,7 +90,8 @@ export default function AdvancedZone({
         <div className="mb-6">
           <h3 className="text-xl font-semibold mb-2">API Keys</h3>
           <p className="text-gray-600 mb-4">
-            Create and manage API keys for programmatic access to your community model.
+            Create and manage API keys for programmatic access to your community
+            model.
           </p>
           <button
             onClick={() => setIsCreateModalOpen(true)}
@@ -115,7 +116,10 @@ export default function AdvancedZone({
                     <p className="text-sm text-gray-500">
                       Created {formatDistanceToNow(key.createdAt)} ago
                       {key.lastUsedAt && (
-                        <> · Last used {formatDistanceToNow(key.lastUsedAt)} ago</>
+                        <>
+                          {" "}
+                          · Last used {formatDistanceToNow(key.lastUsedAt)} ago
+                        </>
                       )}
                     </p>
                   </div>
@@ -149,7 +153,7 @@ export default function AdvancedZone({
             <h3 className="text-xl font-semibold mb-4">
               {newKeyData ? "Save Your API Key" : "Create New API Key"}
             </h3>
-            
+
             {!newKeyData && (
               <>
                 {error && (
@@ -158,7 +162,10 @@ export default function AdvancedZone({
                   </div>
                 )}
                 <div className="mb-4">
-                  <label htmlFor="keyName" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="keyName"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Key Name
                   </label>
                   <input
@@ -184,7 +191,8 @@ export default function AdvancedZone({
               <>
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
                   <p className="text-yellow-800 text-sm font-medium">
-                    Important: Copy your API key now. You won't be able to see it again!
+                    Important: Copy your API key now. You won't be able to see
+                    it again!
                   </p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-md mb-4 font-mono text-sm break-all">
@@ -210,4 +218,4 @@ export default function AdvancedZone({
       </div>
     </ZoneWrapper>
   );
-} 
+}

@@ -92,7 +92,7 @@ export async function getCommunityModel(modelId: string): Promise<
       },
       constitutions: true,
       activeConstitution: true,
-      apiKeys: true
+      apiKeys: true,
     },
   });
 
