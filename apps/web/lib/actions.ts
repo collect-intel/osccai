@@ -1077,14 +1077,17 @@ export async function fetchPollData(
   };
 }
 
-export async function createApiKey(modelId: string, ownerId: string, name?: string) {
+export async function createApiKey(modelId: string, ownerId: string, name: string) {
   console.log('Creating API key:', { modelId, ownerId, name });
   
   if (!ownerId || ownerId === "") {
     throw new Error("Invalid owner ID provided");
   }
 
-  // Verify the owner exists
+  if (!name || name.trim() === "") {
+    throw new Error("API key name is required");
+  }
+
   const owner = await prisma.communityModelOwner.findUnique({
     where: { uid: ownerId }
   });
@@ -1111,7 +1114,7 @@ export async function createApiKey(modelId: string, ownerId: string, name?: stri
   return {
     id: apiKey.uid,
     key: raw,
-    name: apiKey.name,
+    name: apiKey.name!,
     createdAt: apiKey.createdAt
   };
 }

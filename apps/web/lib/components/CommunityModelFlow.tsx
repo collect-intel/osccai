@@ -33,6 +33,7 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   owner?: {
     uid: string;
     name: string;
+    clerkUserId: string;
   };
 }
 

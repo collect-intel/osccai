@@ -1,16 +1,11 @@
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { verifyApiKeyRequest } from "@/lib/api-auth";
 import { genSystemPrompt, processAIResponse } from "@/lib/constitutional-ai";
 
-// skip Clerk authentication for API key-based requests
-export const config = {
-  api: {
-    auth: false
-
-  }
-}
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
