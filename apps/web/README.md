@@ -7,6 +7,7 @@
 When setting up Prisma migrations on a new production database that already has tables:
 
 1. Create the migrations tracking table in Supabase SQL Editor:
+
 ```sql
 CREATE TABLE "_prisma_migrations" (
     id                      VARCHAR(36) PRIMARY KEY NOT NULL,
@@ -21,11 +22,13 @@ CREATE TABLE "_prisma_migrations" (
 ```
 
 2. Mark the initial migration as applied:
+
 ```bash
 pnpm run db:init:prod
 ```
 
 3. Verify the migration status:
+
 ```bash
 pnpm run db:status:prod
 ```

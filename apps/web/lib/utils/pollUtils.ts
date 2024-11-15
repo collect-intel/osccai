@@ -4,7 +4,10 @@ export function isStatementConstitutionable(
   statement: Statement & { votes?: Vote[] },
 ): boolean {
   // If isConstitutionable is explicitly set (true or false), use that value
-  if (statement.isConstitutionable !== null && statement.isConstitutionable !== undefined) {
+  if (
+    statement.isConstitutionable !== null &&
+    statement.isConstitutionable !== undefined
+  ) {
     return statement.isConstitutionable;
   }
 
