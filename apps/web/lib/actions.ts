@@ -19,7 +19,7 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import { deleteFile } from "@/lib/utils/uploader";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
-import { generateApiKey } from '@/lib/utils/api-keys';
+import { generateApiKey } from '@/lib/utils/server/api-keys';
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(

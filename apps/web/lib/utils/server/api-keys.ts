@@ -1,3 +1,4 @@
+'use server';
 import { hash, compare } from "bcrypt";
 import crypto from 'crypto';
 

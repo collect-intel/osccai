@@ -1,4 +1,6 @@
-import { verifyApiKey } from '@/lib/utils/api-keys';
+'use server';
+
+import { verifyApiKey } from '@/lib/utils/server/api-keys';
 import { prisma } from "@/lib/db";
 
 export async function verifyApiKeyRequest(apiKey: string): Promise<{ modelId: string; isValid: boolean }> {
@@ -6,9 +8,6 @@ export async function verifyApiKeyRequest(apiKey: string): Promise<{ modelId: st
   const keyRecord = await prisma.apiKey.findFirst({
     where: { 
       status: 'ACTIVE',
-      key: {
-        not: null
-      }
     },
     include: { model: true }
   });
