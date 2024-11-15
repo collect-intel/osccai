@@ -145,3 +145,7 @@ This setup presumes you have the following installed:
 - **`styles/`**: Global CSS styles and Tailwind CSS configuration.
 - **`functions/`**: Contains serverless functions, including `update-gac-scores.ts` for the cron job.
 - **`scripts/`**: Utility scripts, including `local-cron.ts` for running the cron job locally.
+
+## Database Management
+
+For detailed instructions on setting up and managing the production database migrations, see the [Web App README](apps/web/README.md#database-migration-setup).
