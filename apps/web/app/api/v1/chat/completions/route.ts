@@ -1,10 +1,8 @@
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs";
-import { prisma } from "@/lib/prisma";
-import { verifyApiKey } from "@/lib/api-auth";
+import { prisma } from "@/lib/db";
+import { verifyApiKeyRequest } from "@/lib/api-auth";
 import { genSystemPrompt, processAIResponse } from "@/lib/constitutional-ai";
-
-export const runtime = "edge";
 
 // skip Clerk authentication for API key-based requests
 export const config = {
@@ -16,6 +14,7 @@ export const config = {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('Processing chat completion request');
     // Verify API key from Authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const apiKey = authHeader.slice(7);
-    const { modelId, isValid } = await verifyApiKey(apiKey);
+    const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
     
     if (!isValid) {
       return new Response(
@@ -121,15 +120,21 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Error processing chat completion:", error);
+    console.error('Detailed API error:', error);
+    // Ensure we always return JSON
     return new Response(
       JSON.stringify({
         error: {
-          message: "Internal server error",
+          message: error instanceof Error ? error.message : "Internal server error",
           type: "internal_server_error",
         },
       }),
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
     );
   }
 } 

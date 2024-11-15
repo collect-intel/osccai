@@ -1,14 +1,20 @@
 import { verifyApiKey } from '@/lib/utils/api-keys';
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/db";
 
 export async function verifyApiKeyRequest(apiKey: string): Promise<{ modelId: string; isValid: boolean }> {
   // Find the API key record
   const keyRecord = await prisma.apiKey.findFirst({
-    where: { enabled: true },
+    where: { 
+      status: 'ACTIVE',
+      key: {
+        not: null
+      }
+    },
     include: { model: true }
   });
 
   if (!keyRecord) {
+    console.log('No active API key found');
     return { modelId: "", isValid: false };
   }
 
@@ -16,9 +22,12 @@ export async function verifyApiKeyRequest(apiKey: string): Promise<{ modelId: st
   const isValid = await verifyApiKey(apiKey, keyRecord.key);
   
   if (!isValid) {
+    console.log('API key verification failed');
     return { modelId: "", isValid: false };
   }
 
+  console.log('API key verified successfully');
+  
   // Update last used timestamp
   await prisma.apiKey.update({
     where: { uid: keyRecord.uid },

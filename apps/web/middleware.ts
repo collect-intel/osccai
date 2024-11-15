@@ -30,5 +30,7 @@ export default clerkMiddleware((auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/"],
+  matcher: [
+    "/((?!api/v1/chat/completions|_next/static|_next/image|favicon.ico).*)",
+  ]
 };
