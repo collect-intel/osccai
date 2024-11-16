@@ -19,6 +19,7 @@ import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
 import { deleteFile } from "@/lib/utils/uploader";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
+import { generateApiKey } from "@/lib/utils/server/api-keys";
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -1073,5 +1074,51 @@ export async function fetchPollData(
   return {
     ...poll,
     statements: statementsWithConstitutionable,
+  };
+}
+
+export async function createApiKey(
+  modelId: string,
+  ownerId: string,
+  name: string,
+) {
+  console.log("Creating API key:", { modelId, ownerId, name });
+
+  if (!ownerId || ownerId === "") {
+    throw new Error("Invalid owner ID provided");
+  }
+
+  if (!name || name.trim() === "") {
+    throw new Error("API key name is required");
+  }
+
+  const owner = await prisma.communityModelOwner.findUnique({
+    where: { uid: ownerId },
+  });
+
+  if (!owner) {
+    console.error(`Owner not found for ID: ${ownerId}`);
+    throw new Error("Owner not found");
+  }
+
+  // Generate the API key
+  const { raw, hashed } = await generateApiKey("sk");
+
+  // Store only the hashed version in the database
+  const apiKey = await prisma.apiKey.create({
+    data: {
+      key: hashed,
+      name,
+      ownerId,
+      modelId,
+    },
+  });
+
+  // Return the raw key only once - it will never be accessible again
+  return {
+    id: apiKey.uid,
+    key: raw,
+    name: apiKey.name!,
+    createdAt: apiKey.createdAt,
   };
 }

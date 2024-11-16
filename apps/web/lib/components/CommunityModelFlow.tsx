@@ -6,6 +6,7 @@ import AboutZone from "./flow/AboutZone";
 import PrinciplesZone from "./flow/PrinciplesZone";
 import PollZone from "./flow/PollZone";
 import ConstitutionZone from "./flow/ConstitutionZone";
+import AdvancedZone from "./flow/AdvancedZone";
 import {
   createCommunityModel,
   updateCommunityModel,
@@ -16,7 +17,7 @@ import { getCommunityModel } from "@/lib/data";
 import { AboutZoneData } from "./flow/AboutZone";
 import Toast from "./Toast";
 import { debounce } from "lodash";
-import { Constitution, Poll, Statement } from "@prisma/client";
+import { Constitution, Poll, Statement, ApiKey } from "@prisma/client";
 import Spinner from "./Spinner";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
@@ -27,6 +28,13 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   activeConstitutionId?: string | null;
   polls: Poll[];
   published?: boolean;
+  apiEnabled?: boolean;
+  apiKeys?: ApiKey[];
+  owner?: {
+    uid: string;
+    name: string;
+    clerkUserId: string;
+  };
 }
 
 interface CommunityModelFlowProps {
@@ -55,6 +63,7 @@ export default function CommunityModelFlow({
     principles: "idle",
     poll: "idle",
     communityModel: "idle",
+    advanced: "idle",
   });
 
   const isExistingModel = !!initialModelId;
@@ -67,6 +76,7 @@ export default function CommunityModelFlow({
     principles: useRef<HTMLDivElement>(null),
     poll: useRef<HTMLDivElement>(null),
     communityModel: useRef<HTMLDivElement>(null),
+    advanced: useRef<HTMLDivElement>(null),
   };
 
   const handleHashChange = useCallback(() => {
@@ -101,6 +111,7 @@ export default function CommunityModelFlow({
         setIsLoading(true);
         try {
           const fetchedModelData = await getCommunityModel(modelId);
+          console.log("Loaded model data:", fetchedModelData);
           if (fetchedModelData) {
             setModelData({
               name: fetchedModelData.name || "Default Name",
@@ -119,8 +130,17 @@ export default function CommunityModelFlow({
                 fetchedModelData.activeConstitutionId || undefined,
               polls: fetchedModelData.polls || [],
               published: fetchedModelData.published || false,
+              apiEnabled: fetchedModelData.apiEnabled || false,
+              apiKeys: fetchedModelData.apiKeys || [],
+              owner: fetchedModelData.owner,
             });
-            setActiveZones(["about", "principles", "poll", "communityModel"]);
+            setActiveZones([
+              "about",
+              "principles",
+              "poll",
+              "communityModel",
+              "advanced",
+            ]);
 
             // After setting the model data, check for hash
             handleHashChange();
@@ -454,6 +474,18 @@ export default function CommunityModelFlow({
                 savingStatus={savingStatus.communityModel}
               />
             </div>
+            {modelData?.apiEnabled && (
+              <div ref={zoneRefs.advanced} id="advanced">
+                <AdvancedZone
+                  isActive={activeZones.includes("advanced")}
+                  modelId={modelId || initialModelId!}
+                  ownerId={modelData.owner?.uid || ""}
+                  apiKeys={modelData.apiKeys || []}
+                  onToggle={() => toggleZone("advanced")}
+                  savingStatus={savingStatus.advanced}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

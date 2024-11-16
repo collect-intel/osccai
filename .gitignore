@@ -45,3 +45,5 @@ next-env.d.ts
 /venv
 /apps/consensus-service/api/__pycache__
 *.pyc
+apps/web/prisma/seed.ts
+apps/web/local_backup.sql

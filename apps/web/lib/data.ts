@@ -1,7 +1,7 @@
 "use server";
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { CommunityModel, Constitution, Poll } from "@prisma/client";
+import { CommunityModel, Constitution, Poll, ApiKey } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 
@@ -10,6 +10,7 @@ type ExtendedCommunityModel = CommunityModel & {
   constitutions: Constitution[];
   activeConstitution: Constitution | null;
   polls: Poll[];
+  apiKeys?: ApiKey[];
 };
 
 export async function getUserCommunityModels() {
@@ -75,13 +76,15 @@ export async function getCommunityModel(modelId: string): Promise<
       polls: Poll[];
       published: boolean;
       ownerId: string;
-      owner: { uid: string; clerkUserId: string };
+      owner: { uid: string; name: string; clerkUserId: string };
+      apiKeys: ApiKey[];
     })
   | null
 > {
   const model = await prisma.communityModel.findUnique({
     where: { uid: modelId },
     include: {
+      owner: true,
       polls: {
         include: {
           statements: true,
@@ -89,7 +92,7 @@ export async function getCommunityModel(modelId: string): Promise<
       },
       constitutions: true,
       activeConstitution: true,
-      owner: true,
+      apiKeys: true,
     },
   });
 
@@ -114,7 +117,9 @@ export async function getCommunityModel(modelId: string): Promise<
     ownerId: model.ownerId,
     owner: {
       uid: model.owner.uid,
+      name: model.owner.name || "",
       clerkUserId: model.owner.clerkUserId || "",
     },
+    apiKeys: model.apiKeys || [],
   };
 }
