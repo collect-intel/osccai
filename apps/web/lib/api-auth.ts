@@ -8,17 +8,16 @@ export async function verifyApiKeyRequest(
 ): Promise<{ modelId: string; isValid: boolean }> {
   // Get all active keys
   const activeKeys = await prisma.apiKey.findMany({
-    where: { 
-      status: 'ACTIVE',
+    where: {
+      status: "ACTIVE",
     },
-    include: { model: true }
+    include: { model: true },
   });
 
   // Try to verify against each active key
   for (const keyRecord of activeKeys) {
     const isValid = await verifyApiKey(apiKey, keyRecord.key);
     if (isValid) {
-
       console.log("API key verified successfully");
 
       // Update last used timestamp
@@ -30,6 +29,6 @@ export async function verifyApiKeyRequest(
     }
   }
 
-  console.log('No matching active API key found');
+  console.log("No matching active API key found");
   return { modelId: "", isValid: false };
 }
