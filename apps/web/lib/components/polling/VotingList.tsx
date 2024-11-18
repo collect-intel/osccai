@@ -77,7 +77,7 @@ export default function VotingList({
             Thank you for participating!
           </h2>
           <p>
-            You've voted on all the statements. Feel free to review or change
+            You&apos;ve voted on all the statements. Feel free to review or change
             your votes below.
           </p>
         </div>

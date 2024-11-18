@@ -55,7 +55,7 @@ export default function Voting({
 
   // Ensure that votes state reflects new initialVotes
   useEffect(() => {
-    setVotes({ ...votes, ...initialVotes });
+    setVotes(prevVotes => ({ ...prevVotes, ...initialVotes }));
   }, [initialVotes]);
 
   const handleVote = async (vote: VoteValue) => {
@@ -112,7 +112,7 @@ export default function Voting({
           <h2 className="text-2xl font-bold mb-4">
             Thank you for participating!
           </h2>
-          <p>You've voted on all the statements in this poll.</p>
+          <p>You&apos;ve voted on all the statements in this poll.</p>
         </div>
       );
     }
@@ -126,7 +126,7 @@ export default function Voting({
         <h2 className="text-2xl font-bold mb-4">
           Thank you for participating!
         </h2>
-        <p>You've already voted on all of these statements.</p>
+        <p>You&apos;ve already voted on all of these statements.</p>
       </div>
     ) : (
       <motion.div

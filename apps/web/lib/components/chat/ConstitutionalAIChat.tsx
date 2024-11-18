@@ -1,6 +1,6 @@
 "use client";
 
-import React, { forwardRef, useCallback, useState } from "react";
+import React, { forwardRef, useCallback, useState, useEffect, useRef } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import AIChat, { AIChatHandle } from "./AIChat";
 import { MessageWithFields } from "../../types";
@@ -9,39 +9,186 @@ import { FaInfoCircle } from "react-icons/fa";
 import AIResponseModal from "./AIResponseModal";
 import LoadingMessage from "./LoadingMessage";
 import StreamingMessage from "./StreamingMessage";
+import { getChat, saveChat } from '@/lib/utils/chatStorage';
+
+declare const process: {
+  env: {
+    NEXT_PUBLIC_PROXY_API_URL?: string;
+  };
+};
+
+interface ChatState {
+  messages: MessageWithFields[];
+  isStreaming: boolean;
+}
 
 interface ConstitutionalAIChatProps {
-  onUserMessage?: (message: string) => void;
-  onAIMessage?: (message: MessageWithFields, isComplete: boolean) => void;
+  chatId: string;
   constitution: {
     text: string;
     icon?: React.ReactNode;
     color?: string;
   };
-  initialMessages?: MessageWithFields[];
-  interactive?: boolean;
   customStyles?: {
     userMessage?: string;
     aiMessage?: string;
     infoIcon?: string;
   };
+  onInputChange?: (chatId: string, value: string) => void;
+  draftInput?: string;
+  initialMessage?: MessageWithFields;
 }
 
-const ConstitutionalAIChat = forwardRef<
-  AIChatHandle,
-  ConstitutionalAIChatProps
->(
-  (
-    {
-      onUserMessage,
-      onAIMessage,
-      constitution,
-      interactive = true,
-      initialMessages,
-      customStyles = {},
-    },
-    ref,
-  ) => {
+const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>(
+  ({
+    chatId,
+    constitution,
+    customStyles = {},
+    onInputChange,
+    draftInput,
+    initialMessage,
+  }, ref) => {
+    const [chats, setChats] = useState<Record<string, ChatState>>({});
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState<MessageWithFields | null>(null);
+
+    // Load initial messages
+    useEffect(() => {
+      if (!chats[chatId]) {
+        const savedChat = getChat(chatId);
+        setChats(current => ({
+          ...current,
+          [chatId]: {
+            messages: savedChat?.messages || [initialMessage || {
+              role: "assistant",
+              content: "Hi there! I'm an AI assistant. How can I help you today?",
+              isInitialMessage: true,
+            }],
+            isStreaming: false
+          }
+        }));
+      }
+    }, [chatId, initialMessage]);
+
+    const genStream = async (messages: MessageWithFields[]) => {
+      const proxyUrl = process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+      const clientProvider = new ClientProvider(proxyUrl);
+
+      const convertedMessages = messages.map((message) => ({
+        role: message.role,
+        content: message.final_response || message.content,
+      }));
+
+      return await xmllm(({ prompt }: { prompt: any }) => {
+        return [
+          prompt({
+            model: ["claude:good", "openai:good", "claude:fast", "openai:fast"],
+            messages: convertedMessages,
+            schema: {
+              thinking: String,
+              draft_response: String,
+              response_metrics: String,
+              improvement_strategy: String,
+              final_response: String,
+            },
+            system: system,
+          }),
+          function* (t: any) {
+            yield { role: "assistant", ...t };
+          },
+        ];
+      }, clientProvider);
+    };
+
+    const handleUserMessage = useCallback(async (content: string) => {
+      setChats(current => {
+        const chatState = current[chatId];
+        const updatedMessages = [...(chatState?.messages || []), 
+          { 
+            role: "user" as const, 
+            content,
+            isNewMessage: true 
+          },
+          { 
+            role: "assistant" as const, 
+            content: "",
+            isStreaming: true,
+            isNewMessage: true 
+          }
+        ];
+        
+        return {
+          ...current,
+          [chatId]: {
+            messages: updatedMessages,
+            isStreaming: true
+          }
+        };
+      });
+
+      const currentChat = chats[chatId];
+      const messagesForStream = [
+        ...(currentChat?.messages || []),
+        { role: "user" as const, content }
+      ];
+
+      try {
+        const stream = await genStream(messagesForStream);
+        
+        for await (const chunk of stream) {
+          setChats(current => {
+            const chatState = current[chatId];
+            const newMessages = [...(chatState?.messages || [])];
+            const streamingIndex = newMessages.length - 1;
+
+            if (typeof chunk === "string") {
+              newMessages[streamingIndex] = {
+                ...newMessages[streamingIndex],
+                content: (newMessages[streamingIndex].content || "") + chunk
+              };
+            } else {
+              newMessages[streamingIndex] = {
+                ...newMessages[streamingIndex],
+                ...chunk
+              };
+            }
+
+            saveChat(chatId, newMessages);
+            return {
+              ...current,
+              [chatId]: {
+                messages: newMessages,
+                isStreaming: true
+              }
+            };
+          });
+        }
+
+        setChats(current => {
+          const chatState = current[chatId];
+          const newMessages = [...(chatState?.messages || [])];
+          const streamingIndex = newMessages.length - 1;
+          newMessages[streamingIndex] = {
+            ...newMessages[streamingIndex],
+            isStreaming: false
+          };
+          saveChat(chatId, newMessages);
+          return {
+            ...current,
+            [chatId]: {
+              messages: newMessages,
+              isStreaming: false
+            }
+          };
+        });
+
+      } catch (error) {
+        console.error("Error in AI response:", error);
+      }
+    }, [chatId, chats]);
+
+    const activeChat = chats[chatId] || { messages: [], isStreaming: false };
+
     const genSystemPrompt = (constitutionText: string): string => {
       if (!constitutionText.trim()) {
         return "Be a helpful AI assistant";
@@ -87,59 +234,6 @@ I observe a peculiar atmospheric phenomenon...
 
     const system = genSystemPrompt(constitution.text);
 
-    const genStream = useCallback(
-      async (messages: MessageWithFields[]) => {
-        const proxyUrl =
-          process.env.NEXT_PUBLIC_PROXY_API_URL ||
-          "https://proxyai.cip.org/api/stream";
-        const clientProvider = new ClientProvider(proxyUrl);
-
-        const convertedMessages = messages.map((message) => ({
-          role: message.role,
-          content: message.final_response || message.content,
-        }));
-
-        return await xmllm(({ prompt }: { prompt: any }) => {
-          return [
-            prompt({
-              model: [
-                // Preference order of models
-                "claude:good", // i.e. sonnet 3.5
-                "openai:good", // i.e. gpt-4o
-                "claude:fast", // i.e. haiku 3
-                "openai:fast", // i.e. gpt-4o-mini
-              ],
-              messages: convertedMessages,
-              schema: {
-                thinking: String,
-                draft_response: String,
-                response_metrics: String,
-                improvement_strategy: String,
-                final_response: String,
-              },
-              system: system,
-            }),
-            function* (t: any) {
-              yield { role: "assistant", ...t };
-            },
-          ];
-        }, clientProvider);
-      },
-      [system],
-    );
-
-    initialMessages = initialMessages?.map((msg) => ({
-      ...msg,
-      isInitialMessage: true,
-    })) || [
-      { role: "user", content: "Hello", isInitialMessage: true },
-      { role: "assistant", content: `Hi there.`, isInitialMessage: true },
-    ];
-
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedMessage, setSelectedMessage] =
-      useState<MessageWithFields | null>(null);
-
     const renderMessage = (message: MessageWithFields) => {
       const hasVisibleContent =
         (message.final_response && message.final_response.trim() !== "") ||
@@ -152,105 +246,61 @@ I observe a peculiar atmospheric phenomenon...
 
       const messageStyle =
         message.role === "user"
-          ? customStyles.userMessage
-          : customStyles.aiMessage;
+          ? customStyles.userMessage || "bg-white text-black rounded-lg p-4"
+          : customStyles.aiMessage || "bg-teal text-white rounded-lg p-4";
 
-      // For user messages, use ReactMarkdown with consistent styling
       if (message.role === "user") {
         return (
-          <div className={`relative ${messageStyle || ""}`}>
-            <ReactMarkdown
+          <div className={`relative ${messageStyle}`}>
+            <StreamingMessage
+              content={message.content}
+              speed="normal"
+              streaming={false}
               className="prose max-w-none"
-              components={{
-                p: ({ children }) => (
-                  <p className="mb-4 last:mb-0">{children}</p>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc pl-4 mb-4 last:mb-0">{children}</ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal pl-4 mb-4 last:mb-0">
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => (
-                  <li className="mb-1 last:mb-0">{children}</li>
-                ),
-                h1: ({ children }) => (
-                  <h1 className="text-2xl font-bold mb-4 mt-6 first:mt-0">
-                    {children}
-                  </h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-xl font-bold mb-3 mt-5 first:mt-0">
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-lg font-bold mb-2 mt-4 first:mt-0">
-                    {children}
-                  </h3>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-gray-200 pl-4 py-1 mb-4 italic">
-                    {children}
-                  </blockquote>
-                ),
-                code: ({ children }) => (
-                  <code className="bg-gray-100 rounded px-1 py-0.5 text-sm">
-                    {children}
-                  </code>
-                ),
-                pre: ({ children }) => (
-                  <pre className="bg-gray-100 rounded p-3 mb-4 overflow-x-auto">
-                    {children}
-                  </pre>
-                ),
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+              variant="light"
+            />
           </div>
         );
       }
 
-      // Handle AI messages with loading states
       if (message.isStreaming && !hasVisibleContent) {
-        if (message.draft_response && !message.response_metrics) {
+        if (!chatId) return null;
+        
+        if (activeChat.isStreaming) {
+          if (message.draft_response && !message.response_metrics) {
+            return (
+              <LoadingMessage
+                message="Reflecting"
+                className={messageStyle}
+                color="white"
+              />
+            );
+          } else if (message.response_metrics && !message.final_response) {
+            return (
+              <LoadingMessage
+                message="Improving"
+                className={messageStyle}
+                color="white"
+              />
+            );
+          }
           return (
             <LoadingMessage
-              message="Reflecting"
-              className={messageStyle || ""}
-              color="white"
-            />
-          );
-        } else if (message.response_metrics && !message.final_response) {
-          return (
-            <LoadingMessage
-              message="Improving"
-              className={messageStyle || ""}
+              message="Thinking"
+              className={messageStyle}
               color="white"
             />
           );
         }
-        return (
-          <LoadingMessage
-            message="Thinking"
-            className={messageStyle || ""}
-            color="white"
-          />
-        );
+        return null;
       }
 
       if (!hasVisibleContent) {
         return null;
       }
 
-      // Only AI messages get the streaming effect
       return (
-        <div
-          className={`relative ${messageStyle || ""} ${hasAdditionalInfo ? "pr-8" : ""}`}
-        >
+        <div className={`relative ${messageStyle} ${hasAdditionalInfo ? "pr-8" : ""}`}>
           {hasAdditionalInfo && (
             <FaInfoCircle
               className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-blue-500"}`}
@@ -264,9 +314,10 @@ I observe a peculiar atmospheric phenomenon...
             content={message.final_response || message.content}
             speed="normal"
             streaming={
-              message.role === "assistant" && !message.isInitialMessage
+              activeChat.isStreaming && message.isStreaming && message.role === "assistant" && !message.isInitialMessage
             }
             className="prose max-w-none"
+            variant="dark"
           />
         </div>
       );
@@ -277,15 +328,16 @@ I observe a peculiar atmospheric phenomenon...
         <div className="flex-1 overflow-y-auto">
           <AIChat
             ref={ref}
-            onUserMessage={onUserMessage}
-            onAIMessage={onAIMessage}
-            system={system}
-            initialMessages={initialMessages}
-            interactive={interactive}
+            messages={activeChat.messages}
+            onUserMessage={handleUserMessage}
+            interactive={true}
             icon={constitution.icon}
             color={constitution.color}
             renderMessage={renderMessage}
-            genStream={genStream}
+            chatId={chatId}
+            onInputChange={onInputChange}
+            draftInput={draftInput}
+            initialMessage={initialMessage}
           />
         </div>
         <AIResponseModal
@@ -295,10 +347,9 @@ I observe a peculiar atmospheric phenomenon...
         />
       </div>
     );
-  },
+  }
 );
 
-// Add this line at the end of the file, after the component definition
 ConstitutionalAIChat.displayName = "ConstitutionalAIChat";
 
 export default ConstitutionalAIChat;

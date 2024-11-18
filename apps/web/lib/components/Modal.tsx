@@ -5,6 +5,7 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   minHeight?: number;
+  fullHeight?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -12,6 +13,7 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   children,
   minHeight,
+  fullHeight,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -42,24 +44,24 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <div
       ref={modalRef}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={handleBackgroundClick}
     >
       <div
-        className="bg-white rounded-lg p-8 max-w-4xl w-full overflow-auto relative"
-        style={{
-          maxHeight: "90vh",
-          // Only apply minHeight if it's provided
-          ...(minHeight && { minHeight: `${minHeight}px` }),
-        }}
+        className={`bg-white rounded-lg relative ${
+          fullHeight ? 'max-h-[90vh] h-[90vh]' : 'max-h-[90vh]'
+        } w-full max-w-4xl overflow-hidden`}
+        style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
       >
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-gray-900 transition-colors"
         >
           ✕
         </button>
-        {children}
+        <div className="h-full overflow-hidden">
+          {children}
+        </div>
       </div>
     </div>
   );

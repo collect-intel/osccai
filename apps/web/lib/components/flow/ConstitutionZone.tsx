@@ -271,29 +271,33 @@ export default function ConstitutionZone({
         <Modal
           isOpen={isChatModalOpen}
           onClose={() => setIsChatModalOpen(false)}
-          minHeight={500}
+          fullHeight
         >
-          <div className="w-full h-full max-w-4xl">
-            <ConstitutionalAIChat
-              constitution={{
-                text: selectedConstitution.content,
-                icon: <ConstitutionIcon />,
-                color: "teal",
-              }}
-              initialMessages={[
-                {
+          <div className="flex flex-col h-full">
+            <div className="shrink-0 p-4 border-b">
+              <h3 className="text-lg font-semibold">
+                Preview Chat with Constitution v{selectedConstitution.version}
+              </h3>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ConstitutionalAIChat
+                chatId={`preview-${selectedConstitution.uid}`}
+                constitution={{
+                  text: selectedConstitution.content,
+                  icon: <ConstitutionIcon />,
+                  color: "teal",
+                }}
+                initialMessage={{
                   role: "assistant",
-                  content: `Hi there. You're chatting with an AI encoded with the constitution of your community model.`,
-                },
-              ]}
-              customStyles={{
-                userMessage:
-                  "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
-                aiMessage:
-                  "bg-teal rounded-lg p-4 mb-4 shadow-sm border border-teal-100 text-white",
-                infoIcon: "text-teal-600 hover:text-teal-700 transition-colors",
-              }}
-            />
+                  content: `Hi there! I'm an AI assistant guided by this constitution. Feel free to test how I respond.`,
+                }}
+                customStyles={{
+                  userMessage: "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
+                  aiMessage: "bg-teal rounded-lg p-4 mb-4 shadow-sm text-white",
+                  infoIcon: "text-white/80 hover:text-white transition-colors",
+                }}
+              />
+            </div>
           </div>
         </Modal>
       )}

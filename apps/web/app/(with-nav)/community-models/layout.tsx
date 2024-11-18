@@ -11,5 +11,9 @@ export default function CommunityModelsLayout({
   const pathname = usePathname();
   const isChatRoute = pathname?.includes("/chat/");
 
-  return <DefaultLayout fullWidth={isChatRoute}>{children}</DefaultLayout>;
+  if (isChatRoute) {
+    return <div className="h-[calc(100dvh-4rem)]">{children}</div>;
+  }
+
+  return <DefaultLayout>{children}</DefaultLayout>;
 }

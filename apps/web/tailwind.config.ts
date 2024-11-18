@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
+import forms from "@tailwindcss/forms";
 
 const config: Config = {
   content: [
@@ -47,15 +49,50 @@ const config: Config = {
         "disagree-green": "#517852", // Color for disagree
         "disagree-amber": "#FFA000", // Color for disagree
         "slate-blue": "#475569", // Color for constitutionable
+        black: "#000000", // For text-black
+        white: "#FFFFFF", // For text-white and bg-white
+        "teal-100": "#CCE4E0", // For border-teal-100
+        "teal-600": "#0F766E", // For text-teal-600
+        "teal-700": "#0E6760", // For hover:text-teal-700
+      },
+      minHeight: {
+        "50": "50px", // For min-h-50
       },
       buttons: {
         primary: "bg-blue-500 text-white hover:bg-blue-600",
         secondary: "bg-gray-300 text-gray-800 hover:bg-gray-400",
         danger: "bg-danger text-white hover:bg-danger/80",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            '--tw-prose-body': 'rgb(0, 0, 0)',
+            '--tw-prose-headings': 'rgb(0, 0, 0)',
+            '--tw-prose-links': 'rgb(0, 0, 0)',
+            '--tw-prose-bold': 'rgb(0, 0, 0)',
+          }
+        },
+        invert: {
+          css: {
+            '--tw-prose-body': 'rgb(255, 255, 255)',
+            '--tw-prose-headings': 'rgb(255, 255, 255)',
+            '--tw-prose-links': 'rgb(255, 255, 255)',
+            '--tw-prose-bold': 'rgb(255, 255, 255)',
+          }
+        }
+      }
     },
   },
-  plugins: [require("@tailwindcss/typography"), require("@tailwindcss/forms")],
+  safelist: [
+    // Add dynamic classes that might be constructed with string interpolation
+    'bg-teal',
+    'hover:bg-black',
+    {
+      pattern: /bg-(gray|teal)-\d+/,
+      variants: ['hover'],
+    },
+  ],
+  plugins: [typography, forms],
 };
 
 export default config;

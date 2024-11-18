@@ -113,10 +113,11 @@ export interface ClerkEmailAddress {
 export interface MessageWithFields {
   role: "user" | "assistant";
   content: string;
-  isStreaming?: boolean;
   final_response?: string;
   draft_response?: string;
   response_metrics?: string;
   improvement_strategy?: string;
+  isStreaming?: boolean;
+  isNewMessage?: boolean;
   isInitialMessage?: boolean;
 }

@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   "/library",
   "/library/:path*",
   "/community-models/chat/:path*",
+  "/community-models/simple-chat/:path*",
   "/community-models/chat(.*)",
   "/(.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|ico))$",
   "/_next/:path*",
