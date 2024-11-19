@@ -14,7 +14,7 @@ export default async function Home() {
     return (
       <DefaultLayout>
         <main className="text-center">
-          <h1 className="text-4xl font-bold mb-6">Welcome to OSCCAI</h1>
+          <h1 className="text-4xl font-bold mb-6">Welcome to Community Models</h1>
           <p className="text-xl mb-8">
             Open-Source Collective Constitutional AI
           </p>
@@ -31,9 +31,9 @@ export default async function Home() {
           </div>
 
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-semibold mb-4">About OSCCAI</h2>
+            <h2 className="text-2xl font-semibold mb-4">About Community Models</h2>
             <p className="mb-4">
-              OSCCAI (Open-Source Collective Constitutional AI) is a platform
+              <strong>Community Models</strong> is a platform
               that enables communities to collaboratively create and refine AI
               models based on collectively defined constitutions.
             </p>
