@@ -150,17 +150,13 @@ export default function ConstitutionZone({
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-      <div className="flex bg-teal text-white rounded-lg min-h-[200px]">
-        <div className="w-1/3 p-4">
+      <div className="flex flex-col lg:flex-row bg-teal text-white rounded-lg min-h-[200px] overflow-hidden">
+        <div className="w-full lg:w-1/3 p-4 lg:border-r lg:border-teal-600">
           <button
             onClick={handleGenerateConstitution}
             disabled={isGenerating}
             className={`bg-yellow text-black px-4 py-2 rounded mb-4 w-full transition-colors
-              ${
-                isGenerating
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-yellow-600"
-              }`}
+              ${isGenerating ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-600"}`}
           >
             {isGenerating ? "Generating..." : "Generate New Constitution"}
           </button>
@@ -169,55 +165,55 @@ export default function ConstitutionZone({
             goals, and the latest poll-derived consensus principles.
           </p>
           {sortedConstitutions.length > 0 && (
-            <>
+            <div className="lg:block">
               <h3 className="text-xl font-semibold mb-2">Constitutions:</h3>
-            </>
+              <ul className="space-y-2">
+                {sortedConstitutions.map((constitution) => (
+                  <li key={constitution.uid} className="flex items-center">
+                    <button
+                      onClick={() => setSelectedConstitution(constitution)}
+                      className={`flex-grow text-left px-3 py-2 rounded transition-all
+                        ${
+                          selectedConstitution?.uid === constitution.uid
+                            ? "bg-teal-700 border-2 border-white"
+                            : "hover:bg-teal-600 hover:border-2 hover:border-white border-2 border-transparent"
+                        }
+                      `}
+                    >
+                      <div>Constitution v{constitution.version}</div>
+                      <div className="text-xs text-teal-200">
+                        {formatDistanceToNow(new Date(constitution.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </div>
+                      {constitution.uid.startsWith("temp-") && (
+                        <>
+                          {" "}
+                          - Generating... <Spinner />
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteConstitution(constitution)}
+                      className="ml-2 p-2 text-white hover:text-red-500 transition-colors"
+                      title="Delete Constitution"
+                    >
+                      <FaTrash />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
-          <ul className="space-y-2">
-            {sortedConstitutions.map((constitution) => (
-              <li key={constitution.uid} className="flex items-center">
-                <button
-                  onClick={() => setSelectedConstitution(constitution)}
-                  className={`flex-grow text-left px-3 py-2 rounded transition-all
-                    ${
-                      selectedConstitution?.uid === constitution.uid
-                        ? "bg-teal-700 border-2 border-white"
-                        : "hover:bg-teal-600 hover:border-2 hover:border-white border-2 border-transparent"
-                    }
-                  `}
-                >
-                  <div>Constitution v{constitution.version}</div>
-                  <div className="text-xs text-teal-200">
-                    {formatDistanceToNow(new Date(constitution.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </div>
-                  {constitution.uid.startsWith("temp-") && (
-                    <>
-                      {" "}
-                      - Generating... <Spinner />
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleDeleteConstitution(constitution)}
-                  className="ml-2 p-2 text-white hover:text-red-500 transition-colors"
-                  title="Delete Constitution"
-                >
-                  <FaTrash />
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
-        <div className="w-2/3 p-4 bg-teal-700 flex flex-col">
+        <div className="w-full lg:w-2/3 p-4 bg-teal-700 flex flex-col min-w-0">
           {selectedConstitution ? (
             <>
-              <div className="flex justify-between items-center mb-2 relative">
-                <h3 className="text-xl font-semibold">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                <h3 className="text-xl font-semibold shrink-0">
                   Constitution v{selectedConstitution.version}
                 </h3>
-                <div className="flex items-center divide-x divide-white/20">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(
@@ -225,37 +221,38 @@ export default function ConstitutionZone({
                       );
                       showToast("Link Copied!");
                     }}
-                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-teal-600/30 rounded-md hover:bg-teal-600/50 transition-colors"
                   >
                     <FaLink className="w-3 h-3" />
-                    <span>Copy Public Link</span>
+                    <span className="whitespace-nowrap">Copy Link</span>
                   </button>
                   <a
                     href={`/community-models/chat/${modelId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-teal-600/30 rounded-md hover:bg-teal-600/50 transition-colors"
                   >
                     <FaExternalLinkAlt className="w-3 h-3" />
-                    <span>Open Public Chat</span>
+                    <span className="whitespace-nowrap">Open Chat</span>
                   </a>
                   <button
                     onClick={() => setIsChatModalOpen(true)}
-                    className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-teal-600/30 rounded-md hover:bg-teal-600/50 transition-colors"
                     disabled={selectedConstitution.uid.startsWith("temp-")}
                   >
                     <FaEye className="w-3 h-3" />
-                    <span>Quick Preview</span>
+                    <span className="whitespace-nowrap">Preview</span>
                   </button>
                 </div>
-                <Toast message={message} isVisible={isVisible} />
               </div>
-              <div className="bg-white p-4 rounded overflow-auto flex-grow text-black border-2 border-white">
-                <ReactMarkdown>
-                  {selectedConstitution.uid.startsWith("temp-")
-                    ? "Generating constitution..."
-                    : selectedConstitution.content}
-                </ReactMarkdown>
+              <div className="bg-white p-4 rounded overflow-auto flex-grow text-black border-2 border-white min-w-0">
+                <div className="prose prose-sm sm:prose max-w-none">
+                  <ReactMarkdown>
+                    {selectedConstitution.uid.startsWith("temp-")
+                      ? "Generating constitution..."
+                      : selectedConstitution.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             </>
           ) : (

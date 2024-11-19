@@ -116,7 +116,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
           <div className="space-y-0.5 p-2">
             {sortedChats.map((chat) => (
               <div
-                key={chat.id}
+                key={`chat-${chat.id}`}
                 className={`group flex items-center gap-3 p-3 mx-2 rounded-lg cursor-pointer
                              transition-all duration-200
                              ${chat.id === currentChatId 

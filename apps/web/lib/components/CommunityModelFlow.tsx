@@ -45,6 +45,12 @@ interface ZoneRefs {
   [key: string]: React.RefObject<HTMLDivElement>;
 }
 
+interface Principle {
+  id: string;
+  text: string;
+  gacScore?: number;
+}
+
 export default function CommunityModelFlow({
   initialModelId,
 }: CommunityModelFlowProps) {
@@ -118,7 +124,7 @@ export default function CommunityModelFlow({
               bio: fetchedModelData.bio || "",
               goal: fetchedModelData.goal || "",
               logoUrl: fetchedModelData.logoUrl || "",
-              principles: fetchedModelData.principles.map((p) =>
+              principles: fetchedModelData.principles.map((p: string | Principle) =>
                 typeof p === "string"
                   ? { id: `principle-${Date.now()}-${Math.random()}`, text: p }
                   : p,
@@ -288,7 +294,7 @@ export default function CommunityModelFlow({
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">
           {modelData?.name.trim() ? (

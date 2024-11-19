@@ -1,6 +1,7 @@
 interface ToastProps {
   message: string;
   isVisible: boolean;
+  onClose?: () => void;
 }
 
 export default function Toast({ message, isVisible }: ToastProps) {

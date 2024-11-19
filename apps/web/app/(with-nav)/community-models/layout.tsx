@@ -10,8 +10,9 @@ export default function CommunityModelsLayout({
 }) {
   const pathname = usePathname();
   const isChatRoute = pathname?.includes("/chat/");
+  const isFlowRoute = pathname?.includes("/flow/");
 
-  if (isChatRoute) {
+  if (isChatRoute || isFlowRoute) {
     return <div className="h-[calc(100dvh-4rem)]">{children}</div>;
   }
 

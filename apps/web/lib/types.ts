@@ -1,9 +1,26 @@
 export interface CommunityModel {
   uid: string;
   name: string;
-  goal: string;
+  createdAt: Date;
+  updatedAt: Date;
   ownerId: string;
+  goal: string | null;
+  bio: string | null;
+  logoUrl: string | null;
   activeConstitutionId: string | null;
+  deleted: boolean;
+  published: boolean;
+  apiEnabled: boolean;
+  owner?: {
+    name: string;
+    clerkUserId: string;
+  };
+  principles?: Array<{ id: string; text: string }>;
+  constitutions?: Array<{
+    uid: string;
+    version: number;
+    content: string;
+  }>;
 }
 
 export interface Constitution {
