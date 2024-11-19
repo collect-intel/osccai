@@ -1,6 +1,8 @@
 import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
 import LockIcon from "@/lib/components/icons/LockIcon";
-import { ShareIcon } from "@heroicons/react/24/outline";
+import { LinkIcon } from "@heroicons/react/24/outline";
+import { useToast } from "@/lib/useToast";
+import Toast from "@/lib/components/Toast";
 
 interface ModelInfoBarProps {
   model: {
@@ -14,6 +16,13 @@ interface ModelInfoBarProps {
 }
 
 export default function ModelInfoBar({ model, onViewConstitution }: ModelInfoBarProps) {
+  const { isVisible, message, showToast } = useToast();
+
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(window.location.href);
+    showToast("Link Copied!");
+  };
+
   return (
     <div className="w-full bg-white shadow-sm mb-4 rounded-lg">
       <div className="max-w-[1536px] mx-auto px-4 py-3 flex items-center gap-4">
@@ -51,20 +60,19 @@ export default function ModelInfoBar({ model, onViewConstitution }: ModelInfoBar
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
+          <Toast message={message} isVisible={isVisible} />
+
           {model.published && (
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                // You'd want to add a toast notification here
-                // toast.success("Link copied to clipboard!");
-              }}
+              onClick={handleCopyUrl}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 
                        hover:text-gray-900 bg-gray-50 rounded-md hover:bg-gray-100 
                        transition-colors"
+              title="Copy model URL"
             >
-              <ShareIcon className="w-4 h-4" />
-              Share Model
+              <LinkIcon className="w-4 h-4" />
+              Copy URL
             </button>
           )}
           <button

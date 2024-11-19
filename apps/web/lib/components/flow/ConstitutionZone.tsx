@@ -14,6 +14,8 @@ import Spinner from "@/lib/components/Spinner";
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
 import { FaTrash, FaExternalLinkAlt, FaLink, FaEye } from "react-icons/fa";
+import { useToast } from "@/lib/useToast";
+import Toast from "@/lib/components/Toast";
 
 interface ConstitutionZoneProps {
   isActive: boolean;
@@ -40,6 +42,8 @@ export default function ConstitutionZone({
   onUpdate,
   savingStatus,
 }: ConstitutionZoneProps) {
+  const { isVisible, message, showToast } = useToast();
+
   // Sort constitutions by createdAt in descending order (newest first)
   const sortedConstitutions = [...modelData.constitutions].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -51,7 +55,6 @@ export default function ConstitutionZone({
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [constitutionToDelete, setConstitutionToDelete] =
     useState<Constitution | null>(null);
-  const [showCopiedToast, setShowCopiedToast] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
   const handleGenerateConstitution = async () => {
@@ -147,7 +150,7 @@ export default function ConstitutionZone({
       onToggle={onToggle}
       savingStatus={savingStatus}
     >
-      <div className="flex bg-teal text-white rounded-lg overflow-hidden min-h-[200px]">
+      <div className="flex bg-teal text-white rounded-lg min-h-[200px]">
         <div className="w-1/3 p-4">
           <button
             onClick={handleGenerateConstitution}
@@ -210,7 +213,7 @@ export default function ConstitutionZone({
         <div className="w-2/3 p-4 bg-teal-700 flex flex-col">
           {selectedConstitution ? (
             <>
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-2 relative">
                 <h3 className="text-xl font-semibold">
                   Constitution v{selectedConstitution.version}
                 </h3>
@@ -220,8 +223,7 @@ export default function ConstitutionZone({
                       navigator.clipboard.writeText(
                         `${window.location.origin}/community-models/chat/${modelId}`,
                       );
-                      setShowCopiedToast(true);
-                      setTimeout(() => setShowCopiedToast(false), 2000);
+                      showToast("Link Copied!");
                     }}
                     className="flex items-center gap-2 px-3 text-white/90 hover:text-yellow transition-colors text-sm"
                   >
@@ -246,12 +248,8 @@ export default function ConstitutionZone({
                     <span>Quick Preview</span>
                   </button>
                 </div>
+                <Toast message={message} isVisible={isVisible} />
               </div>
-              {showCopiedToast && (
-                <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 rounded text-sm">
-                  Link copied!
-                </div>
-              )}
               <div className="bg-white p-4 rounded overflow-auto flex-grow text-black border-2 border-white">
                 <ReactMarkdown>
                   {selectedConstitution.uid.startsWith("temp-")

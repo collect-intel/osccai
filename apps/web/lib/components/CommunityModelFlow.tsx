@@ -276,36 +276,10 @@ export default function CommunityModelFlow({
 
   if (isPageLoading || isLoading) {
     return (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          zIndex: 9999,
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "white",
-            padding: "1.5rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-          }}
-        >
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+        <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center">
           <Spinner size="large" color="#4A5568" />
-          <p
-            style={{
-              marginTop: "1rem",
-              color: "#4A5568",
-              textAlign: "center",
-            }}
-          >
+          <p className="mt-4 text-gray-600">
             Loading...
           </p>
         </div>
