@@ -94,20 +94,18 @@ export default function PollZone({
     localPollData?.statements?.reduce(
       (sum: number, statement: Statement) =>
         sum +
-        statement.agreeCount +
-        statement.disagreeCount +
-        statement.passCount,
+        (statement.agreeCount || 0) +
+        (statement.disagreeCount || 0) +
+        (statement.passCount || 0),
       0,
     ) ?? 0;
 
-  const uniqueParticipants =
-    new Set(
-      localPollData?.statements?.flatMap((statement) => [
-        ...Array(statement.agreeCount).fill(statement.participantId),
-        ...Array(statement.disagreeCount).fill(statement.participantId),
-        ...Array(statement.passCount).fill(statement.participantId),
-      ]),
-    ).size ?? 0;
+  const uniqueParticipants = localPollData?.statements?.reduce((set, statement) => {
+    statement.votes?.forEach(vote => {
+      set.add(vote.participantId);
+    });
+    return set;
+  }, new Set<string>()).size ?? 0;
 
   const handleShare = () => {
     if (localPollData?.uid) {

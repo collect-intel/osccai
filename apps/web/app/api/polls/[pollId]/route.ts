@@ -28,5 +28,17 @@ export async function POST(
     ? await fetchUserVotes(poll.uid, participant.uid)
     : {};
 
-  return NextResponse.json({ poll, isLoggedIn, userVotes });
+  return NextResponse.json({ 
+    poll: {
+      ...poll,
+      communityModel: {
+        bio: poll.communityModel.bio,
+        goal: poll.communityModel.goal,
+        name: poll.communityModel.name,
+        uid: poll.communityModel.uid
+      }
+    }, 
+    isLoggedIn, 
+    userVotes 
+  });
 }

@@ -77,10 +77,7 @@ export default function Voting({
 
   const handleGoBack = () => {
     if (currentStatementIx === null || currentStatementIx === 0) return;
-    const previousIndex = statements.findIndex(
-      (statement, index) => index < currentStatementIx && votes[statement.uid],
-    );
-    setCurrentStatementIx(previousIndex >= 0 ? previousIndex : 0);
+    setCurrentStatementIx(currentStatementIx - 1);
   };
 
   const hasVotedOnAll =
@@ -136,7 +133,7 @@ export default function Voting({
         exit={{ x: -20, opacity: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="text-xl font-semibold mb-6">
+        <div className="text-lg mb-4 pr-12">
           {statements[currentStatementIx].text}
         </div>
         <VoteButtons
@@ -158,7 +155,7 @@ export default function Voting({
   return (
     <>
       {!canVote && (
-        <div className="bg-light-yellow border border-yellow rounded-lg p-4 mb-6 text-center">
+        <div className="bg-light-yellow border border-yellow rounded-md p-4 mb-6 text-center">
           <p className="text-lg font-semibold mb-2">Join the conversation!</p>
           <p className="mb-4">
             You need an account to participate in this poll.
@@ -179,7 +176,6 @@ export default function Voting({
       )}
 
       <div className="flex justify-between items-center text-lg font-semibold mb-6">
-        <div>Vote on these statements</div>
         {allowParticipantStatements && (
           <Button
             title="Contribute a statement"
@@ -194,33 +190,68 @@ export default function Voting({
       </div>
 
       {viewMode === "list" ? (
-        <VotingList
-          statements={statements}
-          pollId={pollId}
-          initialVotes={votes}
-          canVote={canVote}
-          allowParticipantStatements={allowParticipantStatements}
-        />
+        <div className="space-y-6">
+          {statements.map((statement, index) => (
+            <div 
+              key={statement.uid} 
+              className="flex flex-col rounded-md shadow-sm p-4 bg-light-beige"
+            >
+              <div className="flex justify-between mb-3">
+                <div className="flex items-center gap-2 text-xs text-gray font-mono font-medium">
+                  <StatementIcon className="fill-none stroke-gray" />
+                  {index + 1} of {statements.length} principles
+                </div>
+                <div className="relative">
+                  <Toast message={message} isVisible={isVisible} />
+                  <button
+                    className="hover:bg-almost-white p-2 rounded stroke-gray hover:stroke-charcoal"
+                    onClick={() => handleFlag(statement.uid)}
+                    disabled={!canVote}
+                  >
+                    <FlagIcon className="fill-none" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-lg mb-4 pr-12">
+                {statement.text}
+              </div>
+              <VoteButtons
+                onClick={(vote) => handleVote(vote)}
+                disabled={!canVote}
+                currentVote={votes[statement.uid]}
+              />
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="flex flex-col rounded-2xl shadow-lg p-6 bg-light-beige">
-          <div className="flex justify-between mb-4">
-            <div className="flex items-center gap-2 text-xs text-gray font-mono font-medium">
-              {currentStatementIx !== null && currentStatementIx > 0 && (
+        <>
+          {currentStatementIx !== null && (
+            <div className="flex justify-center items-center gap-4 text-xs text-gray font-mono font-medium mb-4">
+              {currentStatementIx > 0 && (
                 <button
                   onClick={handleGoBack}
                   className="flex items-center gap-1 text-teal hover:text-teal-dark"
                 >
-                  <ArrowLeftIcon className="w-4 h-4" /> Go back
+                  <ArrowLeftIcon className="w-4 h-4" /> Previous
                 </button>
               )}
-              {currentStatementIx !== null && (
-                <>
-                  <StatementIcon className="fill-none stroke-gray" />{" "}
-                  {currentStatementNumber} of {statements.length}
-                </>
+              <div className="flex items-center gap-2">
+                <StatementIcon className="fill-none stroke-gray" />
+                {currentStatementNumber} of {statements.length} principles
+              </div>
+              {currentStatementIx < statements.length - 1 && (
+                <button
+                  onClick={() => setCurrentStatementIx(currentStatementIx + 1)}
+                  className="flex items-center gap-1 text-teal hover:text-teal-dark"
+                >
+                  Next <ArrowLeftIcon className="w-4 h-4 rotate-180" />
+                </button>
               )}
             </div>
-            {currentStatementIx !== null && (
+          )}
+          
+          <div className="flex flex-col rounded-md shadow-sm p-6 bg-light-beige relative">
+            <div className="absolute top-4 right-4">
               <div className="relative">
                 <Toast message={message} isVisible={isVisible} />
                 <button
@@ -231,10 +262,10 @@ export default function Voting({
                   <FlagIcon className="fill-none" />
                 </button>
               </div>
-            )}
+            </div>
+            <div>{renderContent()}</div>
           </div>
-          <div>{renderContent()}</div>
-        </div>
+        </>
       )}
 
       {!canVote && (
