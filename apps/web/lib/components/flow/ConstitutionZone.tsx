@@ -276,7 +276,9 @@ export default function ConstitutionZone({
             </div>
             <div className="flex-1 min-h-0">
               <ConstitutionalAIChat
+                modelId={modelId}
                 chatId={`preview-${selectedConstitution.uid}`}
+                ephemeral={true}
                 constitution={{
                   text: selectedConstitution.content,
                   icon: <ConstitutionIcon />,

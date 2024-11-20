@@ -30,7 +30,9 @@ export default function SimpleChatClient({ model }: { model: any }) {
     <div className="h-[100dvh] bg-soft-gray">
       <PreviewBanner />
       <ConstitutionalAIChat
+        modelId={model.uid}
         chatId={chatId}
+        ephemeral={true}
         initialMessage={initialMessage}
         constitution={{
           text: latestConstitution.content,

@@ -38,6 +38,7 @@ interface ConstitutionalAIChatProps {
   onInputChange?: (chatId: string, value: string) => void;
   draftInput?: string;
   initialMessage?: MessageWithFields;
+  ephemeral?: boolean;
 }
 
 const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>(
@@ -49,28 +50,34 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
     onInputChange,
     draftInput,
     initialMessage,
+    ephemeral = false,
   }, ref) => {
     const [chats, setChats] = useState<Record<string, ChatState>>({});
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState<MessageWithFields | null>(null);
 
-    // Load initial messages
+    // Initialize messages
     useEffect(() => {
-      if (!chats[chatId]) {
-        const savedChat = getChat(modelId, chatId);
-        setChats(current => ({
-          ...current,
-          [chatId]: {
-            messages: savedChat?.messages || [initialMessage || {
-              role: "assistant",
-              content: "Hi there! I'm an AI assistant. How can I help you today?",
-              isInitialMessage: true,
-            }],
-            isStreaming: false
-          }
-        }));
-      }
-    }, [chatId, initialMessage, modelId]);
+      if (chats[chatId]) return;
+
+      const defaultMessage = initialMessage || {
+        role: "assistant",
+        content: "Hi there! I'm an AI assistant. How can I help you today?",
+        isInitialMessage: true,
+      };
+
+      const messages = ephemeral ? 
+        [defaultMessage] : 
+        getChat(modelId, chatId)?.messages || [defaultMessage];
+
+      setChats(current => ({
+        ...current,
+        [chatId]: {
+          messages,
+          isStreaming: false
+        }
+      }));
+    }, [chatId, initialMessage, modelId, ephemeral]);
 
     const genStream = async (messages: MessageWithFields[]) => {
       const proxyUrl = process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
@@ -155,7 +162,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
               };
             }
 
-            saveChat(modelId, chatId, newMessages);
+            saveMessages(newMessages);
             return {
               ...current,
               [chatId]: {
@@ -174,7 +181,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
             ...newMessages[streamingIndex],
             isStreaming: false
           };
-          saveChat(modelId, chatId, newMessages);
+          saveMessages(newMessages);
           return {
             ...current,
             [chatId]: {
@@ -324,6 +331,13 @@ I observe a peculiar atmospheric phenomenon...
         </div>
       );
     };
+
+    // Only save if not ephemeral
+    const saveMessages = useCallback((messages: MessageWithFields[]) => {
+      if (!ephemeral) {
+        saveChat(modelId, chatId, messages);
+      }
+    }, [modelId, chatId, ephemeral]);
 
     return (
       <div className="flex flex-col h-full">
