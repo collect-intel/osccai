@@ -20,14 +20,12 @@ export default function Voting({
   statements,
   pollId,
   requireAuth,
-  viewMode = "list",
   initialVotes,
   allowParticipantStatements,
 }: {
   statements: Statement[];
   pollId: string;
   requireAuth: boolean;
-  viewMode?: "list" | "individual";
   initialVotes: Record<string, VoteValue>;
   allowParticipantStatements: boolean;
 }) {
@@ -40,7 +38,7 @@ export default function Voting({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isVisible, message, showToast } = useToast();
 
-  const canVote = isSignedIn || !requireAuth; // Everyone can vote now, as we handle anonymous users
+  const canVote = isSignedIn || !requireAuth;
 
   useEffect(() => {
     if (canVote) {
@@ -72,11 +70,6 @@ export default function Voting({
         statement.uid !== statementId,
     );
     setCurrentStatementIx(nextUnvotedIndex >= 0 ? nextUnvotedIndex : null);
-  };
-
-  const handleGoBack = () => {
-    if (currentStatementIx === null || currentStatementIx === 0) return;
-    setCurrentStatementIx(currentStatementIx - 1);
   };
 
   const hasVotedOnAll =
@@ -140,12 +133,13 @@ export default function Voting({
       </div>
     );
 
-  const currentStatementNumber =
-    currentStatementIx !== null ? currentStatementIx + 1 : 0;
-
   const handleFlag = async (statementId: string) => {
     await flagStatement(statementId, getAnonymousId());
     showToast("Statement flagged");
+  };
+
+  const getRemainingVotesCount = () => {
+    return statements.filter(statement => !votes[statement.uid]).length;
   };
 
   return (
@@ -171,8 +165,37 @@ export default function Voting({
         </div>
       )}
 
-      <div className="flex justify-between items-center text-lg font-semibold mb-6">
-        {allowParticipantStatements && (
+      {currentStatementIx !== null && (
+        <div className="flex justify-center items-center gap-4 text-xs text-gray font-mono font-medium mb-4">
+          <div className="flex items-center gap-2">
+            <StatementIcon className="fill-none stroke-gray" />
+            {getRemainingVotesCount()} remaining
+          </div>
+        </div>
+      )}
+      
+      <div className="flex flex-col rounded-md shadow-sm p-6 bg-light-beige relative">
+        <div className="absolute top-4 right-4">
+          <div className="relative">
+            <Toast message={message} isVisible={isVisible} />
+            <button
+              className="hover:bg-almost-white p-3 rounded stroke-gray hover:stroke-charcoal"
+              onClick={() => {
+                if (currentStatementIx !== null) {
+                  handleFlag(statements[currentStatementIx].uid);
+                }
+              }}
+              disabled={!canVote}
+            >
+              <FlagIcon className="fill-none" />
+            </button>
+          </div>
+        </div>
+        <div>{renderContent()}</div>
+      </div>
+
+      {allowParticipantStatements && (
+        <div className="flex justify-center mt-8">
           <Button
             title="Contribute a statement"
             onClick={() => {
@@ -182,90 +205,7 @@ export default function Voting({
             disabled={!canVote}
             icon={<PlusIcon className="w-5 h-5 stroke-white" />}
           />
-        )}
-      </div>
-
-      {viewMode === "list" ? (
-        <div className="space-y-6">
-          {statements.map((statement, index) => (
-            <div 
-              key={statement.uid} 
-              className="flex flex-col rounded-md shadow-sm p-4 bg-light-beige"
-            >
-              <div className="flex justify-between mb-3">
-                <div className="flex items-center gap-2 text-xs text-gray font-mono font-medium">
-                  <StatementIcon className="fill-none stroke-gray" />
-                  {index + 1} of {statements.length} principles
-                </div>
-                <div className="relative">
-                  <Toast message={message} isVisible={isVisible} />
-                  <button
-                    className="hover:bg-almost-white p-2 rounded stroke-gray hover:stroke-charcoal"
-                    onClick={() => handleFlag(statement.uid)}
-                    disabled={!canVote}
-                  >
-                    <FlagIcon className="fill-none" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-lg mb-4 pr-12">
-                {statement.text}
-              </div>
-              <VoteButtons
-                onClick={(vote) => handleVote(vote)}
-                disabled={!canVote}
-                currentVote={votes[statement.uid]}
-              />
-            </div>
-          ))}
         </div>
-      ) : (
-        <>
-          {currentStatementIx !== null && (
-            <div className="flex justify-center items-center gap-4 text-xs text-gray font-mono font-medium mb-4">
-              {currentStatementIx > 0 && (
-                <button
-                  onClick={handleGoBack}
-                  className="flex items-center gap-1 text-teal hover:text-teal-dark"
-                >
-                  <ArrowLeftIcon className="w-4 h-4" /> Previous
-                </button>
-              )}
-              <div className="flex items-center gap-2">
-                <StatementIcon className="fill-none stroke-gray" />
-                {currentStatementNumber} of {statements.length} principles
-              </div>
-              {currentStatementIx < statements.length - 1 && (
-                <button
-                  onClick={() => setCurrentStatementIx(currentStatementIx + 1)}
-                  className="flex items-center gap-1 text-teal hover:text-teal-dark"
-                >
-                  Next <ArrowLeftIcon className="w-4 h-4 rotate-180" />
-                </button>
-              )}
-            </div>
-          )}
-          
-          <div className="flex flex-col rounded-md shadow-sm p-6 bg-light-beige relative">
-            <div className="absolute top-4 right-4">
-              <div className="relative">
-                <Toast message={message} isVisible={isVisible} />
-                <button
-                  className="hover:bg-almost-white p-3 rounded stroke-gray hover:stroke-charcoal"
-                  onClick={() => {
-                    if (currentStatementIx !== null) {
-                      handleFlag(statements[currentStatementIx].uid);
-                    }
-                  }}
-                  disabled={!canVote}
-                >
-                  <FlagIcon className="fill-none" />
-                </button>
-              </div>
-            </div>
-            <div>{renderContent()}</div>
-          </div>
-        </>
       )}
 
       {!canVote && (
@@ -277,33 +217,36 @@ export default function Voting({
           to participate in this poll.
         </div>
       )}
+
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="flex flex-col gap-5">
-          <h2 className="text-xl font-semibold">
-            Contribute a statement for participants to vote on
-          </h2>
-          <textarea
-            value={statementText}
-            onChange={(e) => setStatementText(e.target.value)}
-            className="w-full rounded-md min-h-[150px] border border-light-gray bg-white ring-1 ring-inset ring-light-gray placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-teal focus:border-teal p-2"
-            placeholder="Enter your statement here..."
-          />
-          <div className="flex justify-end items-center gap-4">
-            <Button
-              title="Cancel"
-              onClick={() => setIsModalOpen(false)}
-              variant="secondary"
+        <div className="p-6">
+          <div className="flex flex-col gap-5">
+            <h2 className="text-xl font-semibold">
+              Contribute a statement for participants to vote on
+            </h2>
+            <textarea
+              value={statementText}
+              onChange={(e) => setStatementText(e.target.value)}
+              className="w-full rounded-md min-h-[150px] border border-light-gray bg-white ring-1 ring-inset ring-light-gray placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-teal focus:border-teal p-2"
+              placeholder="Enter your statement here..."
             />
-            <Button
-              title="Add statement"
-              onClick={async () => {
-                await submitStatement(pollId, statementText, getAnonymousId());
-                setStatementText("");
-                setIsModalOpen(false);
-              }}
-              disabled={!statementText.trim()}
-              icon={<PlusIcon className="w-5 h-5 stroke-white" />}
-            />
+            <div className="flex justify-end items-center gap-4">
+              <Button
+                title="Cancel"
+                onClick={() => setIsModalOpen(false)}
+                variant="secondary"
+              />
+              <Button
+                title="Add statement"
+                onClick={async () => {
+                  await submitStatement(pollId, statementText, getAnonymousId());
+                  setStatementText("");
+                  setIsModalOpen(false);
+                }}
+                disabled={!statementText.trim()}
+                icon={<PlusIcon className="w-5 h-5 stroke-white" />}
+              />
+            </div>
           </div>
         </div>
       </Modal>

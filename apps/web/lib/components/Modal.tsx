@@ -59,7 +59,7 @@ const Modal: React.FC<ModalProps> = ({
         >
           ✕
         </button>
-        <div className="h-full overflow-hidden">
+        <div className="h-full overflow-hidden p-6">
           {children}
         </div>
       </div>
