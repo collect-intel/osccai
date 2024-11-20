@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import CommunityModelCard from "@/lib/components/CommunityModelCard";
 import Link from "next/link";
 import { getUserCommunityModels } from "@/lib/data";
-import { CommunityModel } from "@/lib/types";
+import { ExtendedCommunityModel } from "@/lib/types";
+import { CommunityModel } from '@prisma/client';
 
 export default async function CommunityModelsPage() {
   const communityModels = await getUserCommunityModels();

@@ -17,8 +17,9 @@ import { getCommunityModel } from "@/lib/data";
 import { AboutZoneData } from "./flow/AboutZone";
 import Toast from "./Toast";
 import { debounce } from "lodash";
-import { Constitution, Poll, Statement, ApiKey } from "@prisma/client";
+import { Constitution, Poll, Statement, ApiKey, Vote } from "@prisma/client";
 import Spinner from "./Spinner";
+import type { ExtendedPoll } from "@/lib/types";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
   principles: Array<{ id: string; text: string; gacScore?: number }>;
@@ -367,11 +368,7 @@ export default function CommunityModelFlow({
                   requireAuth: modelData?.requireAuth || false,
                   allowContributions: modelData?.allowContributions || false,
                 }}
-                pollData={
-                  modelData?.polls?.[0] as
-                    | (Poll & { statements: Statement[] })
-                    | undefined
-                }
+                pollData={modelData?.polls?.[0] as ExtendedPoll}
                 isExistingModel={isExistingModel}
                 onToggle={() => toggleZone("poll")}
                 savingStatus={savingStatus.poll}

@@ -15,6 +15,7 @@ import AuthPrompt from "@/lib/components/AuthPrompt";
 import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
 import { isPollOwner, fetchUserVotes } from "@/lib/actions";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 interface PollPageProps {
   poll: {
@@ -47,13 +48,8 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
       const isCreator = await isPollOwner(poll.uid);
       setIsUserCreator(isCreator);
 
-      console.log("isLoggedIn", isLoggedIn);
-      console.log("anonymousId", anonymousId);
-      console.log("votes", userVotes);
-
       if (!isLoggedIn) {
         const votes = await fetchUserVotes(poll.uid, anonymousId);
-        console.log("non-logged-in votes", votes);
         setAnonymousUserVotes(votes as unknown as Record<string, VoteValue>);
       }
     };
@@ -61,31 +57,19 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
     fetchData();
   }, [poll.uid, isLoggedIn]);
 
-  const pollPath = pollUrl(poll);
-
-  if (!poll.published) {
-    // redirect(`${pollPath}/create`);
-  }
-
   const participantCount = new Set(
     poll.statements.flatMap((statement) =>
-      statement.votes.map((vote) => vote.participantId),
+      statement.votes.map((vote: { participantId: string }) => vote.participantId),
     ),
   ).size;
 
-  const voteCount = poll.statements.reduce(
-    (acc, statement) => acc + statement.votes.length,
-    0,
-  );
-
   const initialVotes = isLoggedIn ? userVotes : anonymousUserVotes;
-
-  console.log("<PollPage> initialVotes", initialVotes);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <BannerShareLink />
       <div className="bg-white rounded-md shadow-md p-8 max-w-4xl mx-auto">
+
         <div className="flex justify-between items-start mb-4">
           <div className="flex-grow">
             <PageTitle title={poll.title} size="small" alignment="left" />

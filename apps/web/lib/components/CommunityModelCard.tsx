@@ -1,11 +1,5 @@
 import Link from "next/link";
-
-interface CommunityModel {
-  uid: string;
-  name: string;
-  goal: string | null;
-  createdAt: Date;
-}
+import { CommunityModel } from "@prisma/client";
 
 export default function CommunityModelCard({
   model,
