@@ -8,21 +8,22 @@ export interface SavedChat {
   isPseudoEntry?: boolean;
 }
 
-const CHATS_KEY = 'cip-chat-history';
+// Modify the storage key to include model ID
+const getChatsKey = (modelId: string) => `cip-chat-history-${modelId}`;
+const getDraftsKey = (modelId: string) => `cip-chat-drafts-${modelId}`;
 
-// Add interfaces for draft storage
 interface ChatDraft {
   inputValue: string;
   lastUpdated: number;
 }
 
-const DRAFTS_KEY = 'cip-chat-drafts';
-
-// Add this constant
 export const NEW_CHAT_ID = 'new-chat';
 
-// Helper to generate a title from the first few messages
-export function generateTitle(messages: MessageWithFields[]): string {
+export function generateTitle(messages: MessageWithFields[] | undefined): string {
+  if (!messages || messages.length === 0) {
+    return `Chat ${new Date().toLocaleDateString()}`;
+  }
+
   const firstUserMessage = messages.find(m => m.role === 'user')?.content;
   if (firstUserMessage) {
     return firstUserMessage.slice(0, 40) + (firstUserMessage.length > 40 ? '...' : '');
@@ -53,58 +54,51 @@ export function formatTimeAgo(timestamp: number): string {
   return 'now';
 }
 
-// Save a chat to localStorage
-export function saveChat(chatId: string, messages: MessageWithFields[], title?: string): void {
+export function saveChat(modelId: string, chatId: string, messages: MessageWithFields[] | undefined, title?: string): void {
   if (typeof window === 'undefined') return;
   
-  const chats = getChats();
+  const chats = getChats(modelId);
   const existingChat = chats[chatId];
   
   chats[chatId] = {
     id: chatId,
-    messages,
+    messages: messages || [],
     lastUpdated: Date.now(),
     title: title || existingChat?.title || generateTitle(messages)
   };
   
-  localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+  localStorage.setItem(getChatsKey(modelId), JSON.stringify(chats));
 }
 
-// Get all chats from localStorage
-export function getChats(): Record<string, SavedChat> {
+export function getChats(modelId: string): Record<string, SavedChat> {
   if (typeof window === 'undefined') return {};
-  const chats = localStorage.getItem(CHATS_KEY);
+  const chats = localStorage.getItem(getChatsKey(modelId));
   return chats ? JSON.parse(chats) : {};
 }
 
-// Get a specific chat
-export function getChat(chatId: string): SavedChat | null {
-  const chats = getChats();
+export function getChat(modelId: string, chatId: string): SavedChat | null {
+  const chats = getChats(modelId);
   return chats[chatId] || null;
 }
 
-// Delete a chat
-export function deleteChat(chatId: string): void {
-  const chats = getChats();
+export function deleteChat(modelId: string, chatId: string): void {
+  const chats = getChats(modelId);
   delete chats[chatId];
-  localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+  localStorage.setItem(getChatsKey(modelId), JSON.stringify(chats));
 }
 
-// Create a new chat ID
 export function createNewChatId(): string {
   return `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-// Clear all chats
-export function clearAllChats(): void {
-  localStorage.removeItem(CHATS_KEY);
+export function clearAllChats(modelId: string): void {
+  localStorage.removeItem(getChatsKey(modelId));
 }
 
-// Simple draft storage - just a map of chatId to draft text
-export function saveDraft(chatId: string, text: string): void {
+export function saveDraft(modelId: string, chatId: string, text: string): void {
   if (typeof window === 'undefined') return;
   
-  const drafts = getDrafts();
+  const drafts = getDrafts(modelId);
   
   if (!text.trim()) {
     delete drafts[chatId];
@@ -112,24 +106,23 @@ export function saveDraft(chatId: string, text: string): void {
     drafts[chatId] = text;
   }
   
-  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  localStorage.setItem(getDraftsKey(modelId), JSON.stringify(drafts));
 }
 
-export function getDrafts(): Record<string, string> {
+export function getDrafts(modelId: string): Record<string, string> {
   if (typeof window === 'undefined') return {};
-  const drafts = localStorage.getItem(DRAFTS_KEY);
+  const drafts = localStorage.getItem(getDraftsKey(modelId));
   return drafts ? JSON.parse(drafts) : {};
 }
 
-export function clearAllDrafts(): void {
-  localStorage.removeItem(DRAFTS_KEY);
+export function clearAllDrafts(modelId: string): void {
+  localStorage.removeItem(getDraftsKey(modelId));
 }
 
-// Add clearDraft function
-export function clearDraft(chatId: string): void {
-  const drafts = getDrafts();
+export function clearDraft(modelId: string, chatId: string): void {
+  const drafts = getDrafts(modelId);
   delete drafts[chatId];
-  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  localStorage.setItem(getDraftsKey(modelId), JSON.stringify(drafts));
 }
 
 const chatStorageUtils = {

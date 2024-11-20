@@ -4,6 +4,7 @@ import { FaPlus, FaTrash, FaComments } from 'react-icons/fa';
 import Modal from '@/lib/components/Modal';
 
 interface ChatHistoryProps {
+  modelId: string;
   currentChatId: string;
   newChatId: string;
   onChatSelect: (chatId: string) => void;
@@ -13,6 +14,7 @@ interface ChatHistoryProps {
 }
 
 const ChatHistory: React.FC<ChatHistoryProps> = ({
+  modelId,
   currentChatId,
   newChatId: propNewChatId,
   onChatSelect,
@@ -27,15 +29,15 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   const [showClearAllModal, setShowClearAllModal] = useState(false);
 
   useEffect(() => {
-    setChats(getChats());
+    setChats(getChats(modelId));
     setIsClient(true);
-  }, []);
+  }, [modelId]);
 
   useEffect(() => {
     if (!isClient) return;
 
     const handleStorage = () => {
-      setChats(getChats());
+      setChats(getChats(modelId));
     };
 
     window.addEventListener('storage', handleStorage);
@@ -45,7 +47,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
       window.removeEventListener('storage', handleStorage);
       clearInterval(interval);
     };
-  }, [isClient]);
+  }, [isClient, modelId]);
 
   useEffect(() => {
     if (currentChatId && chats[currentChatId]) {

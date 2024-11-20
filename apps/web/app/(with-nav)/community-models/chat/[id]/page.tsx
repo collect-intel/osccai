@@ -14,6 +14,12 @@ export default async function PublicModelChatPage({
   let model;
   try {
     model = await getCommunityModel(params.id);
+
+    if (!model?.uid) {
+      console.error("No model found:", params.id, model);
+      notFound();
+    }
+
   } catch (error) {
     console.error("Error fetching model:", error);
     notFound();

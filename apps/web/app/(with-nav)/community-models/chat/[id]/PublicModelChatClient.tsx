@@ -12,6 +12,7 @@ import { FaBars } from "react-icons/fa";
 import MobileMenu from "@/lib/components/chat/MobileMenu";
 
 export default function PublicModelChatClient({ model }: { model: any }) {
+
   const [currentChatId, setCurrentChatId] = useState(() => createNewChatId());
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [chatKey, setChatKey] = useState(0);
@@ -19,61 +20,57 @@ export default function PublicModelChatClient({ model }: { model: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   useEffect(() => {
-    setDrafts(getDrafts());
-  }, []);
+    setDrafts(getDrafts(model.uid));
+  }, [model.uid]);
 
   const handleDraftChange = useCallback((chatId: string, value: string) => {
-    saveDraft(chatId, value);
+    saveDraft(model.uid, chatId, value);
     setDrafts(prev => ({
       ...prev,
       [chatId]: value
     }));
-  }, []);
+  }, [model.uid]);
 
   const handleChatSelect = useCallback((chatId: string) => {
-    // Save current draft before switching
     const currentDraft = drafts[currentChatId];
     if (currentDraft?.trim()) {
-      saveDraft(currentChatId, currentDraft);
+      saveDraft(model.uid, currentChatId, currentDraft);
     }
     setCurrentChatId(chatId);
     setChatKey(prev => prev + 1);
-  }, [currentChatId, drafts]);
+  }, [currentChatId, drafts, model.uid]);
 
   const handleNewChat = useCallback(() => {
-    // Save current draft before switching
     const currentDraft = drafts[currentChatId];
     if (currentDraft?.trim()) {
-      saveDraft(currentChatId, currentDraft);
+      saveDraft(model.uid, currentChatId, currentDraft);
     }
     const newChatId = createNewChatId();
     setCurrentChatId(newChatId);
     setChatKey(prev => prev + 1);
-  }, [currentChatId, drafts]);
+  }, [currentChatId, drafts, model.uid]);
 
   const handleClearAll = useCallback(() => {
-    clearAllChats();
-    clearAllDrafts();
+    clearAllChats(model.uid);
+    clearAllDrafts(model.uid);
     setDrafts({});
     setCurrentChatId(NEW_CHAT_ID);
     setChatKey(prev => prev + 1);
-  }, []);
+  }, [model.uid]);
 
   const handleDeleteChat = useCallback((chatId: string) => {
     if (chatId === currentChatId) {
       handleNewChat();
       setChatKey(prev => prev + 1);
     }
-    // Clear the draft
-    clearDraft(chatId);
+    clearDraft(model.uid, chatId);
     setDrafts(prev => {
       const next = { ...prev };
       delete next[chatId];
       return next;
     });
-    // Use the proper utility function to delete the chat
-    deleteChat(chatId);
-  }, [currentChatId, handleNewChat]);
+    deleteChat(model.uid, chatId);
+  }, [currentChatId, handleNewChat, model.uid]);
 
   const latestConstitution = model.constitutions[0];
 
@@ -109,6 +106,7 @@ How can I help you today?`,
               </div>
               <div className="flex-1 overflow-hidden">
                 <ChatHistory
+                  modelId={model.uid}
                   currentChatId={currentChatId}
                   newChatId={NEW_CHAT_ID}
                   onChatSelect={handleChatSelect}
@@ -124,6 +122,7 @@ How can I help you today?`,
               <div className="flex-1 overflow-hidden">
                 <ConstitutionalAIChat
                   key={chatKey}
+                  modelId={model.uid}
                   chatId={currentChatId}
                   draftInput={drafts[currentChatId] || ''}
                   onInputChange={handleDraftChange}
@@ -156,6 +155,7 @@ How can I help you today?`,
 
         {/* Mobile Slide-out Menu */}
         <MobileMenu 
+          modelId={model.uid}
           isOpen={mobileMenuOpen} 
           onClose={() => setMobileMenuOpen(false)}
           currentChatId={currentChatId}

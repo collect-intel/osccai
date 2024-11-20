@@ -4,6 +4,7 @@ import { NEW_CHAT_ID } from '@/lib/utils/chatStorage';
 import { useEffect } from 'react';
 
 interface MobileMenuProps {
+  modelId: string;
   isOpen: boolean;
   onClose: () => void;
   currentChatId: string;
@@ -14,6 +15,7 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({
+  modelId,
   isOpen,
   onClose,
   currentChatId,
@@ -59,6 +61,7 @@ export default function MobileMenu({
           </div>
           <div className="flex-1 overflow-hidden">
             <ChatHistory
+              modelId={modelId}
               currentChatId={currentChatId}
               newChatId={NEW_CHAT_ID}
               onChatSelect={(chatId) => {

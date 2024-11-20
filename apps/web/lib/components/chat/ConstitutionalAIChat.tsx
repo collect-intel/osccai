@@ -24,6 +24,7 @@ interface ChatState {
 
 interface ConstitutionalAIChatProps {
   chatId: string;
+  modelId: string;
   constitution: {
     text: string;
     icon?: React.ReactNode;
@@ -42,6 +43,7 @@ interface ConstitutionalAIChatProps {
 const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>(
   ({
     chatId,
+    modelId,
     constitution,
     customStyles = {},
     onInputChange,
@@ -55,7 +57,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
     // Load initial messages
     useEffect(() => {
       if (!chats[chatId]) {
-        const savedChat = getChat(chatId);
+        const savedChat = getChat(modelId, chatId);
         setChats(current => ({
           ...current,
           [chatId]: {
@@ -68,7 +70,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
           }
         }));
       }
-    }, [chatId, initialMessage]);
+    }, [chatId, initialMessage, modelId]);
 
     const genStream = async (messages: MessageWithFields[]) => {
       const proxyUrl = process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
@@ -153,7 +155,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
               };
             }
 
-            saveChat(chatId, newMessages);
+            saveChat(modelId, chatId, newMessages);
             return {
               ...current,
               [chatId]: {
@@ -172,7 +174,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
             ...newMessages[streamingIndex],
             isStreaming: false
           };
-          saveChat(chatId, newMessages);
+          saveChat(modelId, chatId, newMessages);
           return {
             ...current,
             [chatId]: {
@@ -185,7 +187,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
       } catch (error) {
         console.error("Error in AI response:", error);
       }
-    }, [chatId, chats]);
+    }, [chatId, chats, modelId]);
 
     const activeChat = chats[chatId] || { messages: [], isStreaming: false };
 
