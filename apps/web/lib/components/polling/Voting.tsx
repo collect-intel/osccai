@@ -12,7 +12,6 @@ import PlusIcon from "../icons/PlusIcon";
 import Modal from "../Modal";
 import { useToast } from "../../useToast";
 import Toast from "../Toast";
-import { motion } from "framer-motion";
 import VotingList from "@/lib/components/polling/VotingList";
 import VoteButtons from "@/lib/components/polling/VoteButtons";
 import ArrowLeftIcon from "../icons/ArrowLeftIcon";
@@ -126,12 +125,9 @@ export default function Voting({
         <p>You&apos;ve already voted on all of these statements.</p>
       </div>
     ) : (
-      <motion.div
+      <div
         key={currentStatementIx}
-        initial={{ x: 20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: -20, opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        className="animate-slide-in"
       >
         <div className="text-lg mb-4 pr-12">
           {statements[currentStatementIx].text}
@@ -141,7 +137,7 @@ export default function Voting({
           disabled={!canVote}
           currentVote={votes[statements[currentStatementIx].uid]}
         />
-      </motion.div>
+      </div>
     );
 
   const currentStatementNumber =
@@ -256,7 +252,11 @@ export default function Voting({
                 <Toast message={message} isVisible={isVisible} />
                 <button
                   className="hover:bg-almost-white p-3 rounded stroke-gray hover:stroke-charcoal"
-                  onClick={() => handleFlag(statements[currentStatementIx].uid)}
+                  onClick={() => {
+                    if (currentStatementIx !== null) {
+                      handleFlag(statements[currentStatementIx].uid);
+                    }
+                  }}
                   disabled={!canVote}
                 >
                   <FlagIcon className="fill-none" />

@@ -5,11 +5,11 @@ import ThumbIcon from "@/lib/components/icons/ThumbIcon";
 import QuestionIcon from "@/lib/components/icons/QuestionIcon";
 import FlagIcon from "@/lib/components/icons/FlagIcon";
 import PlusIcon from "@/lib/components/icons/PlusIcon";
-import { motion } from "framer-motion";
 import { useToast } from "@/lib/useToast";
 import Button from "@/lib/components/Button";
 import Modal from "@/lib/components/Modal";
 import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
+
 type VotingListProps = {
   statements: Statement[];
   pollId: string;
@@ -98,9 +98,9 @@ export default function VotingList({
           <div className="flex justify-between items-center">
             <div className="space-x-2">
               {["AGREE", "DISAGREE", "PASS"].map((voteType) => (
-                <motion.button
+                <button
                   key={voteType}
-                  className={`px-3 py-1 rounded ${
+                  className={`px-3 py-1 rounded transition-all transform hover:scale-[1.05] active:scale-[0.95] ${
                     votes[statement.uid] === voteType
                       ? "bg-teal text-white"
                       : "bg-gray-200 text-gray-800"
@@ -109,8 +109,6 @@ export default function VotingList({
                     handleVote(statement.uid, voteType as VoteValue)
                   }
                   disabled={!canVote}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   {voteType === "AGREE" && (
                     <ThumbIcon
@@ -128,11 +126,11 @@ export default function VotingList({
                     />
                   )}
                   {voteType}
-                </motion.button>
+                </button>
               ))}
             </div>
             <button
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 transition-colors"
               onClick={() => handleFlag(statement.uid)}
               disabled={!canVote}
             >
