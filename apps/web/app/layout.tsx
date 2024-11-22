@@ -3,6 +3,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import UserDebug from "@/lib/components/UserDebug";
 import Navbar from "@/lib/components/Navbar";
+import { headers } from 'next/headers';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,8 +20,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.className} grid grid-rows-[auto_1fr]`}>
-          <Navbar />
+        <body className={inter.className}>
           <main>{children}</main>
           <UserDebug />
         </body>

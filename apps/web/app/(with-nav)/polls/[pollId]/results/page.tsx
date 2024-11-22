@@ -9,7 +9,7 @@ import VoteIcon from "@/lib/components/icons/VoteIcon";
 import { isPollOwner } from "@/lib/actions";
 import { pollUrl } from "@/lib/links";
 import ResultsControls from "@/lib/components/ResultsControls";
-
+import type { ExtendedStatement } from "@/lib/types";
 export default async function Page({ params }: { params: { pollId: string } }) {
   const poll = await prisma.poll.findUnique({
     where: { uid: params.pollId },
@@ -20,6 +20,7 @@ export default async function Page({ params }: { params: { pollId: string } }) {
         orderBy: { createdAt: "desc" },
         include: {
           votes: true,
+          flags: true,
         },
       },
     },
@@ -69,7 +70,7 @@ export default async function Page({ params }: { params: { pollId: string } }) {
           <p>No statements have been submitted yet.</p>
         ) : (
           <ul className="space-y-4">
-            {poll.statements.map((statement) => (
+            {poll.statements.map((statement: ExtendedStatement) => (
               <li key={statement.uid} className="border p-4 rounded-lg">
                 <p className="mb-2">{statement.text}</p>
                 <div className="flex gap-4 text-sm text-gray-600">

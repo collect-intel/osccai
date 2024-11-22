@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { FaRobot, FaUserAlt } from "react-icons/fa";
 import ConstitutionIcon from "../icons/ConstitutionIcon";
@@ -14,6 +14,16 @@ interface ChatInterfaceProps {
   icon?: React.ReactNode;
   color?: string;
   renderMessage: (message: MessageWithFields) => React.ReactNode;
+  chatId: string;
+  onInputChange?: (chatId: string, value: string) => void;
+  draftInput?: string;
+  isActiveChat?: boolean;
+  initialMessage?: MessageWithFields;
+  customStyles?: {
+    userMessage?: string;
+    aiMessage?: string;
+    infoIcon?: string;
+  };
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -24,59 +34,106 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   icon,
   color = "teal",
   renderMessage,
+  chatId,
+  onInputChange,
+  draftInput = "",
+  isActiveChat = true,
+  initialMessage,
+  customStyles,
 }) => {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(draftInput);
+
+  useEffect(() => {
+    setInputValue(draftInput);
+  }, [draftInput]);
+
+  useEffect(() => {
+    if (messages.length === 0 && initialMessage) {
+      renderMessage(initialMessage);
+    }
+  }, [messages.length, initialMessage]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    onInputChange?.(chatId, newValue);
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
     onUserMessage(inputValue.trim());
     setInputValue("");
+    onInputChange?.(chatId, "");
   };
 
   return (
-    <div className="flex bg-teal align-items-space-between flex-col h-full border-2 border-light-gray rounded-lg shadow-sm min-h-50 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 p-4 overflow-y-auto">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            {message.role === "user" ? (
-              <div className="flex mr-2">
-                <div>{renderMessage(message)}</div>
-                <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
-              </div>
-            ) : (
-              <div className="flex ml-2">
-                <div className="self-start mt-6 mr-2">
-                  {icon || <ConstitutionIcon />}
+        <div className="relative">
+          {messages.map((message, index) => {
+            if (!isActiveChat && message.isStreaming) {
+              return (
+                <div key={index} className="text-gray-500 italic p-3">
+                  Message in progress...
                 </div>
-                <div>{renderMessage(message)}</div>
+              );
+            }
+
+            return (
+              <div
+                key={index}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                {message.role === "user" ? (
+                  <div className="flex mr-2">
+                    <div>{renderMessage(message)}</div>
+                    <FaUserAlt className="w-4 h-4 fill-current text-black self-start ml-2 mt-6" />
+                  </div>
+                ) : (
+                  <div className="flex ml-2">
+                    <div className="self-start mt-6 mr-2">
+                      {icon || <ConstitutionIcon />}
+                    </div>
+                    <div>{renderMessage(message)}</div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
-      {interactive && (
-        <form onSubmit={handleSubmit} className="flex p-4">
+
+      {interactive && isActiveChat && (
+        <form 
+          onSubmit={handleSubmit} 
+          className="flex p-4 bg-white relative z-10 shadow-[0_-8px_16px_-4px_rgba(255,255,255,0.9)]"
+        >
           <input
             type="text"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Say something"
-            className="flex-1 p-6 border border-gray-200 bg-off-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal"
+            onChange={handleInputChange}
+            placeholder="Type your message..."
+            className="flex-1 p-3 bg-gray-50 rounded-l-md focus:outline-none focus:ring-2 focus:ring-teal focus:bg-white transition-colors"
+            disabled={isLoading}
           />
           <button
             type="submit"
-            className={`ml-2 px-4 py-2 text-white rounded-md ${
-              isLoading
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : `bg-${color} hover:bg-black`
-            }`}
-            disabled={isLoading}
+            className={`px-6 py-2 rounded-r-md transition-all ${
+              isLoading 
+                ? "bg-gray-200 text-gray-500" 
+                : `bg-${color} hover:bg-${color}/80 text-white`
+            } disabled:cursor-not-allowed`}
+            disabled={isLoading || !inputValue.trim()}
           >
-            {isLoading ? "Sending..." : "Send"}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                Sending
+              </span>
+            ) : (
+              "Send"
+            )}
           </button>
         </form>
       )}

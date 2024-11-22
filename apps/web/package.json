@@ -44,7 +44,6 @@
     "csv-stringify": "^6.5.1",
     "date-fns": "^4.1.0",
     "formidable": "^3.5.1",
-    "framer-motion": "^11.5.4",
     "lodash": "^4.17.21",
     "ml-kmeans": "^6.0.0",
     "ml-matrix": "^6.10.4",

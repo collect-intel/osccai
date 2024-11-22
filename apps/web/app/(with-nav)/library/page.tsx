@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import PageTitle from "@/lib/components/PageTitle";
 import ConstitutionIcon from "@/lib/components/icons/ConstitutionIcon";
+import type { PublishedModel } from "@/lib/types";
 
 export default async function LibraryPage() {
   const publishedModels = await prisma.communityModel.findMany({
@@ -38,7 +39,7 @@ export default async function LibraryPage() {
       </p>
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {publishedModels.map((model) => {
+        {publishedModels.map((model: PublishedModel) => {
           const version = model.constitutions[0]?.version;
 
           return (

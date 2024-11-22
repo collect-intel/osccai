@@ -1,17 +1,10 @@
 "use server";
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { CommunityModel, Constitution, Poll, ApiKey } from "@prisma/client";
+import { CommunityModel, Constitution, Poll, ApiKey, Statement, Vote } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
-
-type ExtendedCommunityModel = CommunityModel & {
-  owner: { uid: string };
-  constitutions: Constitution[];
-  activeConstitution: Constitution | null;
-  polls: Poll[];
-  apiKeys?: ApiKey[];
-};
+import type { ExtendedPoll } from "@/lib/types";
 
 export async function getUserCommunityModels() {
   const { userId: clerkUserId } = auth();
@@ -35,7 +28,7 @@ export async function getUserCommunityModels() {
   return communityModels;
 }
 
-export async function getPollData(pollId: string) {
+export async function getPollData(pollId: string): Promise<ExtendedPoll | null> {
   const poll = await prisma.poll.findUnique({
     where: { uid: pollId },
     include: {
@@ -59,11 +52,22 @@ export async function getPollData(pollId: string) {
 
   return {
     ...poll,
-    statements: poll.statements.map((statement) => ({
+    statements: poll.statements.map((statement: Statement & { votes: Vote[]; flags: any[] }) => ({
       ...statement,
       isConstitutionable: isStatementConstitutionable(statement),
     })),
-  };
+    communityModel: {
+      bio: poll.communityModel.bio,
+      goal: poll.communityModel.goal,
+      name: poll.communityModel.name,
+      uid: poll.communityModel.uid,
+      owner: {
+        uid: poll.communityModel.owner.uid,
+        name: poll.communityModel.owner.name,
+        clerkUserId: poll.communityModel.owner.clerkUserId,
+      },
+    },
+  } as ExtendedPoll;
 }
 
 export async function getCommunityModel(modelId: string): Promise<
@@ -87,7 +91,11 @@ export async function getCommunityModel(modelId: string): Promise<
       owner: true,
       polls: {
         include: {
-          statements: true,
+          statements: {
+            include: {
+              votes: true,
+            },
+          },
         },
       },
       constitutions: true,
@@ -105,7 +113,7 @@ export async function getCommunityModel(modelId: string): Promise<
   return {
     ...model,
     principles:
-      firstPoll?.statements.map((s) => ({
+      firstPoll?.statements.map((s: Statement & { votes: Vote[] }) => ({
         id: s.uid,
         text: s.text,
         gacScore: s.gacScore || undefined,

@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { ClerkUser, ClerkEmailAddress } from "@/lib/types";
+import type { ClerkUser, ClerkEmailAddress, ExtendedStatement, ExtendedPoll } from "@/lib/types";
 import type {
   Poll,
   VoteValue as VoteValueType,
@@ -10,16 +10,16 @@ import type {
   CommunityModelOwner,
   CommunityModel,
   Constitution,
-  ConstitutionStatus,
+  Vote,
 } from "@prisma/client";
 import { VoteValue } from "@prisma/client";
 import { init as initCuid } from "@paralleldrive/cuid2";
 import { stringify } from "csv-stringify/sync";
 import { currentUser, auth } from "@clerk/nextjs/server";
 import { getPollData } from "./data";
-import { deleteFile } from "@/lib/utils/uploader";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import { generateApiKey } from "@/lib/utils/server/api-keys";
+import type { Prisma } from "@prisma/client";
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -171,7 +171,7 @@ export async function fetchUserVotes(
   console.log("votes", votes);
 
   return votes.reduce(
-    (acc, vote) => {
+    (acc: Record<string, VoteValue>, vote: { statementId: string; voteValue: VoteValue }) => {
       acc[vote.statementId] = vote.voteValue;
       return acc;
     },
@@ -319,9 +319,9 @@ export async function submitVote(
 
   const participantId = participant.uid;
 
-  return await prisma.$transaction(async (prisma) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // First, check if the statement exists
-    const statement = await prisma.statement.findUnique({
+    const statement = await tx.statement.findUnique({
       where: { uid: statementId },
     });
 
@@ -331,7 +331,7 @@ export async function submitVote(
 
     if (previousVote) {
       // Update the existing vote
-      await prisma.vote.updateMany({
+      await tx.vote.updateMany({
         where: {
           statementId,
           participantId,
@@ -345,7 +345,7 @@ export async function submitVote(
       // Create a new vote
       try {
         await retryOperation(() =>
-          prisma.vote.create({
+          tx.vote.create({
             data: { statementId, voteValue, participantId },
           }),
         );
@@ -359,7 +359,7 @@ export async function submitVote(
     }
 
     // Fetch and return updated statement
-    return prisma.statement.findUnique({
+    return tx.statement.findUnique({
       where: { uid: statementId },
       include: { votes: true },
     });
@@ -411,15 +411,15 @@ export async function generateCsv(pollId: string): Promise<string> {
     throw new Error("Poll not found");
   }
 
-  const csvData = poll.statements.map((statement) => {
+  const csvData = poll.statements.map((statement: ExtendedStatement) => {
     const approvedVotes = statement.votes.filter(
-      (vote) => vote.voteValue === VoteValue.AGREE,
+      (vote: Vote) => vote.voteValue === VoteValue.AGREE,
     );
     const disapprovedVotes = statement.votes.filter(
-      (vote) => vote.voteValue === VoteValue.DISAGREE,
+      (vote: Vote) => vote.voteValue === VoteValue.DISAGREE,
     );
     const passedVotes = statement.votes.filter(
-      (vote) => vote.voteValue === VoteValue.PASS,
+      (vote: Vote) => vote.voteValue === VoteValue.PASS,
     );
 
     return {
@@ -427,13 +427,13 @@ export async function generateCsv(pollId: string): Promise<string> {
       Statement: statement.text,
       "Statement uid": statement.uid,
       "Participant uids vote Approved": approvedVotes
-        .map((vote) => vote.participantId)
+        .map((vote: Vote) => vote.participantId)
         .join(", "),
       "Participant uids vote Disapproved": disapprovedVotes
-        .map((vote) => vote.participantId)
+        .map((vote: Vote) => vote.participantId)
         .join(", "),
       "Participant uids vote Passed": passedVotes
-        .map((vote) => vote.participantId)
+        .map((vote: Vote) => vote.participantId)
         .join(", "),
       "Count of Flags": statement.flags.length,
     };
@@ -880,9 +880,9 @@ export async function updateCommunityModel(
   } = data;
 
   try {
-    const updatedModel = await prisma.$transaction(async (prisma) => {
+    const updatedModel = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update the community model
-      const model = await prisma.communityModel.update({
+      const model = await tx.communityModel.update({
         where: { uid: modelId },
         data: {
           ...modelData,
@@ -896,7 +896,7 @@ export async function updateCommunityModel(
 
       // Update all associated polls
       if (requireAuth !== undefined || allowContributions !== undefined) {
-        await prisma.poll.updateMany({
+        await tx.poll.updateMany({
           where: { communityModelId: modelId },
           data: {
             ...(requireAuth !== undefined && { requireAuth }),
@@ -909,7 +909,7 @@ export async function updateCommunityModel(
 
       // Handle principles update if provided
       if (principles) {
-        const poll = await prisma.poll.findFirst({
+        const poll = await tx.poll.findFirst({
           where: { communityModelId: modelId },
           include: { statements: true },
         });
@@ -918,13 +918,13 @@ export async function updateCommunityModel(
           // Ensure the owner has a linked participant
           let participantId = model.owner.participantId;
           if (!participantId) {
-            const participant = await prisma.participant.create({
+            const participant = await tx.participant.create({
               data: {
                 clerkUserId: model.owner.clerkUserId,
               },
             });
             participantId = participant.uid;
-            await prisma.communityModelOwner.update({
+            await tx.communityModelOwner.update({
               where: { uid: model.owner.uid },
               data: { participantId: participantId },
             });
@@ -936,7 +936,7 @@ export async function updateCommunityModel(
           for (const principle of principles) {
             if (principle.id.startsWith("new-")) {
               // This is a new principle, create it
-              const newStatement = await prisma.statement.create({
+              const newStatement = await tx.statement.create({
                 data: {
                   pollId: poll.uid,
                   text: principle.text,
@@ -947,7 +947,7 @@ export async function updateCommunityModel(
               updatedPrinciples.push(newStatement);
             } else {
               // This is an existing principle, update it
-              const updatedStatement = await prisma.statement.update({
+              const updatedStatement = await tx.statement.update({
                 where: { uid: principle.id },
                 data: {
                   text: principle.text,
@@ -968,15 +968,15 @@ export async function updateCommunityModel(
 
           // Delete principles that are no longer in the list
           for (const statement of statementsToDelete) {
-            await prisma.vote.deleteMany({
+            await tx.vote.deleteMany({
               where: { statementId: statement.uid },
             });
 
-            await prisma.flag.deleteMany({
+            await tx.flag.deleteMany({
               where: { statementId: statement.uid },
             });
 
-            await prisma.statement.delete({
+            await tx.statement.delete({
               where: { uid: statement.uid },
             });
           }
@@ -988,7 +988,7 @@ export async function updateCommunityModel(
         // Update or create constitutions
         for (const constitution of constitutions) {
           if (constitution.uid) {
-            await prisma.constitution.update({
+            await tx.constitution.update({
               where: { uid: constitution.uid },
               data: {
                 content: constitution.content,
@@ -996,7 +996,7 @@ export async function updateCommunityModel(
               },
             });
           } else {
-            await prisma.constitution.create({
+            await tx.constitution.create({
               data: {
                 modelId: modelId,
                 content: constitution.content,
@@ -1009,7 +1009,7 @@ export async function updateCommunityModel(
       }
 
       // Fetch the updated model with polls and constitutions
-      return prisma.communityModel.findUnique({
+      return tx.communityModel.findUnique({
         where: { uid: modelId },
         include: {
           polls: { include: { statements: true } },
@@ -1031,7 +1031,7 @@ export async function updateCommunityModel(
 
 export async function fetchPollData(
   modelId: string,
-): Promise<Poll & { statements: Statement[] }> {
+): Promise<ExtendedPoll> {
   const poll = await prisma.poll.findFirst({
     where: {
       communityModelId: modelId,
@@ -1042,9 +1042,15 @@ export async function fetchPollData(
         where: { deleted: false },
         include: {
           votes: true,
+          flags: true,
         },
         orderBy: {
           createdAt: "desc",
+        },
+      },
+      communityModel: {
+        include: {
+          owner: true,
         },
       },
     },
@@ -1055,17 +1061,15 @@ export async function fetchPollData(
   }
 
   // Calculate isConstitutionable for each statement
-  const statementsWithConstitutionable = poll.statements.map((statement) => {
+  const statementsWithConstitutionable = poll.statements.map((statement: ExtendedStatement) => {
     const totalVotes = statement.votes.length;
     const agreeVotes = statement.votes.filter(
-      (vote) => vote.voteValue === "AGREE",
+      (vote: Vote) => vote.voteValue === VoteValue.AGREE,
     ).length;
-    const agreePercentage =
-      totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
+    const agreePercentage = totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
 
     return {
       ...statement,
-      // If isConstitutionable is not explicitly set, use the agreePercentage threshold
       isConstitutionable:
         statement.isConstitutionable ?? agreePercentage >= 66.67,
     };
@@ -1074,7 +1078,18 @@ export async function fetchPollData(
   return {
     ...poll,
     statements: statementsWithConstitutionable,
-  };
+    communityModel: {
+      bio: poll.communityModel.bio,
+      goal: poll.communityModel.goal,
+      name: poll.communityModel.name,
+      uid: poll.communityModel.uid,
+      owner: {
+        uid: poll.communityModel.owner.uid,
+        name: poll.communityModel.owner.name,
+        clerkUserId: poll.communityModel.owner.clerkUserId,
+      },
+    },
+  } as ExtendedPoll;
 }
 
 export async function createApiKey(

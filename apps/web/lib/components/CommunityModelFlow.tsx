@@ -17,8 +17,9 @@ import { getCommunityModel } from "@/lib/data";
 import { AboutZoneData } from "./flow/AboutZone";
 import Toast from "./Toast";
 import { debounce } from "lodash";
-import { Constitution, Poll, Statement, ApiKey } from "@prisma/client";
+import { Constitution, Poll, Statement, ApiKey, Vote } from "@prisma/client";
 import Spinner from "./Spinner";
+import type { ExtendedPoll } from "@/lib/types";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
   principles: Array<{ id: string; text: string; gacScore?: number }>;
@@ -43,6 +44,12 @@ interface CommunityModelFlowProps {
 
 interface ZoneRefs {
   [key: string]: React.RefObject<HTMLDivElement>;
+}
+
+interface Principle {
+  id: string;
+  text: string;
+  gacScore?: number;
 }
 
 export default function CommunityModelFlow({
@@ -118,7 +125,7 @@ export default function CommunityModelFlow({
               bio: fetchedModelData.bio || "",
               goal: fetchedModelData.goal || "",
               logoUrl: fetchedModelData.logoUrl || "",
-              principles: fetchedModelData.principles.map((p) =>
+              principles: fetchedModelData.principles.map((p: string | Principle) =>
                 typeof p === "string"
                   ? { id: `principle-${Date.now()}-${Math.random()}`, text: p }
                   : p,
@@ -276,36 +283,10 @@ export default function CommunityModelFlow({
 
   if (isPageLoading || isLoading) {
     return (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          zIndex: 9999,
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "white",
-            padding: "1.5rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-          }}
-        >
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+        <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center">
           <Spinner size="large" color="#4A5568" />
-          <p
-            style={{
-              marginTop: "1rem",
-              color: "#4A5568",
-              textAlign: "center",
-            }}
-          >
+          <p className="mt-4 text-gray-600">
             Loading...
           </p>
         </div>
@@ -314,7 +295,7 @@ export default function CommunityModelFlow({
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">
           {modelData?.name.trim() ? (
@@ -387,11 +368,7 @@ export default function CommunityModelFlow({
                   requireAuth: modelData?.requireAuth || false,
                   allowContributions: modelData?.allowContributions || false,
                 }}
-                pollData={
-                  modelData?.polls?.[0] as
-                    | (Poll & { statements: Statement[] })
-                    | undefined
-                }
+                pollData={modelData?.polls?.[0] as ExtendedPoll}
                 isExistingModel={isExistingModel}
                 onToggle={() => toggleZone("poll")}
                 savingStatus={savingStatus.poll}

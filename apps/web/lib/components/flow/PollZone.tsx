@@ -9,7 +9,6 @@ import {
   FaVoteYea,
   FaQuestionCircle,
 } from "react-icons/fa";
-import { Poll, Statement } from "@prisma/client";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 import IconCounter from "@/lib/components/IconCounter";
 import Button from "@/lib/components/Button";
@@ -18,12 +17,10 @@ import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import Modal from "@/lib/components/Modal";
 import ConstitutionableExplanation from "@/lib/components/ConstitutionableExplanation";
 import ZoneWrapper from "./ZoneWrapper";
+import { Poll, Statement, Vote } from "@prisma/client";
+import type { ExtendedPoll, ExtendedStatement, ExtendedCommunityModel } from "@/lib/types";
 
 const crimson = Crimson_Text({ subsets: ["latin"], weight: "400" });
-
-interface ExtendedPoll extends Poll {
-  statements: Statement[];
-}
 
 interface PollZoneProps {
   isActive: boolean;
@@ -72,7 +69,6 @@ export default function PollZone({
     if (modelId) {
       setIsRefreshing(true);
       try {
-        // Implement this function in your actions file
         const updatedPollData = await fetchPollData(modelId);
         setLocalPollData(updatedPollData);
       } catch (error) {
@@ -92,22 +88,20 @@ export default function PollZone({
 
   const totalVotes =
     localPollData?.statements?.reduce(
-      (sum: number, statement: Statement) =>
+      (sum: number, statement: ExtendedStatement) =>
         sum +
-        statement.agreeCount +
-        statement.disagreeCount +
-        statement.passCount,
+        (statement.agreeCount || 0) +
+        (statement.disagreeCount || 0) +
+        (statement.passCount || 0),
       0,
     ) ?? 0;
 
-  const uniqueParticipants =
-    new Set(
-      localPollData?.statements?.flatMap((statement) => [
-        ...Array(statement.agreeCount).fill(statement.participantId),
-        ...Array(statement.disagreeCount).fill(statement.participantId),
-        ...Array(statement.passCount).fill(statement.participantId),
-      ]),
-    ).size ?? 0;
+  const uniqueParticipants = localPollData?.statements?.reduce((set, statement) => {
+    statement.votes?.forEach((vote: Vote) => {
+      set.add(vote.participantId);
+    });
+    return set;
+  }, new Set<string>()).size ?? 0;
 
   const handleShare = () => {
     if (localPollData?.uid) {
@@ -233,7 +227,7 @@ export default function PollZone({
                 const flexBasis = areAllEqual ? "33.33%" : "0%";
 
                 const isConstitutionable =
-                  isStatementConstitutionable(statement);
+                  isStatementConstitutionable(statement as Statement);
 
                 return (
                   <li

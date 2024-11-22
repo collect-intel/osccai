@@ -1,4 +1,4 @@
-# OSCCAI Web App
+# Community Models (OSCCAI) Web App
 
 ## Database Migration Setup
 

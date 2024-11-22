@@ -1,14 +1,21 @@
-export interface CommunityModel {
-  uid: string;
-  name: string;
-  goal: string;
-  ownerId: string;
-  activeConstitutionId: string | null;
+import type { Prisma, CommunityModel, Statement, Vote, Poll } from "@prisma/client";
+
+export interface ExtendedCommunityModel extends CommunityModel {
+  owner: {
+    uid: string;
+    name: string;
+    clerkUserId: string | null;
+  };
 }
 
-export interface Constitution {
-  uid: string;
-  version: number;
+export interface ExtendedStatement extends Statement {
+  votes: Vote[];
+  flags: { uid: string }[];
+}
+
+export interface ExtendedPoll extends Omit<Poll, 'statements'> {
+  statements: ExtendedStatement[];
+  communityModel: ExtendedCommunityModel;
 }
 
 import React from "react";
@@ -113,10 +120,34 @@ export interface ClerkEmailAddress {
 export interface MessageWithFields {
   role: "user" | "assistant";
   content: string;
-  isStreaming?: boolean;
   final_response?: string;
   draft_response?: string;
   response_metrics?: string;
   improvement_strategy?: string;
+  isStreaming?: boolean;
+  isNewMessage?: boolean;
   isInitialMessage?: boolean;
 }
+
+/**
+ * Type for community models returned by the library page query.
+ * We use Prisma.CommunityModelGetPayload instead of the base CommunityModel type because:
+ * 1. The base CommunityModel type doesn't include relations by default
+ * 2. This type exactly matches our specific SELECT query structure
+ * 3. It automatically updates if we change the Prisma schema or query
+ * 
+ * This is particularly important when dealing with relations like 'constitutions',
+ * which need to be explicitly selected and typed according to what we're actually querying.
+ */
+export type PublishedModel = Prisma.CommunityModelGetPayload<{
+  select: {
+    uid: true;
+    name: true;
+    bio: true;
+    constitutions: {
+      select: {
+        version: true;
+      };
+    };
+  };
+}>;
