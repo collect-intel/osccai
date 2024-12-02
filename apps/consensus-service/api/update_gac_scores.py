@@ -13,7 +13,6 @@ import pandas as pd
 pd.set_option('future.no_silent_downcasting', True)
 
 VERSION = "1.0.1"  # Update this when making changes
-print(f"Starting update-gac-scores.py version {VERSION}")
 
 def setup_logging():
     # Configure logging to output to stdout
@@ -83,8 +82,7 @@ def create_connection():
         raise
 
 def main():
-    print("main")
-    logger.info("Starting update-gac-scores.py script")
+    logger.info(f"Starting update-gac-scores.py script version {VERSION}")
 
     # Connect to the database
     try:
@@ -473,5 +471,3 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                 WHERE uid = %s;
             """, (statement_id,))
     conn.commit()
-
-print("Finished update-gac-scores.py")
