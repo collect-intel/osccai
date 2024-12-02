@@ -9,6 +9,9 @@ from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
 
+# Set pandas option for future-proof behavior with downcasting
+pd.set_option('future.no_silent_downcasting', True)
+
 VERSION = "1.0.1"  # Update this when making changes
 print(f"Starting update-gac-scores.py version {VERSION}")
 
@@ -252,8 +255,8 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
     binary_matrix[binary_matrix == -1] = 0
     binary_matrix[binary_matrix != 0] = 0  # Treat 'PASS' and None as 0
 
-    # Fill NA values and infer proper data types
-    filled_binary_matrix = binary_matrix.fillna(0).infer_objects(copy=False)
+    # Fill NA values - with future-proof behavior
+    filled_binary_matrix = binary_matrix.fillna(0)
     
     # Calculate Jaccard similarity between participants
     similarity_matrix = filled_binary_matrix.dot(filled_binary_matrix.T)
@@ -358,20 +361,20 @@ def perform_clustering(imputed_vote_matrix):
     
     n_participants, n_statements = imputed_vote_matrix.shape
     logger.info(f"Vote matrix has {n_participants} participants and {n_statements} statements")
-    # Log the imputed vote matrix without index and header
-    logger.info(f"Imputed vote matrix:\n{imputed_vote_matrix.to_string(index=False, header=False)}")
     
     if n_participants == 1:
         # Only one participant, assign to a single cluster
         cluster_labels = [0]
         return np.array(cluster_labels)
     
+    # Fill NA values - with future-proof behavior
+    data = imputed_vote_matrix.fillna(0).values
+    
     # Determine the maximum number of PCA components
     max_components = min(n_participants, n_statements)
     optimal_components = min(2, max_components)
     logger.info(f"Using {optimal_components} PCA components")
     
-    data = imputed_vote_matrix.fillna(0).values
     principal_components = perform_pca(data, optimal_components)
     
     # Determine optimal number of clusters using silhouette score
