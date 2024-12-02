@@ -12,8 +12,17 @@ VERSION = "1.0.1"  # Update this when making changes
 print(f"Starting update-gac-scores.py version {VERSION}")
 
 # Configure logging to output to stdout
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',  # Simplified format for Vercel
+    handlers=[
+        logging.StreamHandler(sys.stdout)  # Force output to stdout
+    ]
+)
 logger = logging.getLogger(__name__)
+
+logger.info("TEST: This should appear in Vercel logs")
+print("TEST: This is a print statement")
 
 # Database connection settings
 DATABASE_URL = os.getenv("DATABASE_URL")
