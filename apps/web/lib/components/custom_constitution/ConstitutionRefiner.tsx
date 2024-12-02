@@ -1,12 +1,8 @@
-import { ClientProvider, xmllm } from "xmllm/client";
 import { FaExclamationTriangle } from 'react-icons/fa';
-import LoadingMessage from '../chat/LoadingMessage';
 
 interface ConstitutionRefinerProps {
   constitution: string;
   onConstitutionChange: (value: string) => void;
-  onRefinedConstitution: (constitution: string) => void;
-  onReasoning: (reasoning: string) => void;
   isRefining: boolean;
   error: string | null;
   onRefine: () => void;
@@ -15,8 +11,6 @@ interface ConstitutionRefinerProps {
 export default function ConstitutionRefiner({
   constitution,
   onConstitutionChange,
-  onRefinedConstitution,
-  onReasoning,
   isRefining,
   error,
   onRefine

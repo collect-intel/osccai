@@ -3,29 +3,15 @@
 import { useState } from 'react';
 import ConstitutionalAIChat from '@/lib/components/chat/ConstitutionalAIChat';
 import { ClientProvider, xmllm } from "xmllm/client";
-import ConstitutionRefiner from '@/lib/components/constitution/ConstitutionRefiner';
-import RefinedDisplay from '@/lib/components/constitution/RefinedDisplay';
+import ConstitutionRefiner from '@/lib/components/custom_constitution/ConstitutionRefiner';
+import RefinedDisplay from '@/lib/components/custom_constitution/RefinedDisplay';
 
-const DEFAULT_CONSTITUTION = `This AI constitution is designed for a community of neighbors in a rural town and should reflect their priorities.
-
-The AI should:
-- Prioritize local knowledge and traditional farming/rural practices
-- Respect the tight-knit nature of small communities
-- Understand the importance of self-reliance and mutual aid
-- Consider the impact on local businesses and farmers
-- Preserve rural values and way of life
-- Support sustainable land management
-- Encourage community gatherings and events
-- Value practical, hands-on solutions
-- Respect privacy and property rights
-- Promote intergenerational knowledge sharing
-- Support local food systems and farmers markets
-- Consider the pace and rhythm of rural life`;
+const DEFAULT_CONSTITUTION = `For a small neighbourly community.`;
 
 export default function CustomConstitutionPage() {
   const [constitution, setConstitution] = useState(DEFAULT_CONSTITUTION);
   const [refinedConstitution, setRefinedConstitution] = useState('');
-  const [reasoning, setReasoning] = useState('');
+  const [reflection, setreflection] = useState('');
   const [isRefining, setIsRefining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatId] = useState(`custom-${Date.now()}`);
@@ -34,8 +20,10 @@ export default function CustomConstitutionPage() {
   const refineConstitution = async (rawConstitution: string) => {
     setIsRefining(true);
     setError(null);
-    setReasoning('');
+    setreflection('');
     setMetrics(undefined);
+    setRefinedConstitution('');
+
     try {
       const proxyUrl = process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
       const clientProvider = new ClientProvider(proxyUrl);
@@ -43,43 +31,67 @@ export default function CustomConstitutionPage() {
       const stream = await xmllm(({ prompt }: { prompt: any }) => {
         return [
           prompt({
+            system: `
+You are an expert at writing constitutions that drive AI behaviour for a variety of topics. These constitutions will be used to guide and align the behaviour of an AI. The subject matter of the constitution might be entirely unrelated to tech however. For example, the constitution might be to represent the needs of an elderly community, and thus may look like this:
+
+<refined_constitution>
+# Constitution for an AI representing the needs of an elderly community:
+- The AI should be easy to use and understand
+- The AI should be helpful and not harmful
+- The AI should focus on diverse needs and preferences
+- The AI should always self-identify as an AI assistant, not human
+- The AI should not overly fixate on the needs of the elderly to the extent of patronizing language.
+</refined_constitution>
+            `.trim(),
             model: ["togetherai:good", "claude:good"],
             messages: [{
               role: "user",
-              content: `Please help refine and structure this AI constitution. Make it clear, concise, and well-organized. Here's the raw constitution:
+              content: `Please help refine and structure this constitution which is to help align the behaviour of an AI (a Large Language Model). The constitution is regarding a specific topic or community outlined below. Make it clear, concise, and well-organized. Here's the raw details or early thoughts from the user/creator or community owner who is seeking to create a constitution to guide the behaviour of their AI:
 
+=== BEGIN Initial thoughts or very-early-draft constitution ===
 ${rawConstitution}
+=== END ===
+
+Please begin by reflecting on what you think the consitution should contain.
+THEN write the refined constitution. 
+THEN determine the best metrics or rubric to use to judge any given response according to the constitution.
 
 Please output a refined version that:
 1. Is well-structured with clear sections
-2. Removes any redundancy
+2. Removes any redundancy but enables high specificity
 3. Makes the principles clear and actionable
 4. Maintains the original intent but improves clarity
 5. Uses consistent formatting
 
-Provide reasoning and reflections in <reasoning/>
+Output the refined constitution in a clean format with appropriate sections and bullet points where helpful.
 
-Output the refined constitution in a clean format with appropriate sections and bullet points where helpful.`
+The order of your output is:
+<reflection>...</reflection>
+<refined_constitution>
+# Constitution on ____
+## Preamble
+This constitution is designed for a community of__
+
+### Principle of ____
+Etc.
+</refined_constitution>
+<constitution_metrics>...</constitution_metrics>`
             }],
             schema: {
               refined_constitution: String,
               constitution_metrics: {
                 metric: [String]
               },
-              reasoning: String
+              reflection: String
             },
             hints: {
-              refined_constitution: 'Markdwown rich with headings and in the style of a constitution.',
+              refined_constitution: 'Refined constitution in markdown format with headings and bullet points. E.g. \n# Constitution on ____\n## Preamble\n...Etc.',
               constitution_metrics: {
                 metric: ['A singular metric an AI can measure itself according to when attempting to follow the constitution.']
               },
-              reasoning: 'An initial reflection of what you think the constitution should contain, based on the initial user-provided constitution.'
+              reflection: 'An initial reflection of what you think the constitution should contain, based on the initial user-provided constitution.'
             }
-          }),
-          function* (t: any) {
-            console.log('>chunk',t);
-            yield t;
-          },
+          })
         ];
       }, clientProvider);
 
@@ -87,8 +99,8 @@ Output the refined constitution in a clean format with appropriate sections and 
         if (chunk.refined_constitution) {
           setRefinedConstitution(chunk.refined_constitution);
         }
-        if (chunk.reasoning) {
-          setReasoning(chunk.reasoning);
+        if (chunk.reflection) {
+          setreflection(chunk.reflection);
         }
         if (chunk.constitution_metrics) {
           setMetrics(chunk.constitution_metrics);
@@ -120,8 +132,6 @@ Output the refined constitution in a clean format with appropriate sections and 
             <ConstitutionRefiner 
               constitution={constitution}
               onConstitutionChange={setConstitution}
-              onRefinedConstitution={setRefinedConstitution}
-              onReasoning={setReasoning}
               isRefining={isRefining}
               error={error}
               onRefine={() => refineConstitution(constitution)}
@@ -133,7 +143,7 @@ Output the refined constitution in a clean format with appropriate sections and 
             <RefinedDisplay
               isRefining={isRefining}
               refinedConstitution={refinedConstitution}
-              reasoning={reasoning}
+              reflection={reflection}
               metrics={metrics}
             />
           </div>
@@ -146,10 +156,22 @@ Output the refined constitution in a clean format with appropriate sections and 
                 modelId="custom"
                 model="togetherai:good"
                 constitution={{
-                  text: refinedConstitution,
+                  text: `${refinedConstitution}\n\n${
+                    metrics?.metric?.length ?
+                      '# Metrics to be aware of:\n' + metrics?.metric.join('\n') : ''
+                  }`,
                   color: "teal"
                 }}
                 ephemeral={true}
+                initialMessage={{
+                  role: "assistant",
+                  content: `Hi there! I'm an AI assistant guided by this constitution. Feel free to test how I respond.`,
+                }}
+                customStyles={{
+                  userMessage: "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
+                  aiMessage: "bg-teal rounded-lg p-4 mb-4 shadow-sm text-white",
+                  infoIcon: "text-white/80 hover:text-white transition-colors",
+                }}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-gray-500 italic p-6">
