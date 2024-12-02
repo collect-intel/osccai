@@ -1,7 +1,8 @@
 import logging
+import sys
+import json
 from http.server import BaseHTTPRequestHandler
 import os
-import sys
 from datetime import datetime
 import pg8000
 from urllib.parse import urlparse
@@ -11,18 +12,26 @@ import pandas as pd
 VERSION = "1.0.1"  # Update this when making changes
 print(f"Starting update-gac-scores.py version {VERSION}")
 
-# Configure logging to output to stdout
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s',  # Simplified format for Vercel
-    handlers=[
-        logging.StreamHandler(sys.stdout)  # Force output to stdout
-    ]
-)
-logger = logging.getLogger(__name__)
+def setup_logging():
+    # Configure logging to output to stdout
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(levelname)s] %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)],
+        force=True  # Ensure this configuration is applied
+    )
+    return logging.getLogger(__name__)
 
-logger.info("TEST: This should appear in Vercel logs")
-print("TEST: This is a print statement")
+logger = setup_logging()
+
+def log_gac(message, data=None, poll_id=None):
+    """Helper function to format GAC calculation logs consistently"""
+    log_data = {
+        'poll_id': poll_id,
+        'message': message,
+        'data': data
+    }
+    logger.info(json.dumps(log_data))
 
 # Database connection settings
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -187,8 +196,14 @@ def generate_vote_matrix(statements, votes, participants):
         0  - Pass
        None - No vote
     """
-    logger.info("Generating vote matrix")
-
+    poll_id = statements[0]['pollId'] if statements else None
+    
+    log_gac("Starting vote matrix generation", {
+        'statement_count': len(statements),
+        'vote_count': len(votes),
+        'participant_count': len(participants)
+    }, poll_id)
+    
     # Create mappings from IDs to indices
     participant_ids = [participant['uid'] for participant in participants]
     statement_ids = [statement['uid'] for statement in statements]
@@ -217,7 +232,11 @@ def generate_vote_matrix(statements, votes, participants):
 
     # Convert to DataFrame for easier handling
     vote_df = pd.DataFrame(vote_matrix, index=participant_ids, columns=statement_ids)
-
+    
+    log_gac("Completed vote matrix generation", {
+        'matrix_shape': vote_df.shape
+    }, poll_id)
+    
     return vote_df
 
 def impute_missing_votes(vote_matrix, n_neighbors=5):
