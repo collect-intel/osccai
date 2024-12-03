@@ -120,7 +120,7 @@ Etc.
       <header className="bg-white shadow-sm border-b px-6 py-4 w-full">
         <div className="max-w-[1600px] mx-auto">
           <h1 className="text-2xl font-bold text-gray-800">Custom Constitution Dashboard</h1>
-          <p className="text-gray-600 mt-1">Create and test your own AI constitution</p>
+          <p className="text-gray-600 mt-1">Create and test your own AI constitution. Edits and chat history are NOT saved - navigating away or refreshing this page will lose changes!</p>
         </div>
       </header>
 
