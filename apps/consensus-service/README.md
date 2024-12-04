@@ -9,6 +9,7 @@ The `update_gac_scores.py` script calculates GAC scores for statements based on 
 ### How It Works
 
 1. The script identifies polls that need GAC score updates by:
+
    - Finding polls with statements that have never been calculated
    - Finding polls with new or updated votes since last calculation
 
@@ -44,10 +45,12 @@ POLL_ID=your-poll-id pnpm consensus-service gac:prod:poll:dry
 ### Production Deployment
 
 In production, `update_gac_scores.py` runs as a Vercel serverless function, triggered by:
+
 1. A cron job defined in `vercel.json` that runs periodically
 2. Manual triggers via the Vercel function URL
 
 The script uses environment variables for database configuration:
+
 - Local development uses `.env.local`
 - Production uses `.env` (managed by Vercel)
 
@@ -66,6 +69,7 @@ pnpm consensus-service build
 ```
 
 3. Set up your `.env.local` with the required database URL:
+
 ```
 DATABASE_URL=your_local_database_url
 ```

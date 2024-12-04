@@ -48,3 +48,5 @@ next-env.d.ts
 apps/web/prisma/seed.ts
 apps/web/local_backup.sql
 *.pyc
+/apps/consensus-service/node_modules
+/apps/consensus-service/python_packages
