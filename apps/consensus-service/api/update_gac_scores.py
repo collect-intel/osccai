@@ -3,6 +3,7 @@ import sys
 import json
 from http.server import BaseHTTPRequestHandler
 import os
+import argparse
 from datetime import datetime
 import pg8000
 from urllib.parse import urlparse
@@ -12,7 +13,7 @@ import pandas as pd
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
 
-VERSION = "1.0.1"  # Update this when making changes
+VERSION = "1.0.2"  # Update this when making changes
 
 def setup_logging():
     # Configure logging to output to stdout
@@ -54,7 +55,6 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(b'Error updating GAC scores')
         return
 
-
 def create_connection():
     # Reload DATABASE_URL at runtime
     DATABASE_URL = os.getenv("DATABASE_URL")
@@ -81,64 +81,105 @@ def create_connection():
         logger.error(f"Failed to parse DATABASE_URL: {e}")
         raise
 
-def main():
-    logger.info(f"Starting update-gac-scores.py script version {VERSION}")
+def verify_poll_exists(cursor, poll_id):
+    """Verify if a poll exists and is valid for processing."""
+    cursor.execute(
+        'SELECT "uid", "published", "deleted" FROM "Poll" WHERE "uid" = %s',
+        (poll_id,)
+    )
+    result = cursor.fetchone()
+    
+    if not result:
+        raise ValueError(f"Poll with ID {poll_id} not found")
+    
+    poll_data = dict(zip(['uid', 'published', 'deleted'], result))
+    if poll_data['deleted']:
+        raise ValueError(f"Poll {poll_id} has been deleted")
+    if not poll_data['published']:
+        raise ValueError(f"Poll {poll_id} is not published")
+    
+    return True
 
-    # Connect to the database
+def main(poll_id=None, dry_run=False):
+    """
+    Main function to update GAC scores.
+    Args:
+        poll_id: Optional specific poll to process
+        dry_run: If True, only show calculations without modifying data
+    """
+    logger.info(f"Starting update-gac-scores.py script version {VERSION}")
+    logger.info(f"Mode: {'Dry Run' if dry_run else 'Normal'}")
+    logger.info(f"Target: {'Specific Poll: ' + poll_id if poll_id else 'All Modified Polls'}")
+
     try:
         conn = create_connection()
         cursor = conn.cursor()
         logger.info("Connected to the database successfully")
-    except Exception as e:
-        logger.error(f"Database connection failed: {e}")
-        raise
 
-    # Fetch polls with changes
-    try:
-        polls = fetch_polls_with_changes(cursor)
-        logger.info(f"Fetched {len(polls)} polls with changes")
-    except Exception as e:
-        logger.error(f"Error fetching polls: {e}")
+        if poll_id:
+            # Verify poll exists and is valid
+            verify_poll_exists(cursor, poll_id)
+            polls = [{'uid': poll_id}]
+            logger.info(f"Processing specific poll: {poll_id}")
+        else:
+            # Fetch polls with changes
+            polls = fetch_polls_with_changes(cursor)
+            logger.info(f"Fetched {len(polls)} polls with changes")
+
+        # Process each poll
+        for poll in polls:
+            try:
+                poll_id = poll['uid']
+                logger.info(f"Processing poll ID: {poll_id}")
+                statements, votes, participants = fetch_poll_data(cursor, poll_id)
+                logger.info(f"Fetched data for poll ID: {poll_id}")
+
+                if not statements or not votes or not participants:
+                    logger.warning(f"Insufficient data for poll ID: {poll_id}, skipping.")
+                    continue
+
+                vote_matrix = generate_vote_matrix(statements, votes, participants)
+                logger.info(f"Generated vote matrix for poll ID: {poll_id}")
+
+                if vote_matrix is None or vote_matrix.empty:
+                    logger.warning(f"Empty vote matrix for poll ID: {poll_id}, skipping.")
+                    continue
+
+                imputed_vote_matrix = impute_missing_votes(vote_matrix)
+                logger.info(f"Imputed missing votes for poll ID: {poll_id}")
+
+                clusters = perform_clustering(imputed_vote_matrix)
+                logger.info(f"Performed clustering for poll ID: {poll_id}")
+
+                gac_scores = calculate_gac_scores(imputed_vote_matrix, clusters)
+                logger.info(f"Calculated GAC scores for poll ID: {poll_id}")
+
+                if not dry_run:
+                    update_statements(cursor, conn, statements, gac_scores, votes)
+                    logger.info(f"Updated GAC scores for poll ID: {poll_id}")
+                else:
+                    # Log what would have been updated in dry run mode
+                    for statement in statements:
+                        statement_id = statement['uid']
+                        if statement_id in gac_scores:
+                            gac_score = gac_scores[statement_id]
+                            is_constitutionable = gac_score >= 0.66
+                            logger.info(f"[DRY RUN] Would update statement {statement_id}:")
+                            logger.info(f"  - GAC Score: {gac_score}")
+                            logger.info(f"  - Is Constitutionable: {is_constitutionable}")
+
+            except Exception as e:
+                logger.error(f"Error processing poll ID {poll_id}: {e}")
+                continue
+
+        # Close database connection
         cursor.close()
         conn.close()
-        raise
+        logger.info("Completed update-gac-scores.py script successfully")
 
-    # Process each poll
-    for poll in polls:
-        try:
-            logger.info(f"Processing poll ID: {poll['uid']}")
-            statements, votes, participants = fetch_poll_data(cursor, poll['uid'])
-            logger.info(f"Fetched data for poll ID: {poll['uid']}")
-
-            if not statements or not votes or not participants:
-                logger.warning(f"Insufficient data for poll ID: {poll['uid']}, skipping.")
-                continue
-
-            vote_matrix = generate_vote_matrix(statements, votes, participants)
-            logger.info(f"Generated vote matrix for poll ID: {poll['uid']}")
-
-            if vote_matrix is None or vote_matrix.empty:
-                logger.warning(f"Empty vote matrix for poll ID: {poll['uid']}, skipping.")
-                continue
-
-            imputed_vote_matrix = impute_missing_votes(vote_matrix)
-            logger.info(f"Imputed missing votes for poll ID: {poll['uid']}")
-
-            clusters = perform_clustering(imputed_vote_matrix)
-            logger.info(f"Performed clustering for poll ID: {poll['uid']}")
-
-            gac_scores = calculate_gac_scores(imputed_vote_matrix, clusters)
-            logger.info(f"Calculated GAC scores for poll ID: {poll['uid']}")
-
-            update_statements(cursor, conn, statements, gac_scores, votes)
-            logger.info(f"Updated GAC scores for poll ID: {poll['uid']}")
-        except Exception as e:
-            logger.error(f"Error processing poll ID {poll['uid']}: {e}")
-
-    # Close database connection
-    cursor.close()
-    conn.close()
-    logger.info("Completed update-gac-scores.py script successfully")
+    except Exception as e:
+        logger.error(f"Error in main function: {e}")
+        sys.exit(1)
 
 def fetch_polls_with_changes(cursor):
     query = """
@@ -471,3 +512,11 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                 WHERE uid = %s;
             """, (statement_id,))
     conn.commit()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Update GAC scores for statements')
+    parser.add_argument('--poll-id', help='Specific poll ID to process')
+    parser.add_argument('--dry-run', action='store_true', help='Show calculations without modifying data')
+    args = parser.parse_args()
+    
+    main(poll_id=args.poll_id, dry_run=args.dry_run)
