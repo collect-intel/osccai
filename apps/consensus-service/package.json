@@ -8,7 +8,8 @@
     "gac:local:dry": "dotenv -e .env.local -- python api/update_gac_scores.py --dry-run",
     "gac:local:poll:dry": "dotenv -e .env.local -- python api/update_gac_scores.py --dry-run --poll-id",
     "gac:prod:poll:dry": "dotenv -e .env -- python api/update_gac_scores.py --dry-run --poll-id",
-    "build": "echo 'Starting build process from package.json' && pip install -r api/requirements.txt --target ./python_packages && echo 'Requirements installed'"
+    "build": "echo 'Starting build process from package.json' && pip install -r api/requirements.txt --target ./python_packages && echo 'Requirements installed'",
+    "test": "pytest tests/"
   },
   "devDependencies": {
     "dotenv-cli": "^7.4.2"

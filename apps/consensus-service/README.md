@@ -73,3 +73,11 @@ pnpm consensus-service build
 ```
 DATABASE_URL=your_local_database_url
 ```
+
+## Testing
+
+Tests use `pytest` to verify GAC score calculations. Run tests with:
+
+```bash
+pnpm run test
+```
