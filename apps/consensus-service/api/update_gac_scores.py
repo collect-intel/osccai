@@ -338,24 +338,48 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
 
 def perform_pca(data, n_components):
     """
-    Perform PCA using numpy.
+    Perform PCA using numpy, with handling for edge cases.
     """
     logger.info("Performing PCA")
+    
+    # If data is too small or lacks variance, return original data
+    if data.shape[1] <= n_components or np.allclose(data, data[0]):
+        logger.info("Data lacks sufficient variance for PCA, using original data")
+        return data
+    
     # Center the data
-    data_meaned = data - np.mean(data , axis = 0)
+    data_meaned = data - np.mean(data, axis=0)
+    
     # Compute covariance matrix
-    cov_mat = np.cov(data_meaned , rowvar = False)
+    cov_mat = np.cov(data_meaned, rowvar=False)
+    
+    # Handle case where covariance matrix is scalar or 1D
+    if not isinstance(cov_mat, np.ndarray) or cov_mat.ndim < 2:
+        logger.info("Insufficient variance in data for PCA, using original data")
+        return data
+    
     # Compute eigenvalues and eigenvectors
-    eigen_values , eigen_vectors = np.linalg.eigh(cov_mat)
-    # Sort eigenvalues and eigenvectors
-    sorted_index = np.argsort(eigen_values)[::-1]
-    sorted_eigenvalues = eigen_values[sorted_index]
-    sorted_eigenvectors = eigen_vectors[:,sorted_index]
-    # Select the first n_components eigenvectors
-    eigenvector_subset = sorted_eigenvectors[:,0:n_components]
-    # Transform the data
-    data_reduced = np.dot(eigenvector_subset.transpose(), data_meaned.transpose()).transpose()
-    return data_reduced
+    try:
+        eigen_values, eigen_vectors = np.linalg.eigh(cov_mat)
+        # Sort eigenvalues and eigenvectors
+        sorted_index = np.argsort(eigen_values)[::-1]
+        sorted_eigenvalues = eigen_values[sorted_index]
+        sorted_eigenvectors = eigen_vectors[:,sorted_index]
+        
+        # Check if we have enough meaningful components
+        meaningful_components = np.sum(sorted_eigenvalues > 1e-10)
+        if meaningful_components < n_components:
+            logger.info(f"Only {meaningful_components} meaningful components found, adjusting dimensionality")
+            n_components = max(1, meaningful_components)
+        
+        # Select components and transform
+        eigenvector_subset = sorted_eigenvectors[:,0:n_components]
+        data_reduced = np.dot(eigenvector_subset.transpose(), data_meaned.transpose()).transpose()
+        return data_reduced
+        
+    except np.linalg.LinAlgError:
+        logger.info("Linear algebra error in PCA, using original data")
+        return data
 
 def perform_kmeans(data, k, max_iterations=100):
     """
@@ -412,36 +436,59 @@ def perform_clustering(imputed_vote_matrix):
         cluster_labels = [0]
         return np.array(cluster_labels)
     
-    # Fill NA values - with future-proof behavior
-    data = imputed_vote_matrix.fillna(0).values
+    # Convert to numpy array and ensure float type with no missing values
+    try:
+        data = imputed_vote_matrix.fillna(0).astype(float).values
+        logger.info("Successfully converted vote matrix to numerical format")
+    except Exception as e:
+        logger.error(f"Error converting vote matrix: {e}")
+        # Fallback to single cluster if conversion fails
+        return np.zeros(n_participants)
     
     # Determine the maximum number of PCA components
     max_components = min(n_participants, n_statements)
     optimal_components = min(2, max_components)
     logger.info(f"Using {optimal_components} PCA components")
     
-    principal_components = perform_pca(data, optimal_components)
+    try:
+        principal_components = perform_pca(data, optimal_components)
+        logger.info("PCA completed successfully")
+    except Exception as e:
+        logger.error(f"PCA failed: {e}")
+        # Fallback to original data if PCA fails
+        principal_components = data
     
-    # Determine optimal number of clusters using silhouette score
-    silhouette_scores = []
+    # Determine optimal number of clusters
     max_k = min(5, n_participants)
-    K = range(2, max_k+1)
-    best_k = 2
-    best_score = -1
+    best_k = 2  # Default to 2 clusters if optimization fails
     
-    for k in K:
-        labels = perform_kmeans(principal_components, k)
-        score = compute_silhouette_score(principal_components, labels)
-        silhouette_scores.append(score)
-        logger.info(f"Silhouette Score for k={k}: {score}")
-        if score > best_score:
-            best_score = score
-            best_k = k
+    try:
+        silhouette_scores = []
+        K = range(2, max_k+1)
+        best_score = -1
+        
+        for k in K:
+            labels = perform_kmeans(principal_components, k)
+            score = compute_silhouette_score(principal_components, labels)
+            silhouette_scores.append(score)
+            logger.info(f"Silhouette Score for k={k}: {score}")
+            if score > best_score:
+                best_score = score
+                best_k = k
+        
+        logger.info(f"Optimal number of clusters determined to be {best_k}")
+    except Exception as e:
+        logger.error(f"Cluster optimization failed: {e}")
+        # Keep default best_k value
     
-    logger.info(f"Optimal number of clusters determined to be {best_k}")
-    
-    # Perform final KMeans clustering with optimal k
-    cluster_labels = perform_kmeans(principal_components, best_k)
+    # Perform final clustering
+    try:
+        cluster_labels = perform_kmeans(principal_components, best_k)
+        logger.info("Final clustering completed successfully")
+    except Exception as e:
+        logger.error(f"Final clustering failed: {e}")
+        # Fallback to basic clustering
+        cluster_labels = np.zeros(n_participants)
     
     return cluster_labels
 
