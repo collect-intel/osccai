@@ -23,23 +23,23 @@ The `update_gac_scores.py` script calculates GAC scores for statements based on 
 
 ### Available Commands
 
-Run these commands from the project root using `pnpm`:
+Run these commands from the project root:
 
 ```bash
-# Run GAC updates on local DB (modifies data)
+# Run GAC updates on all polls in local DB (modifies data)
 pnpm consensus-service gac:local
 
 # Run GAC updates on a specific poll in local DB (modifies data)
-POLL_ID=your-poll-id pnpm consensus-service gac:local:poll
+pnpm consensus-service gac:local:poll "your-poll-id"
 
 # Show GAC calculations for local DB without modifying data
 pnpm consensus-service gac:local:dry
 
 # Show GAC calculations for specific poll in local DB (no data changes)
-POLL_ID=your-poll-id pnpm consensus-service gac:local:poll:dry
+pnpm consensus-service gac:local:poll:dry "your-poll-id"
 
 # Show GAC calculations for specific poll in prod DB (no data changes)
-POLL_ID=your-poll-id pnpm consensus-service gac:prod:poll:dry
+pnpm consensus-service gac:prod:poll:dry "your-poll-id"
 ```
 
 ### Production Deployment
