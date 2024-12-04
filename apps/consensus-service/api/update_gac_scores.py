@@ -84,7 +84,7 @@ def create_connection():
 def verify_poll_exists(cursor, poll_id):
     """Verify if a poll exists and is valid for processing."""
     cursor.execute(
-        'SELECT "uid", "published", "deleted" FROM "Poll" WHERE "uid" = %s',
+        'SELECT "uid", "deleted" FROM "Poll" WHERE "uid" = %s',
         (poll_id,)
     )
     result = cursor.fetchone()
@@ -92,11 +92,9 @@ def verify_poll_exists(cursor, poll_id):
     if not result:
         raise ValueError(f"Poll with ID {poll_id} not found")
     
-    poll_data = dict(zip(['uid', 'published', 'deleted'], result))
+    poll_data = dict(zip(['uid', 'deleted'], result))
     if poll_data['deleted']:
         raise ValueError(f"Poll {poll_id} has been deleted")
-    if not poll_data['published']:
-        raise ValueError(f"Poll {poll_id} is not published")
     
     return True
 
