@@ -383,22 +383,61 @@ def perform_pca(data, n_components):
 
 def perform_kmeans(data, k, max_iterations=100):
     """
-    Perform KMeans clustering using numpy.
+    Perform KMeans clustering using numpy with improved stability.
     """
     logger.info(f"Performing KMeans clustering with k={k}")
-    # Randomly initialize centroids
-    centroids = data[np.random.choice(data.shape[0], k, replace=False)]
-    for i in range(max_iterations):
-        # Calculate distances and assign clusters
-        distances = np.linalg.norm(data[:, np.newaxis] - centroids, axis=2)
-        labels = np.argmin(distances, axis=1)
-        # Update centroids
-        new_centroids = np.array([data[labels == j].mean(axis=0) for j in range(k)])
-        # Check for convergence
-        if np.allclose(centroids, new_centroids, atol=1e-6):
-            break
-        centroids = new_centroids
-    return labels
+    
+    n_samples = data.shape[0]
+    
+    # Handle edge cases
+    if n_samples < k:
+        logger.info(f"Too few samples ({n_samples}) for {k} clusters, adjusting k")
+        k = max(2, n_samples)
+    
+    try:
+        # Initialize centroids using better sampling
+        centroid_indices = np.random.choice(n_samples, k, replace=False)
+        centroids = data[centroid_indices]
+        
+        # Handle case where initial centroids are identical
+        if np.allclose(centroids, centroids[0]):
+            logger.info("Initial centroids are identical, adding small random noise")
+            centroids += np.random.normal(0, 1e-4, centroids.shape)
+        
+        prev_labels = None
+        
+        for iteration in range(max_iterations):
+            # Calculate distances with numerical stability
+            distances = np.zeros((n_samples, k))
+            for i in range(k):
+                distances[:, i] = np.sum(np.square(data - centroids[i]), axis=1)
+            
+            # Assign clusters
+            labels = np.argmin(distances, axis=1)
+            
+            # Check for convergence
+            if prev_labels is not None and np.array_equal(labels, prev_labels):
+                logger.info(f"KMeans converged after {iteration + 1} iterations")
+                break
+                
+            prev_labels = labels.copy()
+            
+            # Update centroids with handling for empty clusters
+            for i in range(k):
+                cluster_points = data[labels == i]
+                if len(cluster_points) > 0:
+                    centroids[i] = cluster_points.mean(axis=0)
+                else:
+                    # If cluster is empty, reinitialize its centroid
+                    logger.info(f"Reinitializing empty cluster {i}")
+                    centroids[i] = data[np.random.choice(n_samples)]
+        
+        return labels
+        
+    except Exception as e:
+        logger.error(f"KMeans clustering failed: {e}")
+        # Fallback to single cluster
+        return np.zeros(n_samples)
 
 def compute_silhouette_score(data, labels):
     """
