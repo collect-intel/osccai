@@ -287,6 +287,14 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
     Participants with similar voting patterns are used to estimate missing votes.
     """
     logger.info("Imputing missing votes using Jaccard Similarity")
+    
+    # Handle single participant case
+    if len(vote_matrix.index) == 1:
+        logger.info("Single participant detected, using simple imputation")
+        imputed_matrix = vote_matrix.copy()
+        # For single participant, impute missing votes with PASS (0)
+        imputed_matrix = imputed_matrix.fillna(0)
+        return imputed_matrix
 
     # Binarize votes for Jaccard similarity
     binary_matrix = vote_matrix.copy()
@@ -294,8 +302,8 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
     binary_matrix[binary_matrix == -1] = 0
     binary_matrix[binary_matrix != 0] = 0  # Treat 'PASS' and None as 0
 
-    # Fill NA values - with future-proof behavior
-    filled_binary_matrix = binary_matrix.fillna(0)
+    # Convert to float type before calculations
+    filled_binary_matrix = binary_matrix.fillna(0).astype(float)
     
     # Calculate Jaccard similarity between participants
     similarity_matrix = filled_binary_matrix.dot(filled_binary_matrix.T)
