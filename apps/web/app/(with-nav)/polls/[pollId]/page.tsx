@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import PollPage from "./PollPage";
 import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
-import { isPollOwner, fetchUserVotes } from "@/lib/actions";
 
 export default function PollPageWrapper({
   params,
@@ -13,41 +12,65 @@ export default function PollPageWrapper({
   const [poll, setPoll] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userVotes, setUserVotes] = useState<Record<string, any>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       const anonymousId = getAnonymousId();
 
-      const res = await fetch(`/api/polls/${params.pollId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ anonymousId }),
-      });
+      try {
+        const res = await fetch(`/api/polls/${params.pollId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ anonymousId }),
+        });
 
-      console.log("RES", res);
+        const text = await res.text();
+        const data = JSON.parse(text);
 
-      const text = await res.text();
-      const data = JSON.parse(text);
-
-      if (res.ok) {
-        setPoll(data.poll);
-        setIsLoggedIn(data.isLoggedIn);
-        setUserVotes(data.userVotes);
-      } else {
-        console.error("Error fetching poll data:", data.error);
+        if (res.ok) {
+          setPoll(data.poll);
+          setIsLoggedIn(data.isLoggedIn);
+          setUserVotes(data.userVotes);
+        } else {
+          setError(data.error || "Poll not found");
+        }
+      } catch (err) {
+        setError("Unable to load poll");
       }
     };
 
     fetchData();
   }, [params.pollId]);
 
+  if (error) {
+    return (
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="bg-white rounded-md shadow-md p-4 sm:p-8 max-w-4xl mx-auto text-center">
+          <h1 className="text-2xl font-semibold text-charcoal mb-4">Poll Not Found</h1>
+          <p className="text-medium-gray mb-6">
+            {error === "Poll not found" 
+              ? "This poll doesn't exist or may have been deleted."
+              : "There was a problem loading this poll."}
+          </p>
+          <a 
+            href="/"
+            className="inline-block text-sm text-teal hover:text-teal-700 transition-colors"
+          >
+            Go to Community Models homepage
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (!poll) {
     // Loading skeleton state
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-md shadow-md p-8 max-w-4xl mx-auto">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="bg-white rounded-md shadow-md p-4 sm:p-8 max-w-4xl mx-auto">
           <div className="animate-pulse">
             {/* Title skeleton */}
             <div className="h-8 bg-light-gray rounded-md w-2/3 mb-8"></div>
