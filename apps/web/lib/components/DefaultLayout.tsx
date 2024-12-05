@@ -11,5 +11,5 @@ export default function DefaultLayout({
     return children;
   }
 
-  return <div className="w-full max-w-6xl mt-10 mx-auto px-4">{children}</div>;
+  return <div className="w-full max-w-6xl mt-10 mx-auto px-2">{children}</div>;
 }
