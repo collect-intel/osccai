@@ -25,6 +25,7 @@ interface ChatState {
 interface ConstitutionalAIChatProps {
   chatId: string;
   modelId: string;
+  model?: string | string[];
   constitution: {
     text: string;
     icon?: React.ReactNode;
@@ -45,6 +46,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
   ({
     chatId,
     modelId,
+    model,
     constitution,
     customStyles = {},
     onInputChange,
@@ -91,7 +93,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
       return await xmllm(({ prompt }: { prompt: any }) => {
         return [
           prompt({
-            model: ["claude:good", "openai:good", "claude:fast", "openai:fast"],
+            model: model || ["claude:good", "openai:good", "claude:fast", "openai:fast"],
             messages: convertedMessages,
             schema: {
               thinking: String,
