@@ -444,7 +444,6 @@ def compute_silhouette_score(data, labels):
     Compute silhouette score manually.
     """
     logger.info("Computing silhouette score")
-    from collections import defaultdict
     a = np.zeros(data.shape[0])
     b = np.zeros(data.shape[0])
     clusters = np.unique(labels)
@@ -453,10 +452,14 @@ def compute_silhouette_score(data, labels):
         other_clusters = data[labels != labels[i]]
         a[i] = np.mean(np.linalg.norm(same_cluster - data[i], axis=1))
         if len(other_clusters) > 0:
-            b[i] = np.min([np.mean(np.linalg.norm(data[labels == label] - data[i], axis=1)) for label in clusters if label != labels[i]])
+            b[i] = np.min([
+                np.mean(np.linalg.norm(data[labels == label] - data[i], axis=1))
+                for label in clusters if label != labels[i]
+            ])
         else:
             b[i] = 0
-    s = (b - a) / np.maximum(a, b)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        s = (b - a) / np.maximum(a, b)
     s = np.nan_to_num(s)  # Handle division by zero
     return np.mean(s)
 
