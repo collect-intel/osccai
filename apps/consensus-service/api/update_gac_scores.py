@@ -477,10 +477,10 @@ def perform_clustering(imputed_vote_matrix):
     n_participants, n_statements = imputed_vote_matrix.shape
     logger.info(f"Vote matrix has {n_participants} participants and {n_statements} statements")
     
-    if n_participants == 1:
-        # Only one participant, assign to a single cluster
-        cluster_labels = [0]
-        return np.array(cluster_labels)
+    # Special case: 5 or fewer participants get a single cluster
+    if n_participants <= 5:
+        logger.info("Small group detected, using single cluster")
+        return np.zeros(n_participants)
     
     # Convert to numpy array and ensure float type with no missing values
     try:
