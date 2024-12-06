@@ -7,6 +7,7 @@ from api.update_gac_scores import (
     impute_missing_votes,
     perform_clustering,
     calculate_gac_scores,
+    is_constitutionable
 )
 
 def test_single_participant_agree():
@@ -21,7 +22,7 @@ def test_single_participant_agree():
     gac_scores = calculate_gac_scores(imputed_matrix, clusters)
     
     # Statement should be constitutionable
-    assert gac_scores['statement1'] >= 0.66
+    assert is_constitutionable(gac_scores['statement1'])
 
 def test_single_participant_disagree():
     # Scenario: Single participant disagrees on a statement
@@ -35,7 +36,7 @@ def test_single_participant_disagree():
     gac_scores = calculate_gac_scores(imputed_matrix, clusters)
     
     # Statement should not be constitutionable
-    assert gac_scores['statement1'] < 0.66
+    assert not is_constitutionable(gac_scores['statement1'])
 
 def test_all_agree():
     # Scenario: All participants agree on a statement
@@ -52,7 +53,7 @@ def test_all_agree():
     gac_scores = calculate_gac_scores(imputed_matrix, clusters)
     
     # Statement should be constitutionable
-    assert gac_scores['statement1'] >= 0.66
+    assert is_constitutionable(gac_scores['statement1'])
 
 def test_most_agree_one_no_vote():
     # Scenario: Most participants agree, one participant did not vote
@@ -70,7 +71,7 @@ def test_most_agree_one_no_vote():
     gac_scores = calculate_gac_scores(imputed_matrix, clusters)
     
     # Statement should be constitutionable
-    assert gac_scores['statement1'] >= 0.66
+    assert is_constitutionable(gac_scores['statement1'])
 
 def test_two_clusters_agree():
     # Scenario: Two clusters; both agree on a statement
@@ -101,7 +102,7 @@ def test_two_clusters_agree():
     gac_scores = calculate_gac_scores(imputed_matrix, clusters)
     
     # Statement1 should be constitutionable
-    assert gac_scores['statement1'] >= 0.66
+    assert is_constitutionable(gac_scores['statement1'])
 
 def test_one_cluster_agree_other_disagree():
     # Scenario: Two clusters; one agrees, one disagrees on a statement
@@ -133,7 +134,7 @@ def test_one_cluster_agree_other_disagree():
     gac_scores = calculate_gac_scores(imputed_matrix, clusters)
     
     # Statement1 should not be constitutionable
-    assert gac_scores['statement1'] < 0.66
+    assert not is_constitutionable(gac_scores['statement1'])
 
 def test_no_votes():
     # Scenario: Statement with no votes

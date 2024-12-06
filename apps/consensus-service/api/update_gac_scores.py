@@ -161,7 +161,7 @@ def main(poll_id=None, dry_run=False):
                         statement_id = statement['uid']
                         if statement_id in gac_scores:
                             gac_score = gac_scores[statement_id]
-                            is_constitutionable = gac_score >= 0.66
+                            is_constitutionable = is_constitutionable(gac_score)
                             logger.info(f"[DRY RUN] Would update statement {statement_id}:")
                             logger.info(f"  - GAC Score: {gac_score}")
                             logger.info(f"  - Is Constitutionable: {is_constitutionable}")
@@ -589,7 +589,7 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
         if statement_id in statements_with_votes:
             if statement_id in gac_scores:
                 gac_score = gac_scores[statement_id]
-                is_constitutionable = gac_score >= 0.66
+                is_constitutionable = is_constitutionable(gac_score)
                 cursor.execute("""
                     UPDATE "Statement"
                     SET "gacScore" = %s,
@@ -607,6 +607,17 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                 WHERE uid = %s;
             """, (statement_id,))
     conn.commit()
+
+def is_constitutionable(gac_score, threshold=0.66):
+    """
+    Determine if a statement is constitutionable based on its GAC score.
+    Args:
+        gac_score (float): The GAC score of the statement.
+        threshold (float): The threshold above which a statement is considered constitutionable.
+    Returns:
+        bool: True if the statement is constitutionable, False otherwise.
+    """
+    return gac_score >= threshold
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Update GAC scores for statements')
