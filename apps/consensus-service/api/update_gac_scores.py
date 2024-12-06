@@ -9,6 +9,7 @@ import pg8000
 from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
+import math
 
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
@@ -286,8 +287,11 @@ def impute_missing_votes(vote_matrix, n_neighbors=5):
     """
     logger.info("Imputing missing votes using Jaccard Similarity")
     
+    n_participants = len(vote_matrix.index)
+    n_neighbors = min(n_neighbors, n_participants - 1)
+    
     # Handle single participant case
-    if len(vote_matrix.index) == 1:
+    if n_participants == 1:
         logger.info("Single participant detected, using simple imputation")
         imputed_matrix = vote_matrix.copy()
         # For single participant, impute missing votes with PASS (0)
@@ -500,29 +504,30 @@ def perform_clustering(imputed_vote_matrix):
         # Fallback to original data if PCA fails
         principal_components = data
     
-    # Determine optimal number of clusters
-    max_k = min(5, n_participants)
+    # Limit K
+    max_k = min(5, n_participants // 2)
+    max_k = max(2, max_k)  # Ensure max_k is at least 2
+
     best_k = 2  # Default to 2 clusters if optimization fails
-    
+
     try:
         silhouette_scores = []
-        K = range(2, max_k+1)
+        K = range(2, max_k + 1)
         best_score = -1
-        
+
         for k in K:
             labels = perform_kmeans(principal_components, k)
             score = compute_silhouette_score(principal_components, labels)
-            silhouette_scores.append(score)
             logger.info(f"Silhouette Score for k={k}: {score}")
             if score > best_score:
                 best_score = score
                 best_k = k
-        
+
         logger.info(f"Optimal number of clusters determined to be {best_k}")
     except Exception as e:
         logger.error(f"Cluster optimization failed: {e}")
         # Keep default best_k value
-    
+
     # Perform final clustering
     try:
         cluster_labels = perform_kmeans(principal_components, best_k)
@@ -531,7 +536,7 @@ def perform_clustering(imputed_vote_matrix):
         logger.error(f"Final clustering failed: {e}")
         # Fallback to basic clustering
         cluster_labels = np.zeros(n_participants)
-    
+
     return cluster_labels
 
 def calculate_gac_scores(imputed_vote_matrix, clusters):
@@ -569,10 +574,17 @@ def calculate_gac_scores(imputed_vote_matrix, clusters):
                 sum_agrees = np.sum(relevant_votes > 0)
                 sum_abs_votes = np.sum(np.abs(relevant_votes))
 
+                group_size = len(cluster_votes)
+                # Compute pseudocount as a function of group size
+                if group_size <= 1:
+                    pseudocount = 0.1  # Small positive value to avoid division by zero
+                else:
+                    pseudocount = 0.5 * math.log10(group_size)
+
                 if sum_abs_votes == 0:
                     p_agree = 0.5  # Neutral if no votes
                 else:
-                    p_agree = (1 + sum_agrees) / (2 + sum_abs_votes)
+                    p_agree = (pseudocount + sum_agrees) / (2 * pseudocount + sum_abs_votes)
 
                 gac *= p_agree
 
