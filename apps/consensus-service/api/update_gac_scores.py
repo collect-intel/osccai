@@ -547,8 +547,6 @@ def is_constitutionable(gac_data, n_participants=None):
     if n_participants is None:
         n_participants = n_votes
     
-    # Minimum vote requirement
-    min_votes = max(3, int(np.sqrt(n_participants)))
     
     # Threshold scales up for small groups but caps at 0.85
     threshold = min(0.85, 0.66 * (1 + 2/np.log2(2 + n_participants)))
