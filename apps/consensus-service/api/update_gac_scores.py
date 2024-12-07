@@ -14,7 +14,7 @@ import math
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
 
-VERSION = "1.0.2"  # Update this when making changes
+VERSION = "1.1.0"  # Update this when making changes
 
 def setup_logging():
     # Configure logging to output to stdout
@@ -267,6 +267,62 @@ def generate_vote_matrix(statements, votes, participants):
     
     return vote_df
 
+def calculate_jaccard_similarity(matrix):
+    """Calculate pairwise Jaccard similarities between participants."""
+    n_participants = len(matrix)
+    similarity_matrix = np.zeros((n_participants, n_participants))
+    
+    for i in range(n_participants):
+        for j in range(i, n_participants):
+            # Convert to boolean arrays for intersection/union
+            a = matrix.iloc[i].values != 0
+            b = matrix.iloc[j].values != 0
+            
+            intersection = np.sum(a & b)
+            union = np.sum(a | b)
+            
+            # Handle edge case of empty union
+            similarity = intersection / union if union > 0 else 0
+            
+            similarity_matrix[i, j] = similarity
+            similarity_matrix[j, i] = similarity  # Matrix is symmetric
+    
+    return similarity_matrix
+
+def jaccard_impute(vote_matrix, n_neighbors):
+    # Binarize the vote matrix for Jaccard similarity calculation
+    binary_matrix = vote_matrix.map(lambda x: 1 if x == 1 else (0 if x == -1 else np.nan))
+    binary_matrix = binary_matrix.fillna(0)
+
+    # Calculate Jaccard similarity between participants
+    similarity_matrix = calculate_jaccard_similarity(binary_matrix)
+    np.fill_diagonal(similarity_matrix, 1)
+
+    # Convert the similarity matrix to a DataFrame for easier indexing
+    similarity_df = pd.DataFrame(similarity_matrix, index=vote_matrix.index, columns=vote_matrix.index)
+
+    # Impute missing votes
+    imputed_matrix = vote_matrix.copy()
+    for participant in vote_matrix.index:
+        missing_statements = vote_matrix.columns[imputed_matrix.loc[participant].isna()]
+        for statement in missing_statements:
+            # Find similar participants who have voted on this statement
+            similar_participants = similarity_df[participant].drop(participant).nlargest(n_neighbors).index
+            similar_votes = vote_matrix.loc[similar_participants, statement].dropna()
+            if not similar_votes.empty:
+                # Use weighted average of similar participants' votes
+                weights = similarity_df.loc[similar_votes.index, participant]
+                if weights.sum() == 0:
+                    continue  # Avoid division by zero
+                weighted_vote = np.average(similar_votes, weights=weights)
+                # Round to nearest integer (-1, 0, 1)
+                imputed_vote = int(round(weighted_vote))
+                imputed_matrix.at[participant, statement] = imputed_vote
+            else:
+                # Default to 'PASS' if no similar votes found
+                imputed_matrix.at[participant, statement] = 0
+    return imputed_matrix
+
 def impute_missing_votes(vote_matrix):
     """
     Impute missing votes with adaptive neighbor selection.
@@ -500,7 +556,8 @@ def calculate_gac_scores(vote_matrix, clusters):
             
         gac_scores[statement] = {
             'score': gac,
-            'n_votes': total_votes
+            'n_votes': total_votes,
+            'n_participants': n_participants
         }
         
     return gac_scores
@@ -533,18 +590,20 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
             """, (statement_id,))
     conn.commit()
 
-def is_constitutionable(gac_data, n_participants=None):
+def is_constitutionable(gac_data):
     """
     Determine if a statement is constitutionable with adaptive thresholds.
     """
     if isinstance(gac_data, dict):
         gac_score = gac_data['score']
+        n_participants = gac_data['n_participants']
     else:
-        gac_score = gac_data
+        raise ValueError("GAC data must be a dictionary containing 'score' and 'n_participants'")
     
     base_threshold = 0.66
     
     # Threshold scales up for small groups but caps at 0.85
+#    threshold = base_threshold
     threshold = min(0.85, base_threshold * (1 + 2/np.log2(2 + n_participants)))
     
     logger.debug(f"Constitutionable check: score={gac_score:.3f}, threshold={threshold:.3f}")

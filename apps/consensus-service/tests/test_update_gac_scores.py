@@ -828,4 +828,17 @@ def test_six_participants_mixed_votes():
     # Validate mixed vote cases
     for i in range(6, 17):
         assert not is_constitutionable(gac_scores[f's{i}'])
+
+def test_is_constitutionable_input():
+    # Test that is_constitutionable requires proper dictionary input
+    with pytest.raises(ValueError):
+        is_constitutionable(0.5)  # Should raise error for non-dict input
+        
+    # Test with proper dictionary input
+    gac_data = {
+        'score': 0.9,
+        'n_votes': 5,
+        'n_participants': 5
+    }
+    assert is_constitutionable(gac_data)  # Should work with proper dict
     
