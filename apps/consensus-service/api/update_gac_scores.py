@@ -539,22 +539,17 @@ def is_constitutionable(gac_data, n_participants=None):
     """
     if isinstance(gac_data, dict):
         gac_score = gac_data['score']
-        n_votes = gac_data['n_votes']
     else:
         gac_score = gac_data
-        n_votes = n_participants  # Fallback for backward compatibility
-        
-    if n_participants is None:
-        n_participants = n_votes
     
+    base_threshold = 0.66
     
     # Threshold scales up for small groups but caps at 0.85
-    threshold = min(0.85, 0.66 * (1 + 2/np.log2(2 + n_participants)))
+    threshold = min(0.85, base_threshold * (1 + 2/np.log2(2 + n_participants)))
     
-    logger.debug(f"Constitutionable check: score={gac_score:.3f}, votes={n_votes}, " +
-                f"min_votes={min_votes}, threshold={threshold:.3f}")
+    logger.debug(f"Constitutionable check: score={gac_score:.3f}, threshold={threshold:.3f}")
     
-    return n_votes >= min_votes and gac_score >= threshold
+    return gac_score >= threshold
 
 def process_votes(participants, statements, votes):
     """
