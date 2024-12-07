@@ -137,20 +137,7 @@ def main(poll_id=None, dry_run=False):
                     logger.warning(f"Insufficient data for poll ID: {poll_id}, skipping.")
                     continue
 
-                vote_matrix = generate_vote_matrix(statements, votes, participants)
-                logger.info(f"Generated vote matrix for poll ID: {poll_id}")
-
-                if vote_matrix is None or vote_matrix.empty:
-                    logger.warning(f"Empty vote matrix for poll ID: {poll_id}, skipping.")
-                    continue
-
-                imputed_vote_matrix = impute_missing_votes(vote_matrix)
-                logger.info(f"Imputed missing votes for poll ID: {poll_id}")
-
-                clusters = perform_clustering(imputed_vote_matrix)
-                logger.info(f"Performed clustering for poll ID: {poll_id}")
-
-                gac_scores = calculate_gac_scores(imputed_vote_matrix, clusters)
+                gac_scores = process_votes(participants, statements, votes)
                 logger.info(f"Calculated GAC scores for poll ID: {poll_id}")
 
                 if not dry_run:
@@ -280,65 +267,29 @@ def generate_vote_matrix(statements, votes, participants):
     
     return vote_df
 
-def impute_missing_votes(vote_matrix, n_neighbors=5):
+def impute_missing_votes(vote_matrix):
     """
-    Impute missing votes using Jaccard Similarity.
-    Participants with similar voting patterns are used to estimate missing votes.
+    Impute missing votes with adaptive neighbor selection.
     """
-    logger.info("Imputing missing votes using Jaccard Similarity")
+    n_participants = len(vote_matrix)
+    logger.info(f"Imputing missing votes for {n_participants} participants")
     
-    n_participants = len(vote_matrix.index)
-    n_neighbors = min(n_neighbors, n_participants - 1)
+    if n_participants < 4:
+        logger.info("Small group detected, using simple mean imputation")
+        return vote_matrix.fillna(0)
     
-    # Handle single participant case
-    if n_participants == 1:
-        logger.info("Single participant detected, using simple imputation")
-        imputed_matrix = vote_matrix.copy()
-        # For single participant, impute missing votes with PASS (0)
-        imputed_matrix = imputed_matrix.fillna(0)
-        return imputed_matrix
-
-    # Binarize votes for Jaccard similarity
-    binary_matrix = vote_matrix.copy()
-    binary_matrix[binary_matrix == 1] = 1
-    binary_matrix[binary_matrix == -1] = 0
-    binary_matrix[binary_matrix != 0] = 0  # Treat 'PASS' and None as 0
-
-    # Convert to float type before calculations
-    filled_binary_matrix = binary_matrix.fillna(0).astype(float)
+    # Adaptive number of neighbors
+    n_neighbors = min(5, max(2, int(np.log2(n_participants))))
+    logger.info(f"Using {n_neighbors} neighbors for imputation")
     
-    # Calculate Jaccard similarity between participants
-    similarity_matrix = filled_binary_matrix.dot(filled_binary_matrix.T)
-    norm = np.array([np.sqrt(np.diagonal(similarity_matrix))])
-    similarity_matrix = similarity_matrix / (norm.T * norm)
-
-    # Impute missing votes
-    imputed_matrix = vote_matrix.copy()
-
-    for participant in vote_matrix.index:
-        for statement in vote_matrix.columns:
-            if pd.isna(vote_matrix.at[participant, statement]):
-                # Find top n_neighbors similar participants who have voted on this statement
-                similar_participants = similarity_matrix.loc[participant].dropna().sort_values(ascending=False).index
-                votes = []
-                weights = []
-                for similar in similar_participants:
-                    vote = vote_matrix.at[similar, statement]
-                    if not pd.isna(vote):
-                        votes.append(vote)
-                        weights.append(similarity_matrix.at[participant, similar])
-                    if len(votes) >= n_neighbors:
-                        break
-                if votes:
-                    # Weighted average
-                    weighted_avg = np.average(votes, weights=weights)
-                    # Round to nearest integer (-1, 0, 1)
-                    imputed_vote = int(round(weighted_avg))
-                    imputed_matrix.at[participant, statement] = imputed_vote
-                else:
-                    # Default to 'PASS' if no similar votes found
-                    imputed_matrix.at[participant, statement] = 0
-    return imputed_matrix
+    try:
+        imputed = jaccard_impute(vote_matrix, n_neighbors)
+        logger.info("Successfully imputed missing votes")
+        return imputed
+    except Exception as e:
+        logger.error(f"Imputation failed: {e}")
+        logger.info("Falling back to simple imputation")
+        return vote_matrix.fillna(0)
 
 def perform_pca(data, n_components):
     """
@@ -467,129 +418,91 @@ def compute_silhouette_score(data, labels):
     s = np.nan_to_num(s)  # Handle division by zero
     return np.mean(s)
 
-def perform_clustering(imputed_vote_matrix):
+def perform_clustering(vote_matrix):
     """
-    Perform PCA and K-means clustering on the imputed vote matrix.
-    Returns cluster labels.
+    Perform clustering with adaptive scaling based on group size.
     """
-    logger.info("Performing PCA and K-means clustering")
+    # Convert to numpy array for calculations
+    data = vote_matrix.values
+    n_participants = len(data)
     
-    n_participants, n_statements = imputed_vote_matrix.shape
-    logger.info(f"Vote matrix has {n_participants} participants and {n_statements} statements")
+    logger.info(f"Starting clustering with {n_participants} participants")
     
-    # Special case: 5 or fewer participants get a single cluster
-    if n_participants <= 5:
-        logger.info("Small group detected, using single cluster")
+    # Single cluster for very small groups 
+    if n_participants < 4:
+        logger.info("Group too small for clustering, using single cluster")
         return np.zeros(n_participants)
+        
+    # Determine max clusters based on group size
+    max_k = min(5, max(2, int(np.sqrt(n_participants/4))))
+    logger.info(f"Maximum clusters set to {max_k}")
     
-    # Convert to numpy array and ensure float type with no missing values
-    try:
-        data = imputed_vote_matrix.fillna(0).astype(float).values
-        logger.info("Successfully converted vote matrix to numerical format")
-    except Exception as e:
-        logger.error(f"Error converting vote matrix: {e}")
-        # Fallback to single cluster if conversion fails
-        return np.zeros(n_participants)
-    
-    # Determine the maximum number of PCA components
-    max_components = min(n_participants, n_statements)
-    optimal_components = min(2, max_components)
-    logger.info(f"Using {optimal_components} PCA components")
-    
-    try:
-        principal_components = perform_pca(data, optimal_components)
-        logger.info("PCA completed successfully")
-    except Exception as e:
-        logger.error(f"PCA failed: {e}")
-        # Fallback to original data if PCA fails
-        principal_components = data
-    
-    # Limit K
-    max_k = min(5, n_participants // 2)
-    max_k = max(2, max_k)  # Ensure max_k is at least 2
-
-    best_k = 2  # Default to 2 clusters if optimization fails
-
-    try:
-        silhouette_scores = []
-        K = range(2, max_k + 1)
-        best_score = -1
-
-        for k in K:
-            labels = perform_kmeans(principal_components, k)
-            score = compute_silhouette_score(principal_components, labels)
-            logger.info(f"Silhouette Score for k={k}: {score}")
-            if score > best_score:
-                best_score = score
-                best_k = k
-
-        logger.info(f"Optimal number of clusters determined to be {best_k}")
-    except Exception as e:
-        logger.error(f"Cluster optimization failed: {e}")
-        # Keep default best_k value
-
-    # Perform final clustering
-    try:
-        cluster_labels = perform_kmeans(principal_components, best_k)
-        logger.info("Final clustering completed successfully")
-    except Exception as e:
-        logger.error(f"Final clustering failed: {e}")
-        # Fallback to basic clustering
-        cluster_labels = np.zeros(n_participants)
-
-    return cluster_labels
-
-def calculate_gac_scores(imputed_vote_matrix, clusters):
-    """
-    Calculate Group-Aware Consensus (GAC) scores for each statement.
-    """
-    logger.info("Calculating GAC scores")
-
-    gac_scores = {}
-    unique_clusters = np.unique(clusters)
-    n_participants = imputed_vote_matrix.shape[0]
-
-    for statement in imputed_vote_matrix.columns:
-        statement_votes = imputed_vote_matrix[statement].values
-
-        if n_participants == 1:
-            # Only one participant
-            vote = statement_votes[0]
-            if vote == 1:
-                gac = 1.0
-            elif vote == -1:
-                gac = 0.0
-            elif vote == 0:
-                gac = 0.5
+    # Try clustering with decreasing k until valid clusters found
+    for k in range(max_k, 1, -1):
+        try:
+            labels = perform_kmeans(data, k)
+            # Check minimum cluster size (log2 scaling provides good minimums)
+            min_size = max(2, int(np.log2(n_participants)))
+            sizes = np.bincount(labels)
+            
+            if np.all(sizes >= min_size):
+                logger.info(f"Found valid clustering with {k} clusters")
+                logger.info(f"Cluster sizes: {sizes}")
+                return labels
             else:
-                # Should not happen
-                gac = 0.5
-        else:
-            gac = 1.0
-            for cluster in unique_clusters:
-                cluster_votes = statement_votes[clusters == cluster]
-                # Exclude 'PASS' votes
-                relevant_votes = cluster_votes[cluster_votes != 0]
+                logger.info(f"Clusters too small with k={k}, trying fewer clusters")
+                
+        except Exception as e:
+            logger.warning(f"Clustering failed with k={k}: {e}")
+            continue
+            
+    # Fallback to single cluster
+    logger.info("No valid clustering found, using single cluster")
+    return np.zeros(n_participants)
 
-                sum_agrees = np.sum(relevant_votes > 0)
-                sum_abs_votes = np.sum(np.abs(relevant_votes))
-
-                group_size = len(cluster_votes)
-                # Compute pseudocount as a function of group size
-                if group_size <= 1:
-                    pseudocount = 0.1  # Small positive value to avoid division by zero
-                else:
-                    pseudocount = 0.5 * math.log10(group_size)
-
-                if sum_abs_votes == 0:
-                    p_agree = 0.5  # Neutral if no votes
-                else:
-                    p_agree = (pseudocount + sum_agrees) / (2 * pseudocount + sum_abs_votes)
-
-                gac *= p_agree
-
-        gac_scores[statement] = gac
-
+def calculate_gac_scores(vote_matrix, clusters):
+    """
+    Calculate GAC scores with adaptive pseudocount scaling.
+    """
+    n_participants = len(vote_matrix)
+    gac_scores = {}
+    
+    logger.info(f"Calculating GAC scores for {n_participants} participants")
+    
+    # Base pseudocount scales logarithmically but stays small
+    base_pseudocount = 0.3 * np.log2(1 + n_participants/10)
+    logger.info(f"Base pseudocount: {base_pseudocount}")
+    
+    for statement in vote_matrix.columns:
+        gac = 1.0
+        total_votes = 0
+        
+        for cluster_id in np.unique(clusters):
+            cluster_votes = vote_matrix[statement][clusters == cluster_id]
+            
+            # Remove PASS votes
+            active_votes = cluster_votes[cluster_votes != 0]
+            n_active = len(active_votes)
+            total_votes += n_active
+            
+            if n_active == 0:
+                p_agree = 0.5
+            else:
+                # Calculate agreement with pseudocount stabilization
+                n_agree = np.sum(active_votes > 0)
+                p_agree = (n_agree + base_pseudocount) / (n_active + 2 * base_pseudocount)
+                
+                # Weight by active participation
+                group_weight = n_active / len(cluster_votes)
+                p_agree = p_agree ** group_weight
+                
+            gac *= p_agree
+            
+        gac_scores[statement] = {
+            'score': gac,
+            'n_votes': total_votes
+        }
+        
     return gac_scores
 
 def update_statements(cursor, conn, statements, gac_scores, votes):
@@ -620,16 +533,54 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
             """, (statement_id,))
     conn.commit()
 
-def is_constitutionable(gac_score, threshold=0.66):
+def is_constitutionable(gac_data, n_participants=None):
     """
-    Determine if a statement is constitutionable based on its GAC score.
-    Args:
-        gac_score (float): The GAC score of the statement.
-        threshold (float): The threshold above which a statement is considered constitutionable.
-    Returns:
-        bool: True if the statement is constitutionable, False otherwise.
+    Determine if a statement is constitutionable with adaptive thresholds.
     """
-    return gac_score >= threshold
+    if isinstance(gac_data, dict):
+        gac_score = gac_data['score']
+        n_votes = gac_data['n_votes']
+    else:
+        gac_score = gac_data
+        n_votes = n_participants  # Fallback for backward compatibility
+        
+    if n_participants is None:
+        n_participants = n_votes
+    
+    # Minimum vote requirement
+    min_votes = max(3, int(np.sqrt(n_participants)))
+    
+    # Threshold scales up for small groups but caps at 0.85
+    threshold = min(0.85, 0.66 * (1 + 2/np.log2(2 + n_participants)))
+    
+    logger.debug(f"Constitutionable check: score={gac_score:.3f}, votes={n_votes}, " +
+                f"min_votes={min_votes}, threshold={threshold:.3f}")
+    
+    return n_votes >= min_votes and gac_score >= threshold
+
+def process_votes(participants, statements, votes):
+    """
+    Process votes with improved error handling and logging.
+    """
+    n_participants = len(participants)
+    logger.info(f"Processing votes for {n_participants} participants")
+    
+    try:
+        vote_matrix = generate_vote_matrix(statements, votes, participants)
+        if vote_matrix.empty or vote_matrix.isnull().values.all():
+            logger.warning("Empty vote matrix, skipping processing")
+            return {}
+            
+        imputed_matrix = impute_missing_votes(vote_matrix)
+        clusters = perform_clustering(imputed_matrix)
+        gac_scores = calculate_gac_scores(imputed_matrix, clusters)
+        
+        logger.info("Successfully processed votes")
+        return gac_scores
+        
+    except Exception as e:
+        logger.error(f"Error processing votes: {e}")
+        return {}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Update GAC scores for statements')
