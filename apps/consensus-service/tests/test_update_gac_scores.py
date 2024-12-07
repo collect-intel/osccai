@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+from typing import Dict, List, Optional, Tuple, Union
 
 from api.update_gac_scores import (
     generate_vote_matrix,
@@ -58,31 +59,377 @@ def test_helpers():
     gac_scores = process_votes(participants, statements, votes)
     assert isinstance(gac_scores, dict)
 
-def test_single_participant_agree():
-    # Scenario: Single participant agrees on a statement
-    participants = create_participants(1, ids=['participant1'])
-    statements = create_statements(1, ids=['statement1'])
-    vote_value_map = {
-        ('participant1', 'statement1'): 'AGREE'
+def create_test_scenario(
+    participants: int,
+    statements_data: Dict[str, Dict[str, Union[List[Tuple[str, str]], bool, str]]],
+    description: str
+) -> dict:
+    """Create a well-structured test scenario"""
+    scenario = {
+        'participants': participants,
+        'statements': statements_data,
+        'description': description
     }
-    votes = create_votes(participants, statements, vote_value_map)
-    gac_scores = process_votes(participants, statements, votes)
-    
-    # Statement should be constitutionable
-    assert is_constitutionable(gac_scores['statement1'])
+    validate_scenario(scenario)
+    return scenario
 
-def test_single_participant_disagree():
-    # Scenario: Single participant disagrees on a statement
-    participants = create_participants(1, ids=['participant1'])
-    statements = create_statements(1, ids=['statement1'])
-    vote_value_map = {
-        ('participant1', 'statement1'): 'DISAGREE'
-    }
+def validate_scenario(scenario: dict) -> None:
+    """Validate scenario structure and data"""
+    assert isinstance(scenario['participants'], int) and scenario['participants'] > 0
+    assert isinstance(scenario['statements'], dict) and scenario['statements']
+    
+    for statement_id, statement_data in scenario['statements'].items():
+        assert 'votes' in statement_data
+        if 'expected_constitutionable' in statement_data:
+            assert isinstance(statement_data['expected_constitutionable'], bool)
+
+@pytest.mark.parametrize("scenario", [
+    # Single participant scenarios
+    create_test_scenario(
+        participants=1,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'Single participant agrees'
+            }
+        },
+        description='Single participant agreeing'
+    ),
+    create_test_scenario(
+        participants=1,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'DISAGREE')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Single participant disagrees'
+            }
+        },
+        description='Single participant disagreeing'
+    ),
+    create_test_scenario(
+        participants=1,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'PASS')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Single participant passes'
+            }
+        },
+        description='Single participant passing'
+    ),
+    
+    # Two participant scenarios
+    create_test_scenario(
+        participants=2,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'Both participants agree'
+            }
+        },
+        description='Two participants both agreeing'
+    ),
+    create_test_scenario(
+        participants=2,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'DISAGREE'),
+                    ('participant2', 'DISAGREE')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Both participants disagree'
+            }
+        },
+        description='Two participants both disagreeing'
+    ),
+    create_test_scenario(
+        participants=2,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'PASS')
+                ],
+                'expected_constitutionable': False,
+                'description': 'One agrees, one passes'
+            }
+        },
+        description='Two participants: agree and pass'
+    ),
+    create_test_scenario(
+        participants=2,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE')
+                    # participant2 doesn't vote
+                ],
+                'expected_constitutionable': False,
+                'description': 'One agrees, one no vote'
+            }
+        },
+        description='Two participants: one votes, one abstains'
+    ),
+
+    # Three participant scenarios
+    create_test_scenario(
+        participants=3,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'All agree'
+            },
+            'statement2': {
+                'votes': [
+                    ('participant1', 'DISAGREE'),
+                    ('participant2', 'PASS')
+                ]
+            }
+        },
+        description='Three participants unanimous agree on one statement'
+    ),
+        # Three participants with diverse voting patterns
+    create_test_scenario(
+        participants=3,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'All agree'
+            },
+            'statement2': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'DISAGREE'),
+                    ('participant3', 'PASS')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Mixed votes with disagree'
+            },
+            'statement3': {
+                'votes': [
+                    ('participant1', 'PASS'),
+                    ('participant2', 'PASS'),
+                    ('participant3', 'DISAGREE')
+                ],
+                'expected_constitutionable': False,
+                'description': 'No agrees, should not be constitutionable'
+            },
+            'statement4': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'PASS'),
+                    ('participant3', 'PASS')
+                ]
+                # No expected_constitutionable test
+            },
+            'statement5': {
+                'votes': [
+                    ('participant1', 'DISAGREE'),
+                    ('participant2', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Majority agree but one disagrees'
+            }
+        },
+        description='Three participants with unique voting patterns'
+    ),
+
+    # Three participants with varying participation levels
+    create_test_scenario(
+        participants=3,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'All vote and agree'
+            },
+            'statement2': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE')
+                    # participant3 doesn't vote
+                ],
+                'expected_constitutionable': True,
+                'description': 'Two agree, one no vote'
+            },
+            'statement3': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'DISAGREE')
+                    # participant3 doesn't vote
+                ],
+                'expected_constitutionable': False,
+                'description': 'One agree, one disagree, one no vote'
+            },
+            'statement4': {
+                'votes': [
+                    ('participant1', 'PASS'),
+                    ('participant2', 'PASS')
+                    # participant3 doesn't vote
+                ]
+                # No expected_constitutionable test
+            },
+            'statement5': {
+                'votes': [
+                    ('participant1', 'AGREE')
+                    # Others don't vote
+                ],
+                'expected_constitutionable': False,
+                'description': 'Single agree, others no vote'
+            },
+            'statement6': {
+                'votes': [
+                    ('participant1', 'DISAGREE'),
+                    ('participant2', 'PASS')
+                ]
+                # No expected_constitutionable test
+            },
+            'statement7': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'Two non-adjacent agree'
+            },
+            'statement8': {
+                'votes': [
+                    ('participant1', 'PASS')
+                ]
+                # No expected_constitutionable test
+            },
+            'statement9': {
+                'votes': [
+                    ('participant1', 'DISAGREE')
+                ]
+                # No expected_constitutionable test
+            },
+            'statement10': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'PASS'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Two agree with pass in between'
+            }
+        },
+        description='Three participants with varying participation levels'
+    ),
+
+    # Edge cases and special scenarios
+    create_test_scenario(
+        participants=3,
+        statements_data={
+            'statement1': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'All agree baseline'
+            },
+            'statement2': {
+                'votes': []  # No votes at all
+                # No expected_constitutionable test - should not generate GAC score
+            },
+            'statement3': {
+                'votes': [
+                    ('participant1', 'PASS'),
+                    ('participant2', 'PASS'),
+                    ('participant3', 'PASS')
+                ],
+                'expected_constitutionable': False,
+                'description': 'All pass'
+            },
+            'statement4': {
+                'votes': [
+                    ('participant1', 'AGREE'),
+                    ('participant2', 'AGREE'),
+                    ('participant3', 'AGREE')
+                ],
+                'expected_constitutionable': True,
+                'description': 'Second unanimous agreement'
+            },
+            'statement5': {
+                'votes': [
+                    ('participant1', 'DISAGREE'),
+                    ('participant2', 'DISAGREE'),
+                    ('participant3', 'DISAGREE')
+                ],
+                'expected_constitutionable': False,
+                'description': 'Unanimous disagree'
+            }
+        },
+        description='Three participants with unanimous votes'
+    )
+    # Add more scenarios here
+])
+def test_scenarios(scenario: dict) -> None:
+    """
+    Test various voting scenarios.
+    Each scenario can include:
+    - Any number of participants
+    - Any number of statements
+    - Optional constitutionability testing per statement
+    - Mixed voting patterns
+    """
+    participants = create_participants(
+        scenario['participants'],
+        ids=[f'participant{i+1}' for i in range(scenario['participants'])]
+    )
+    
+    statements = create_statements(
+        len(scenario['statements']),
+        ids=list(scenario['statements'].keys())
+    )
+    
+    vote_value_map = {}
+    for statement_id, statement_data in scenario['statements'].items():
+        for participant_id, vote_value in statement_data['votes']:
+            vote_value_map[(participant_id, statement_id)] = vote_value
+    
     votes = create_votes(participants, statements, vote_value_map)
     gac_scores = process_votes(participants, statements, votes)
     
-    # Statement should not be constitutionable
-    assert not is_constitutionable(gac_scores['statement1'])
+    for statement_id, statement_data in scenario['statements'].items():
+        if 'expected_constitutionable' in statement_data:
+            test_description = statement_data.get('description', f'Statement {statement_id}')
+            
+            if statement_id in gac_scores:
+                assert is_constitutionable(gac_scores[statement_id]) == statement_data['expected_constitutionable'], \
+                    f"Failed: {scenario['description']} - {test_description}"
+            else:
+                assert not statement_data['expected_constitutionable'], \
+                    f"Failed: {scenario['description']} - {test_description} (no GAC score)"
 
 def test_all_agree():
     # Scenario: All participants agree on a statement
