@@ -859,20 +859,20 @@ def test_imputation_patterns():
         ('p6', 's1'): 'PASS',
         
         # Statement 2 reinforces patterns
-        ('p1', 's1'): 'AGREE',
-        ('p2', 's1'): 'AGREE',
-        ('p3', 's1'): 'DISAGREE',
-        ('p4', 's1'): 'DISAGREE',
-        ('p5', 's1'): 'PASS',
-        ('p6', 's1'): 'PASS',
+        ('p1', 's2'): 'AGREE',
+        ('p2', 's2'): 'AGREE',
+        ('p3', 's2'): 'DISAGREE',
+        ('p4', 's2'): 'DISAGREE',
+        ('p5', 's2'): 'PASS',
+        ('p6', 's2'): 'PASS',
         
         # Statement 3 has missing votes to test imputation
         ('p1', 's3'): 'AGREE',
-        # p2 missing - should be imputed as AGREE
+        # p2 missing - should be imputed as positive
         ('p3', 's3'): 'DISAGREE',
-        # p4 missing - should be imputed as DISAGREE
+        # p4 missing - should be imputed as negative
         ('p5', 's3'): 'PASS',
-        # p6 missing - should be imputed as PASS
+        # p6 missing - should be imputed near zero
     }
     
     votes = create_votes(participants, statements, vote_value_map)
@@ -880,9 +880,9 @@ def test_imputation_patterns():
     imputed = impute_missing_votes(vote_matrix)
     
     # Test that imputation follows established patterns
-    assert imputed.loc['p2', 's3'] == 1, "p2 should be imputed as AGREE based on similarity to p1"
-    assert imputed.loc['p4', 's3'] == -1, "p4 should be imputed as DISAGREE based on similarity to p3"
-    assert imputed.loc['p6', 's3'] == 0, "p6 should be imputed as PASS based on similarity to p5"
+    assert imputed.loc['p2', 's3'] > 0.5, "p2 should be imputed with positive value (approximating AGREE) based on similarity to p1"
+    assert imputed.loc['p4', 's3'] < -0.5, "p4 should be imputed with negative value (approximating DISAGREE) based on similarity to p3"
+    assert abs(imputed.loc['p6', 's3']) < 0.3, "p6 should be imputed with near-zero value (approximating PASS) based on similarity to p5"
 
 def test_imputation_with_mixed_patterns():
     """Test imputation when participants have mixed voting patterns"""
@@ -912,18 +912,14 @@ def test_imputation_with_mixed_patterns():
     imputed = impute_missing_votes(vote_matrix)
     
     # Test that imputation considers overall voting patterns
-    assert imputed.loc['p2', 's3'] == 1, "p2 should follow p1's pattern"
-    assert imputed.loc['p4', 's3'] == -1, "p4 should follow p3's pattern"
+    assert imputed.loc['p2', 's3'] > 0.3, "p2 should follow p1's positive pattern (approximating AGREE)"
+    assert imputed.loc['p4', 's3'] < -0.3, "p4 should follow p3's negative pattern (approximating DISAGREE)"
 
 def test_imputation_edge_cases():
     """Test imputation behavior in edge cases"""
     participants = create_participants(3, ids=['p1', 'p2', 'p3'])
     statements = create_statements(3, ids=['s1', 's2', 's3'])
     
-    # Test cases:
-    # 1. Single vote in entire matrix
-    # 2. All passes for a statement
-    # 3. Conflicting patterns
     vote_value_map = {
         # Single vote
         ('p1', 's1'): 'AGREE',
@@ -942,13 +938,13 @@ def test_imputation_edge_cases():
     vote_matrix = generate_vote_matrix(statements, votes, participants)
     imputed = impute_missing_votes(vote_matrix)
     
-    # Test single vote imputation defaults to PASS
-    assert imputed.loc['p2', 's1'] == 0, "Should default to PASS with insufficient data"
-    assert imputed.loc['p3', 's1'] == 0, "Should default to PASS with insufficient data"
+    # Test single vote imputation defaults to near zero
+    assert abs(imputed.loc['p2', 's1']) < 0.3, "Should default to near zero (approximating PASS) with insufficient data"
+    assert abs(imputed.loc['p3', 's1']) < 0.3, "Should default to near zero (approximating PASS) with insufficient data"
     
     # Test that all-PASS pattern is preserved
-    assert (imputed.loc[:, 's2'] == 0).all(), "Should preserve all-PASS pattern"
+    assert (abs(imputed.loc[:, 's2']) < 0.1).all(), "Should preserve near-zero pattern (approximating PASS)"
     
-    # Test conflicting pattern defaults to PASS
-    assert imputed.loc['p3', 's3'] == 0, "Should default to PASS with conflicting patterns"
+    # Test conflicting pattern defaults to near zero
+    assert abs(imputed.loc['p3', 's3']) < 0.3, "Should default to near zero (approximating PASS) with conflicting patterns"
     

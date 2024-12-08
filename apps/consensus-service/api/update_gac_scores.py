@@ -222,7 +222,7 @@ def generate_vote_matrix(statements, votes, participants):
         1  - Agree
        -1  - Disagree
         0  - Pass
-       None - No vote
+       np.nan - No vote (changed from None)
     """
     poll_id = statements[0]['pollId'] if statements else None
     
@@ -239,8 +239,8 @@ def generate_vote_matrix(statements, votes, participants):
     participant_index = {pid: idx for idx, pid in enumerate(participant_ids)}
     statement_index = {sid: idx for idx, sid in enumerate(statement_ids)}
 
-    # Initialize matrix with None
-    vote_matrix = np.full((len(participant_ids), len(statement_ids)), None)
+    # Initialize matrix with np.nan instead of None
+    vote_matrix = np.full((len(participant_ids), len(statement_ids)), np.nan)
 
     for vote in votes:
         participant_id = vote['participantId']
@@ -267,65 +267,71 @@ def generate_vote_matrix(statements, votes, participants):
     
     return vote_df
 
-def calculate_jaccard_similarity(matrix):
-    """Calculate pairwise Jaccard similarities between participants."""
-    n_participants = len(matrix)
-    similarity_matrix = np.zeros((n_participants, n_participants))
+def calculate_cosine_similarity(matrix):
+    """
+    Calculate pairwise cosine similarities between participants efficiently.
+    Handles -1, 0, 1 vote values directly without binarization.
+    """
+    # Replace nans with 0 for dot product calculation
+    vote_matrix_filled = np.nan_to_num(matrix.values, nan=0, copy=True)
     
-    for i in range(n_participants):
-        for j in range(i, n_participants):
-            # Convert to boolean arrays for intersection/union
-            a = matrix.iloc[i].values != 0
-            b = matrix.iloc[j].values != 0
-            
-            intersection = np.sum(a & b)
-            union = np.sum(a | b)
-            
-            # Handle edge case of empty union
-            similarity = intersection / union if union > 0 else 0
-            
-            similarity_matrix[i, j] = similarity
-            similarity_matrix[j, i] = similarity  # Matrix is symmetric
+    # Compute norms for each participant's vote vector
+    norms = np.linalg.norm(vote_matrix_filled, axis=1)
     
-    return similarity_matrix
+    # Avoid division by zero
+    norms[norms == 0] = 1
+    
+    # Normalize the vote matrix
+    vote_matrix_normalized = vote_matrix_filled / norms[:, np.newaxis]
+    
+    # Compute similarities
+    return pd.DataFrame(
+        np.dot(vote_matrix_normalized, vote_matrix_normalized.T),
+        index=matrix.index,
+        columns=matrix.index
+    )
 
-def jaccard_impute(vote_matrix, n_neighbors):
-    # Binarize the vote matrix for Jaccard similarity calculation
-    binary_matrix = vote_matrix.map(lambda x: 1 if x == 1 else (0 if x == -1 else np.nan))
-    binary_matrix = binary_matrix.fillna(0)
-
-    # Calculate Jaccard similarity between participants
-    similarity_matrix = calculate_jaccard_similarity(binary_matrix)
-    np.fill_diagonal(similarity_matrix, 1)
-
-    # Convert the similarity matrix to a DataFrame for easier indexing
-    similarity_df = pd.DataFrame(similarity_matrix, index=vote_matrix.index, columns=vote_matrix.index)
-
+def cosine_impute(vote_matrix, n_neighbors):
+    """
+    Impute missing votes using cosine similarity between participants.
+    Returns continuous values to reflect uncertainty in imputation.
+    """
+    # Calculate cosine similarity between participants
+    similarity_matrix = calculate_cosine_similarity(vote_matrix)
+    
     # Impute missing votes
     imputed_matrix = vote_matrix.copy()
+    
     for participant in vote_matrix.index:
-        missing_statements = vote_matrix.columns[imputed_matrix.loc[participant].isna()]
+        missing_statements = vote_matrix.columns[vote_matrix.loc[participant].isna()]
+        
+        if len(missing_statements) == 0:
+            continue
+            
+        # Find most similar participants
+        similar_participants = similarity_matrix[participant].drop(participant).nlargest(n_neighbors)
+        
         for statement in missing_statements:
-            # Find similar participants who have voted on this statement
-            similar_participants = similarity_df[participant].drop(participant).nlargest(n_neighbors).index
-            similar_votes = vote_matrix.loc[similar_participants, statement].dropna()
+            # Get votes from similar participants
+            similar_votes = vote_matrix.loc[similar_participants.index, statement].dropna()
+            
             if not similar_votes.empty:
                 # Use weighted average of similar participants' votes
-                weights = similarity_df.loc[similar_votes.index, participant]
-                if weights.sum() == 0:
-                    continue  # Avoid division by zero
-                weighted_vote = np.average(similar_votes, weights=weights)
-                # Round to nearest integer (-1, 0, 1)
-                imputed_vote = int(round(weighted_vote))
-                imputed_matrix.at[participant, statement] = imputed_vote
+                weights = similarity_matrix.loc[similar_votes.index, participant]
+                if weights.sum() > 0:  # Ensure we have valid weights
+                    weighted_vote = np.average(similar_votes, weights=weights)
+                    # Store the raw weighted average
+                    imputed_matrix.at[participant, statement] = weighted_vote
+                else:
+                    imputed_matrix.at[participant, statement] = 0
             else:
-                # Default to 'PASS' if no similar votes found
                 imputed_matrix.at[participant, statement] = 0
+    
     return imputed_matrix
 
 def impute_missing_votes(vote_matrix):
     """
-    Impute missing votes with adaptive neighbor selection.
+    Impute missing votes with adaptive neighbor selection using cosine similarity.
     """
     n_participants = len(vote_matrix)
     logger.info(f"Imputing missing votes for {n_participants} participants")
@@ -339,7 +345,7 @@ def impute_missing_votes(vote_matrix):
     logger.info(f"Using {n_neighbors} neighbors for imputation")
     
     try:
-        imputed = jaccard_impute(vote_matrix, n_neighbors)
+        imputed = cosine_impute(vote_matrix, n_neighbors)
         logger.info("Successfully imputed missing votes")
         return imputed
     except Exception as e:
