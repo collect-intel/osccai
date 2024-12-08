@@ -302,10 +302,11 @@ def calculate_cosine_similarity(matrix):
 def cosine_impute(vote_matrix, n_neighbors):
     """
     Impute missing votes using cosine similarity between participants.
-    Returns continuous values to reflect uncertainty in imputation.
+    Uses both similar and opposite voting patterns as signals.
     """
     # Calculate cosine similarity between participants
     similarity_matrix = calculate_cosine_similarity(vote_matrix)
+    logger.info(f"Similarity matrix:\n{similarity_matrix}")
     
     # Impute missing votes
     imputed_matrix = vote_matrix.copy()
@@ -316,23 +317,28 @@ def cosine_impute(vote_matrix, n_neighbors):
         if len(missing_statements) == 0:
             continue
             
-        # Find most similar participants
-        similar_participants = similarity_matrix[participant].drop(participant).nlargest(n_neighbors)
+        # Find participants with strongest correlations (both positive and negative)
+        correlations = similarity_matrix[participant].drop(participant)
+        # Take top N by absolute value, but keep their original signs
+        strongest_correlations = correlations[correlations.abs().nlargest(n_neighbors).index]
+        logger.info(f"\nFor {participant}:")
+        logger.info(f"Strongest correlations:\n{strongest_correlations}")
         
         for statement in missing_statements:
-            # Get votes from similar participants
-            similar_votes = vote_matrix.loc[similar_participants.index, statement].dropna()
+            similar_votes = vote_matrix.loc[strongest_correlations.index, statement].dropna()
             
             if not similar_votes.empty:
-                # Use weighted average of similar participants' votes
-                weights = similarity_matrix.loc[similar_votes.index, participant]
-                if weights.sum() > 0:  # Ensure we have valid weights
-                    weighted_vote = np.average(similar_votes, weights=weights)
-                    # Store the raw weighted average
+                # For each correlated participant, use their vote but flip it if correlation is negative
+                adjusted_votes = similar_votes * np.sign(strongest_correlations[similar_votes.index])
+                weights = strongest_correlations[similar_votes.index].abs()
+                
+                if weights.sum() > 0:
+                    weighted_vote = np.average(adjusted_votes, weights=weights)
                     imputed_matrix.at[participant, statement] = weighted_vote
                 else:
                     imputed_matrix.at[participant, statement] = 0
             else:
+                logger.info("No similar votes - defaulting to 0")
                 imputed_matrix.at[participant, statement] = 0
     
     return imputed_matrix
