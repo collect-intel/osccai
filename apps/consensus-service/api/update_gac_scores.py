@@ -269,27 +269,35 @@ def generate_vote_matrix(statements, votes, participants):
 
 def calculate_cosine_similarity(matrix):
     """
-    Calculate pairwise cosine similarities between participants efficiently.
-    Handles -1, 0, 1 vote values directly without binarization.
+    Calculate pairwise cosine similarities between participants.
+    Weights similarity by participation overlap.
     """
-    # Replace nans with 0 for dot product calculation
+    # Get participation mask
+    valid_votes_mask = ~np.isnan(matrix.values)
+    
+    # Replace nans with 0 for computation
     vote_matrix_filled = np.nan_to_num(matrix.values, nan=0, copy=True)
     
-    # Compute norms for each participant's vote vector
+    # Calculate vote similarity
     norms = np.linalg.norm(vote_matrix_filled, axis=1)
-    
-    # Avoid division by zero
     norms[norms == 0] = 1
-    
-    # Normalize the vote matrix
     vote_matrix_normalized = vote_matrix_filled / norms[:, np.newaxis]
+    vote_similarities = np.dot(vote_matrix_normalized, vote_matrix_normalized.T)
     
-    # Compute similarities
-    return pd.DataFrame(
-        np.dot(vote_matrix_normalized, vote_matrix_normalized.T),
-        index=matrix.index,
-        columns=matrix.index
-    )
+    # Calculate participation overlap
+    n_common_votes = valid_votes_mask @ valid_votes_mask.T
+    n_either_voted = (valid_votes_mask.sum(1)[:, np.newaxis] + 
+                     valid_votes_mask.sum(1) - n_common_votes)
+    
+    # Weight similarities by participation overlap ratio
+    overlap_ratio = np.divide(n_common_votes, n_either_voted, 
+                            where=n_either_voted > 0,
+                            out=np.zeros_like(n_common_votes, dtype=float))
+    
+    # Combine vote similarity with overlap weight
+    similarities = vote_similarities * overlap_ratio
+    
+    return pd.DataFrame(similarities, index=matrix.index, columns=matrix.index)
 
 def cosine_impute(vote_matrix, n_neighbors):
     """
