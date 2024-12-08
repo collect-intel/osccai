@@ -346,16 +346,13 @@ def cosine_impute(vote_matrix, n_neighbors):
 def impute_missing_votes(vote_matrix):
     """
     Impute missing votes with adaptive neighbor selection using cosine similarity.
+    Works for all group sizes.
     """
     n_participants = len(vote_matrix)
     logger.info(f"Imputing missing votes for {n_participants} participants")
     
-    if n_participants < 4:
-        logger.info("Small group detected, using simple mean imputation")
-        return vote_matrix.fillna(0)
-    
-    # Adaptive number of neighbors
-    n_neighbors = min(5, max(2, int(np.log2(n_participants))))
+    # Adaptive number of neighbors - for small groups, use n-1 neighbors
+    n_neighbors = min(n_participants - 1, max(2, int(np.log2(n_participants))))
     logger.info(f"Using {n_neighbors} neighbors for imputation")
     
     try:
