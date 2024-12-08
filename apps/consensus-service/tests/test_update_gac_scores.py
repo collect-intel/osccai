@@ -842,3 +842,113 @@ def test_is_constitutionable_input():
     }
     assert is_constitutionable(gac_data)  # Should work with proper dict
     
+def test_imputation_patterns():
+    """Test that imputation respects voting patterns"""
+    participants = create_participants(6, ids=['p1', 'p2', 'p3', 'p4', 'p5', 'p6'])
+    statements = create_statements(4, ids=['s1', 's2', 's3', 's4'])
+    
+    # Create a clear voting pattern where p1 and p2 tend to agree,
+    # p3 and p4 tend to disagree, and p5 and p6 tend to pass
+    vote_value_map = {
+        # Statement 1 establishes voting patterns
+        ('p1', 's1'): 'AGREE',
+        ('p2', 's1'): 'AGREE',
+        ('p3', 's1'): 'DISAGREE',
+        ('p4', 's1'): 'DISAGREE',
+        ('p5', 's1'): 'PASS',
+        ('p6', 's1'): 'PASS',
+        
+        # Statement 2 reinforces patterns
+        ('p1', 's1'): 'AGREE',
+        ('p2', 's1'): 'AGREE',
+        ('p3', 's1'): 'DISAGREE',
+        ('p4', 's1'): 'DISAGREE',
+        ('p5', 's1'): 'PASS',
+        ('p6', 's1'): 'PASS',
+        
+        # Statement 3 has missing votes to test imputation
+        ('p1', 's3'): 'AGREE',
+        # p2 missing - should be imputed as AGREE
+        ('p3', 's3'): 'DISAGREE',
+        # p4 missing - should be imputed as DISAGREE
+        ('p5', 's3'): 'PASS',
+        # p6 missing - should be imputed as PASS
+    }
+    
+    votes = create_votes(participants, statements, vote_value_map)
+    vote_matrix = generate_vote_matrix(statements, votes, participants)
+    imputed = impute_missing_votes(vote_matrix)
+    
+    # Test that imputation follows established patterns
+    assert imputed.loc['p2', 's3'] == 1, "p2 should be imputed as AGREE based on similarity to p1"
+    assert imputed.loc['p4', 's3'] == -1, "p4 should be imputed as DISAGREE based on similarity to p3"
+    assert imputed.loc['p6', 's3'] == 0, "p6 should be imputed as PASS based on similarity to p5"
+
+def test_imputation_with_mixed_patterns():
+    """Test imputation when participants have mixed voting patterns"""
+    participants = create_participants(4, ids=['p1', 'p2', 'p3', 'p4'])
+    statements = create_statements(5, ids=['s1', 's2', 's3', 's4', 's5'])
+    
+    vote_value_map = {
+        # p1 and p2 agree on s1, disagree on s2
+        ('p1', 's1'): 'AGREE',
+        ('p2', 's1'): 'AGREE',
+        ('p1', 's2'): 'DISAGREE',
+        ('p2', 's2'): 'DISAGREE',
+        
+        # p3 and p4 have opposite pattern
+        ('p3', 's1'): 'DISAGREE',
+        ('p4', 's1'): 'DISAGREE',
+        ('p3', 's2'): 'AGREE',
+        ('p4', 's2'): 'AGREE',
+        
+        # Test statement with partial votes
+        ('p1', 's3'): 'AGREE',
+        ('p3', 's3'): 'DISAGREE',
+    }
+    
+    votes = create_votes(participants, statements, vote_value_map)
+    vote_matrix = generate_vote_matrix(statements, votes, participants)
+    imputed = impute_missing_votes(vote_matrix)
+    
+    # Test that imputation considers overall voting patterns
+    assert imputed.loc['p2', 's3'] == 1, "p2 should follow p1's pattern"
+    assert imputed.loc['p4', 's3'] == -1, "p4 should follow p3's pattern"
+
+def test_imputation_edge_cases():
+    """Test imputation behavior in edge cases"""
+    participants = create_participants(3, ids=['p1', 'p2', 'p3'])
+    statements = create_statements(3, ids=['s1', 's2', 's3'])
+    
+    # Test cases:
+    # 1. Single vote in entire matrix
+    # 2. All passes for a statement
+    # 3. Conflicting patterns
+    vote_value_map = {
+        # Single vote
+        ('p1', 's1'): 'AGREE',
+        
+        # All passes
+        ('p1', 's2'): 'PASS',
+        ('p2', 's2'): 'PASS',
+        ('p3', 's2'): 'PASS',
+        
+        # Conflicting
+        ('p1', 's3'): 'AGREE',
+        ('p2', 's3'): 'DISAGREE',
+    }
+    
+    votes = create_votes(participants, statements, vote_value_map)
+    vote_matrix = generate_vote_matrix(statements, votes, participants)
+    imputed = impute_missing_votes(vote_matrix)
+    
+    # Test single vote imputation defaults to PASS
+    assert imputed.loc['p2', 's1'] == 0, "Should default to PASS with insufficient data"
+    assert imputed.loc['p3', 's1'] == 0, "Should default to PASS with insufficient data"
+    
+    # Test that all-PASS pattern is preserved
+    assert (imputed.loc[:, 's2'] == 0).all(), "Should preserve all-PASS pattern"
+    
+    # Test conflicting pattern defaults to PASS
+    assert imputed.loc['p3', 's3'] == 0, "Should default to PASS with conflicting patterns"
+    
