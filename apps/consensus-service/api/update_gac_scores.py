@@ -406,9 +406,14 @@ def perform_kmeans(data, k, max_iterations=100):
         k = max(2, n_samples)
     
     try:
+        # Ensure data is float64 and handle NaN values
+        data_array = np.array(data, dtype=np.float64)
+        if np.isnan(data_array).any():
+            data_array = np.nan_to_num(data_array, nan=0.0)
+        
         # Initialize centroids using better sampling
         centroid_indices = np.random.choice(n_samples, k, replace=False)
-        centroids = data[centroid_indices]
+        centroids = data_array[centroid_indices]
         
         # Handle case where initial centroids are identical
         if np.allclose(centroids, centroids[0]):
@@ -421,7 +426,8 @@ def perform_kmeans(data, k, max_iterations=100):
             # Calculate distances with numerical stability
             distances = np.zeros((n_samples, k))
             for i in range(k):
-                distances[:, i] = np.sum(np.square(data - centroids[i]), axis=1)
+                diff = data_array - centroids[i]
+                distances[:, i] = np.sum(np.square(diff), axis=1)
             
             # Assign clusters
             labels = np.argmin(distances, axis=1)
@@ -435,20 +441,20 @@ def perform_kmeans(data, k, max_iterations=100):
             
             # Update centroids with handling for empty clusters
             for i in range(k):
-                cluster_points = data[labels == i]
+                cluster_points = data_array[labels == i]
                 if len(cluster_points) > 0:
                     centroids[i] = cluster_points.mean(axis=0)
                 else:
                     # If cluster is empty, reinitialize its centroid
                     logger.info(f"Reinitializing empty cluster {i}")
-                    centroids[i] = data[np.random.choice(n_samples)]
+                    centroids[i] = data_array[np.random.choice(n_samples)]
         
-        return labels
+        return labels.astype(np.int64)
         
     except Exception as e:
         logger.error(f"KMeans clustering failed: {e}")
         # Fallback to single cluster
-        return np.zeros(n_samples)
+        return np.zeros(n_samples, dtype=np.int64)
 
 def compute_silhouette_score(data, labels):
     """
