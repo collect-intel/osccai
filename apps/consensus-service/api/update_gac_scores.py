@@ -501,16 +501,17 @@ def perform_clustering(vote_matrix):
     """
     Perform clustering with adaptive scaling based on group size.
     """
-    # Convert to numpy array for calculations
-    data = vote_matrix.values
-    n_participants = len(data)
-    
+    n_participants = len(vote_matrix)
     logger.info(f"Starting clustering with {n_participants} participants")
     
-    # Single cluster for very small groups 
+    # Convert to numpy array and handle missing values
+    data = vote_matrix.values
+    data = np.nan_to_num(data)
+    
+    # For very small groups (< 4), use voting pattern to determine clusters
     if n_participants < 4:
-        logger.info("Group too small for clustering, using single cluster")
-        return np.zeros(n_participants)
+        logger.info("Small group - clustering based on voting patterns")
+        return perform_kmeans(data, k=2)  # Try splitting into 2 clusters
         
     # Determine max clusters based on group size
     max_k = min(5, max(2, int(np.sqrt(n_participants/4))))
