@@ -17,14 +17,44 @@ pd.set_option('future.no_silent_downcasting', True)
 VERSION = "1.1.0"  # Update this when making changes
 
 def setup_logging():
-    # Configure logging to output to stdout
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(levelname)s] %(message)s',
-        handlers=[logging.StreamHandler(sys.stdout)],
-        force=True  # Ensure this configuration is applied
-    )
-    return logging.getLogger(__name__)
+    """
+    Configure logging with environment-aware setup:
+    - Test environment: Let pytest handle logging
+    - Vercel environment: Use basic logging (captured by Vercel)
+    - Local development: Log to stdout
+    """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    
+    # Clear any existing handlers to prevent duplicates
+    if logger.hasHandlers():
+        logger.handlers.clear()
+    
+    formatter = logging.Formatter('[%(levelname)s] %(message)s')
+    
+    # Check environment
+    is_vercel = os.environ.get('VERCEL', False)
+    is_test = 'pytest' in sys.modules
+    
+    if is_vercel:
+        # In Vercel: Use basic logging (Vercel handles capture)
+        logging.basicConfig(
+            level=logging.INFO,
+            format='[%(levelname)s] %(message)s'
+        )
+        logger.propagate = False  # Prevent double logging
+    elif is_test:
+        # In tests: Let pytest handle logging
+        # Do not set up any handlers; allow logs to propagate
+        logger.propagate = True  # Allow propagation to root logger
+    else:
+        # Local development: Log to stdout
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.propagate = False  # Prevent double logging
+
+    return logger
 
 logger = setup_logging()
 
@@ -635,6 +665,8 @@ def process_votes(participants, statements, votes):
     """
     Process votes with improved error handling and logging.
     """
+    logger = setup_logging()
+    logger.info("Starting vote processing")
     n_participants = len(participants)
     logger.info(f"Processing votes for {n_participants} participants")
     
