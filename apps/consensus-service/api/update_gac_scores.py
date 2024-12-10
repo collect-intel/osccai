@@ -270,7 +270,7 @@ def generate_vote_matrix(statements, votes, participants):
 def calculate_cosine_similarity(matrix):
     """
     Calculate pairwise cosine similarities between participants.
-    Weights similarity by participation overlap.
+    Includes uncertainty scaling based on overlap.
     """
     # Get participation mask
     valid_votes_mask = ~np.isnan(matrix.values)
@@ -286,16 +286,14 @@ def calculate_cosine_similarity(matrix):
     
     # Calculate participation overlap
     n_common_votes = valid_votes_mask @ valid_votes_mask.T
-    n_either_voted = (valid_votes_mask.sum(1)[:, np.newaxis] + 
-                     valid_votes_mask.sum(1) - n_common_votes)
+    n_total_possible = matrix.shape[1]
     
-    # Weight similarities by participation overlap ratio
-    overlap_ratio = np.divide(n_common_votes, n_either_voted, 
-                            where=n_either_voted > 0,
-                            out=np.zeros_like(n_common_votes, dtype=float))
+    # Scale similarities by overlap ratio and add uncertainty factor
+    overlap_ratio = n_common_votes / n_total_possible
+    uncertainty_factor = 1 - (1 / (1 + n_common_votes))  # Approaches 1 as overlap increases
     
-    # Combine vote similarity with overlap weight
-    similarities = vote_similarities * overlap_ratio
+    # Combine similarity with scaled uncertainty
+    similarities = vote_similarities * overlap_ratio * uncertainty_factor
     
     return pd.DataFrame(similarities, index=matrix.index, columns=matrix.index)
 
@@ -304,11 +302,9 @@ def cosine_impute(vote_matrix, n_neighbors):
     Impute missing votes using cosine similarity between participants.
     Uses both similar and opposite voting patterns as signals.
     """
-    # Calculate cosine similarity between participants
     similarity_matrix = calculate_cosine_similarity(vote_matrix)
     logger.info(f"Similarity matrix:\n{similarity_matrix}")
     
-    # Impute missing votes
     imputed_matrix = vote_matrix.copy()
     
     for participant in vote_matrix.index:
@@ -317,9 +313,7 @@ def cosine_impute(vote_matrix, n_neighbors):
         if len(missing_statements) == 0:
             continue
             
-        # Find participants with strongest correlations (both positive and negative)
         correlations = similarity_matrix[participant].drop(participant)
-        # Take top N by absolute value, but keep their original signs
         strongest_correlations = correlations[correlations.abs().nlargest(n_neighbors).index]
         logger.info(f"\nFor {participant}:")
         logger.info(f"Strongest correlations:\n{strongest_correlations}")
@@ -333,8 +327,11 @@ def cosine_impute(vote_matrix, n_neighbors):
                 weights = strongest_correlations[similar_votes.index].abs()
                 
                 if weights.sum() > 0:
+                    # Calculate base weighted vote
                     weighted_vote = np.average(adjusted_votes, weights=weights)
-                    imputed_matrix.at[participant, statement] = weighted_vote
+                    # Scale by average correlation strength
+                    confidence = weights.mean()  # Use mean correlation as confidence
+                    imputed_matrix.at[participant, statement] = weighted_vote * confidence
                 else:
                     imputed_matrix.at[participant, statement] = 0
             else:

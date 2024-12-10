@@ -948,3 +948,79 @@ def test_imputation_edge_cases():
     # Test conflicting pattern defaults to near zero
     assert abs(imputed.loc['p3', 's3']) < 0.3, "Should default to near zero (approximating PASS) with conflicting patterns"
     
+def test_imputation_uncertainty():
+    """Test that imputed values reflect uncertainty by never being exactly -1, 0, or 1"""
+    participants = create_participants(4, ids=['p1', 'p2', 'p3', 'p4'])
+    statements = create_statements(5, ids=['s1', 's2', 's3', 's4', 's5'])
+    
+    vote_value_map = {
+        # Strong agreement pattern between p1 and p2
+        ('p1', 's1'): 'AGREE',
+        ('p2', 's1'): 'AGREE',
+        ('p1', 's2'): 'AGREE',
+        ('p2', 's2'): 'AGREE',
+        ('p1', 's3'): 'AGREE',  # p2 missing this vote
+        
+        # Strong disagreement pattern between p3 and p4
+        ('p3', 's1'): 'DISAGREE',
+        ('p4', 's1'): 'DISAGREE',
+        ('p3', 's2'): 'DISAGREE',
+        ('p4', 's2'): 'DISAGREE',
+        ('p3', 's3'): 'DISAGREE',  # p4 missing this vote
+        
+        # Mixed pattern for s4:
+        # p1 and p3 (who usually disagree) both AGREE
+        ('p1', 's4'): 'AGREE',
+        ('p3', 's4'): 'AGREE',
+        # p2 missing - should show uncertainty despite usually agreeing with p1
+        # p4 missing - should show uncertainty despite usually agreeing with p3
+        
+        # Mixed pattern for s5:
+        # p2 and p4 (who usually vote with different groups) both DISAGREE
+        ('p2', 's5'): 'DISAGREE',
+        ('p4', 's5'): 'DISAGREE',
+        # p1 missing - should show uncertainty despite usually agreeing with p2
+        # p3 missing - should show uncertainty despite usually agreeing with p4
+    }
+    
+    votes = create_votes(participants, statements, vote_value_map)
+    vote_matrix = generate_vote_matrix(statements, votes, participants)
+    imputed = impute_missing_votes(vote_matrix)
+    
+    # Check imputed values for strong patterns
+    assert 0.7 < imputed.loc['p2', 's3'] < 1.0, "Even with strong agreement pattern, imputed value should show some uncertainty"
+    assert -1.0 < imputed.loc['p4', 's3'] < -0.7, "Even with strong disagreement pattern, imputed value should show some uncertainty"
+    
+    # Check imputed values when usual patterns are broken
+    assert abs(imputed.loc['p2', 's4']) < 0.7, "Should show uncertainty when usual disagreers agree"
+    assert abs(imputed.loc['p4', 's4']) < 0.7, "Should show uncertainty when usual disagreers agree"
+    assert abs(imputed.loc['p1', 's5']) < 0.7, "Should show uncertainty when usual agreers disagree"
+    assert abs(imputed.loc['p3', 's5']) < 0.7, "Should show uncertainty when usual agreers disagree"
+
+def test_imputation_uncertainty_scaling():
+    """Test that imputation uncertainty scales with amount of data"""
+    participants = create_participants(3, ids=['p1', 'p2', 'p3'])
+    statements = create_statements(4, ids=['s1', 's2', 's3', 's4'])
+    
+    # Case 1: Single vote
+    votes1 = create_votes(participants, statements, {
+        ('p1', 's1'): 'AGREE'
+    })
+    matrix1 = generate_vote_matrix(statements, votes1, participants)
+    imputed1 = impute_missing_votes(matrix1)
+    
+    # Case 2: Multiple consistent votes
+    votes2 = create_votes(participants, statements, {
+        ('p1', 's1'): 'AGREE',
+        ('p2', 's1'): 'AGREE',
+        ('p1', 's2'): 'AGREE',
+        ('p2', 's2'): 'AGREE',
+        ('p1', 's3'): 'AGREE'  # p2 missing this vote
+    })
+    matrix2 = generate_vote_matrix(statements, votes2, participants)
+    imputed2 = impute_missing_votes(matrix2)
+    
+    # Imputed value should show more uncertainty with less data
+    assert abs(imputed1.loc['p2', 's1']) < abs(imputed2.loc['p2', 's3']), \
+        "Imputed values should show more uncertainty (closer to 0) with less data"
+    
