@@ -1,7 +1,6 @@
 "use client";
 
 import React, { forwardRef, useCallback, useState, useEffect, useRef } from "react";
-import ReactMarkdown, { Components } from "react-markdown";
 import AIChat, { AIChatHandle } from "./AIChat";
 import { MessageWithFields } from "../../types";
 import { ClientProvider, xmllm } from "xmllm/client";
@@ -342,7 +341,7 @@ I observe a peculiar atmospheric phenomenon...
     }, [modelId, chatId, ephemeral]);
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full">
         <div className="flex-1 overflow-y-auto">
           <AIChat
             ref={ref}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ConstitutionalAIChat from '@/lib/components/chat/ConstitutionalAIChat';
 import { ClientProvider, xmllm } from "xmllm/client";
 import ConstitutionRefiner from '@/lib/components/custom_constitution/ConstitutionRefiner';
@@ -16,6 +16,8 @@ export default function CustomConstitutionPage() {
   const [error, setError] = useState<string | null>(null);
   const [chatId] = useState(`custom-${Date.now()}`);
   const [metrics, setMetrics] = useState<{ metric: string[] }>();
+  const [activeTab, setActiveTab] = useState('constitution');
+  const [progress, setProgress] = useState(0);
 
   const refineConstitution = async (rawConstitution: string) => {
     setIsRefining(true);
@@ -75,7 +77,11 @@ This constitution is designed for a community of__
 ### Principle of ____
 Etc.
 </refined_constitution>
-<constitution_metrics>...</constitution_metrics>`
+<constitution_metrics>...</constitution_metrics>
+
+Regarding metrics, they will help the AI self-reflect and measure itself according to when attempting to follow the constitution. This IS NOT a metric of the community itself, because the AI has no control over that; it is only a metric of AI behaviours. An example would be "kindness" or "avoid over-stereotyping or fixating".
+
+`
             }],
             schema: {
               refined_constitution: String,
@@ -87,7 +93,7 @@ Etc.
             hints: {
               refined_constitution: 'Refined constitution in markdown format with headings and bullet points. E.g. \n# Constitution on ____\n## Preamble\n...Etc.',
               constitution_metrics: {
-                metric: ['A singular metric an AI can measure itself according to when attempting to follow the constitution.']
+                metric: ['A singular metric an AI can measure itself according to.']
               },
               reflection: 'An initial reflection of what you think the constitution should contain, based on the initial user-provided constitution.'
             }
@@ -114,43 +120,118 @@ Etc.
     }
   };
 
+  useEffect(() => {
+    if (refinedConstitution && !isRefining && window.innerWidth < 1024) {
+      setActiveTab('chat');
+    }
+  }, [refinedConstitution, isRefining]);
+
+  useEffect(() => {
+    if (isRefining) {
+      const interval = setInterval(() => {
+        setProgress(p => Math.min(p + Math.random() * 15, 90));
+      }, 500);
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [isRefining]);
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b px-6 py-4 w-full">
-        <div className="max-w-[1600px] mx-auto">
-          <h1 className="text-2xl font-bold text-gray-800">Custom Constitution Dashboard</h1>
-          <p className="text-gray-600 mt-1">Create and test your own AI constitution. Edits and chat history are NOT saved - navigating away or refreshing this page will lose changes!</p>
+    <div className="p-6 lg:block">
+      {/* Main Container */}
+      <div className="max-w-[1600px] mx-auto bg-white/50 rounded-2xl shadow-sm overflow-hidden">
+        {/* Header - More compact on mobile */}
+        <header className="px-4 pt-4 lg:px-8 lg:pt-6">
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-800">Experiment with your own AI Constitution</h1>
+          <p className="text-sm lg:text-base text-gray-600 mt-1">
+            Create and test your own AI constitution. Changes are not saved.
+          </p>
+          {isRefining && (
+            <div className="relative h-0.5 bg-gray-100">
+              <div 
+                className="absolute h-full bg-teal-600 transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
+        </header>
+
+        {/* Mobile Navigation */}
+        <div className="lg:hidden px-4 pb-2">
+          <div className="flex gap-2 bg-white p-1 rounded-lg shadow-sm">
+            <button 
+              onClick={() => setActiveTab('constitution')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors
+                ${activeTab === 'constitution' 
+                  ? 'bg-teal-600 text-white' 
+                  : 'text-gray-600 hover:bg-gray-50'
+                }`}
+            >
+              Constitution
+            </button>
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors
+                ${activeTab === 'chat' 
+                  ? 'bg-teal-600 text-white' 
+                  : 'text-gray-600 hover:bg-gray-50'
+                }
+                ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+              disabled={isRefining}
+            >
+              Chat {isRefining && <span className="ml-2 inline-block animate-pulse">•</span>}
+            </button>
+          </div>
         </div>
-      </header>
 
-      {/* Main Content - Fixed height container */}
-      <main className="flex-1 flex flex-col items-center">
-        <div className="w-full max-w-[1600px] h-[calc(100vh-9rem)] flex">
-          {/* Left Panel - Fixed height */}
-          <div className="w-1/3 flex-shrink-0 border-r bg-white h-full">
-            <ConstitutionRefiner 
-              constitution={constitution}
-              onConstitutionChange={setConstitution}
-              isRefining={isRefining}
-              error={error}
-              onRefine={() => refineConstitution(constitution)}
-            />
-          </div>
+        {/* Main Content Area */}
+        <div className="p-4 lg:p-6">
+          <div className={`
+            relative
+            flex flex-col lg:flex-row lg:gap-6 
+            h-[calc(100vh-12rem)] lg:h-[calc(100vh-16rem)]
+            -mt-2 lg:mt-0
+          `}>
+            {/* Left Panel - Constitution Input & Refined Display */}
+            <div className={`
+              absolute lg:relative inset-0
+              w-full lg:w-[50%] flex flex-col gap-4 lg:gap-6
+              ${activeTab === 'constitution' 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 translate-x-full lg:opacity-100 lg:translate-x-0 pointer-events-none lg:pointer-events-auto'
+              }
+            `}>
+              {/* Constitution Input Card */}
+              <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+                <ConstitutionRefiner 
+                  constitution={constitution}
+                  onConstitutionChange={setConstitution}
+                  isRefining={isRefining}
+                  error={error}
+                  onRefine={() => refineConstitution(constitution)}
+                />
+              </div>
 
-          {/* Middle Panel - Scrollable */}
-          <div className="w-1/3 flex-shrink-0 border-r bg-white overflow-y-auto">
-            <RefinedDisplay
-              isRefining={isRefining}
-              refinedConstitution={refinedConstitution}
-              reflection={reflection}
-              metrics={metrics}
-            />
-          </div>
+              {/* Refined Display Card */}
+              <div className="flex-1 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+                <RefinedDisplay
+                  isRefining={isRefining}
+                  refinedConstitution={refinedConstitution}
+                  reflection={reflection}
+                  metrics={metrics}
+                />
+              </div>
+            </div>
 
-          {/* Right Panel - Fixed height */}
-          <div className="w-1/3 flex-shrink-0 bg-white h-full">
-            {refinedConstitution && !isRefining ? (
+            {/* Right Panel - Chat Interface */}
+            <div className={`
+              absolute lg:relative inset-0
+              w-full lg:w-[50%] bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)]
+              overflow-hidden h-full
+              ${activeTab === 'chat' ? 'block' : 'hidden lg:flex'}
+            `}>
               <ConstitutionalAIChat
                 chatId={chatId}
                 modelId="custom"
@@ -168,19 +249,15 @@ Etc.
                   content: `Hi there! I'm an AI assistant guided by this constitution. Feel free to test how I respond.`,
                 }}
                 customStyles={{
-                  userMessage: "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
-                  aiMessage: "bg-teal rounded-lg p-4 mb-4 shadow-sm text-white",
+                  userMessage: "bg-gray-50/50 rounded-lg p-4 mb-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]",
+                  aiMessage: "bg-teal/95 rounded-lg p-4 mb-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] text-white",
                   infoIcon: "text-white/80 hover:text-white transition-colors",
                 }}
               />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-500 italic p-6">
-                Chat will appear after constitution is refined...
-              </div>
-            )}
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 } 
