@@ -21,7 +21,14 @@ export default function VotingContainer({
 }: VotingContainerProps) {
   return (
     <div className="rounded-md">
-      <div className="text-lg font-semibold mb-4">Vote on these statements</div>
+      <div className="flex items-center justify-center gap-4 mb-8">
+        <div className="h-px bg-light-gray flex-grow" />
+        <div className="text-sm text-medium-gray whitespace-nowrap">
+          Vote on these statements
+        </div>
+        <div className="h-px bg-light-gray flex-grow" />
+      </div>
+
       <Voting
         statements={statements}
         pollId={pollId}
