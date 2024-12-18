@@ -58,8 +58,9 @@ model CommunityModel {
 
   deleted                  Boolean                 @default(false)
   published               Boolean                 @default(false)
-  apiEnabled    Boolean    @default(false)  // Feature flag for API access
-  apiKeys       ApiKey[]   // Relation to API keys
+  apiEnabled              Boolean                 @default(false)  // Feature flag for API access
+  advancedOptionsEnabled  Boolean                 @default(false)  // Feature flag for advanced poll options
+  apiKeys                 ApiKey[]   // Relation to API keys
   @@index([ownerId])
 }
 
@@ -102,6 +103,13 @@ model Poll {
   // Allows participants to submit their own statements
   allowParticipantStatements Boolean         @default(true)
   statements                 Statement[]
+
+  // Advanced options
+  minVotesBeforeSubmission   Int?            // Minimum votes required before allowing statement submission
+  maxVotesPerParticipant     Int?            // Maximum number of statements a participant can vote on
+  maxSubmissionsPerParticipant Int?          // Maximum number of statements a participant can submit
+  minRequiredSubmissions     Int?            // Minimum number of statements a participant must submit
+  completionMessage          String?         // Message to display when participant has completed the poll
 
   createdAt                  DateTime        @default(now())
   updatedAt                  DateTime        @updatedAt
