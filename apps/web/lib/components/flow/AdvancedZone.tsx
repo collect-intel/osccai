@@ -126,11 +126,11 @@ export default function AdvancedZone({
 
     if (hasChanges) {
       const options = {
-        minVotesBeforeSubmission: minVotes ? parseInt(minVotes) : undefined,
-        maxVotesPerParticipant: maxVotes ? parseInt(maxVotes) : undefined,
-        maxSubmissionsPerParticipant: maxSubmissions ? parseInt(maxSubmissions) : undefined,
-        minRequiredSubmissions: minRequiredSubmissions ? parseInt(minRequiredSubmissions) : undefined,
-        completionMessage: completionMessage || undefined,
+        minVotesBeforeSubmission: minVotes.trim() !== "" ? parseInt(minVotes) : null,
+        maxVotesPerParticipant: maxVotes.trim() !== "" ? parseInt(maxVotes) : null,
+        maxSubmissionsPerParticipant: maxSubmissions.trim() !== "" ? parseInt(maxSubmissions) : null,
+        minRequiredSubmissions: minRequiredSubmissions.trim() !== "" ? parseInt(minRequiredSubmissions) : null,
+        completionMessage: completionMessage.trim() !== "" ? completionMessage : null,
       };
 
       // Update the previous values
