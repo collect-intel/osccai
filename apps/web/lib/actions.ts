@@ -125,11 +125,60 @@ export async function submitStatement(
   anonymousId?: string,
 ) {
   const participant = await getOrCreateParticipant(null, anonymousId);
-  const participantId = participant?.uid;
-  if (!participantId) throw new Error("Participant not found");
+  if (!participant) throw new Error("Participant not found");
+
+  const participantId = participant.uid;
+
+  // Get the poll to check limits and requirements
+  const poll = await prisma.poll.findUnique({
+    where: { uid: pollId },
+  });
+
+  if (!poll) throw new Error("Poll not found");
+
+  // Check if participant statements are allowed
+  if (!poll.allowParticipantStatements) {
+    throw new Error("Participant statements are not allowed in this poll");
+  }
+
+  // Check minimum votes requirement if set
+  if (poll.minVotesBeforeSubmission) {
+    const voteCount = await prisma.vote.count({
+      where: {
+        participantId,
+        statement: {
+          pollId,
+        },
+      },
+    });
+
+    if (voteCount < poll.minVotesBeforeSubmission) {
+      throw new Error(
+        `You must vote on at least ${poll.minVotesBeforeSubmission} statements before submitting your own`
+      );
+    }
+  }
+
+  // Check maximum submissions limit if set
+  if (poll.maxSubmissionsPerParticipant) {
+    const submissionCount = await prisma.statement.count({
+      where: {
+        pollId,
+        participantId,
+        deleted: false,
+      },
+    });
+
+    if (submissionCount >= poll.maxSubmissionsPerParticipant) {
+      throw new Error("Maximum submissions limit reached");
+    }
+  }
+
+  // Create the statement
   await prisma.statement.create({
     data: { pollId, text, participantId },
   });
+
   revalidatePath(`/polls/${pollId}`);
 }
 
@@ -318,6 +367,32 @@ export async function submitVote(
   if (!participant) throw new Error("Participant not found");
 
   const participantId = participant.uid;
+
+  // Get the poll and statement to check limits
+  const statement = await prisma.statement.findUnique({
+    where: { uid: statementId },
+    include: {
+      poll: true,
+    },
+  });
+
+  if (!statement) throw new Error("Statement not found");
+
+  // If there's a vote limit, check if participant has reached it
+  if (statement.poll.maxVotesPerParticipant) {
+    const voteCount = await prisma.vote.count({
+      where: {
+        participantId,
+        statement: {
+          pollId: statement.pollId,
+        },
+      },
+    });
+
+    if (!previousVote && voteCount >= statement.poll.maxVotesPerParticipant) {
+      throw new Error("Maximum votes limit reached");
+    }
+  }
 
   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // First, check if the statement exists
@@ -1135,5 +1210,60 @@ export async function createApiKey(
     key: raw,
     name: apiKey.name!,
     createdAt: apiKey.createdAt,
+  };
+}
+
+// New helper function to check poll completion status
+export async function checkPollCompletion(
+  pollId: string,
+  participantId: string,
+): Promise<{
+  isComplete: boolean;
+  message?: string;
+  requiredSubmissions?: number;
+  currentSubmissions?: number;
+}> {
+  const poll = await prisma.poll.findUnique({
+    where: { uid: pollId },
+    include: {
+      statements: {
+        where: { deleted: false },
+      },
+    },
+  });
+
+  if (!poll) throw new Error("Poll not found");
+
+  const voteCount = await prisma.vote.count({
+    where: {
+      participantId,
+      statement: {
+        pollId,
+      },
+    },
+  });
+
+  const submissionCount = await prisma.statement.count({
+    where: {
+      pollId,
+      participantId,
+      deleted: false,
+    },
+  });
+
+  const hasReachedVoteLimit = poll.maxVotesPerParticipant 
+    ? voteCount >= poll.maxVotesPerParticipant
+    : voteCount >= poll.statements.length;
+
+  const hasMetSubmissionRequirement = !poll.minRequiredSubmissions || 
+    submissionCount >= poll.minRequiredSubmissions;
+
+  const isComplete = hasReachedVoteLimit && hasMetSubmissionRequirement;
+
+  return {
+    isComplete,
+    message: isComplete ? poll.completionMessage : undefined,
+    requiredSubmissions: poll.minRequiredSubmissions,
+    currentSubmissions: submissionCount,
   };
 }

@@ -4,7 +4,7 @@ import { useAuth, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Statement } from "@prisma/client";
 import type { VoteValue } from "@prisma/client";
 import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
-import { flagStatement, submitStatement, submitVote } from "@/lib/actions";
+import { flagStatement, submitStatement, submitVote, checkPollCompletion } from "@/lib/actions";
 import StatementIcon from "../icons/StatementIcon";
 import FlagIcon from "../icons/FlagIcon";
 import Button from "../Button";
@@ -15,6 +15,20 @@ import Toast from "../Toast";
 import VotingList from "@/lib/components/polling/VotingList";
 import VoteButtons from "@/lib/components/polling/VoteButtons";
 import ArrowLeftIcon from "../icons/ArrowLeftIcon";
+import PollProgress from "./PollProgress";
+
+interface VotingProps {
+  statements: Statement[];
+  pollId: string;
+  requireAuth: boolean;
+  initialVotes: Record<string, VoteValue>;
+  allowParticipantStatements: boolean;
+  minVotesBeforeSubmission?: number;
+  maxVotesPerParticipant?: number;
+  maxSubmissionsPerParticipant?: number;
+  minRequiredSubmissions?: number;
+  completionMessage?: string;
+}
 
 export default function Voting({
   statements,
@@ -22,13 +36,12 @@ export default function Voting({
   requireAuth,
   initialVotes,
   allowParticipantStatements,
-}: {
-  statements: Statement[];
-  pollId: string;
-  requireAuth: boolean;
-  initialVotes: Record<string, VoteValue>;
-  allowParticipantStatements: boolean;
-}) {
+  minVotesBeforeSubmission,
+  maxVotesPerParticipant,
+  maxSubmissionsPerParticipant,
+  minRequiredSubmissions,
+  completionMessage,
+}: VotingProps) {
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
   const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(
@@ -36,41 +49,90 @@ export default function Voting({
   );
   const [statementText, setStatementText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submissionCount, setSubmissionCount] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
   const { isVisible, message, showToast } = useToast();
 
   const canVote = isSignedIn || !requireAuth;
+  const votedCount = Object.keys(votes).length;
 
   useEffect(() => {
     if (canVote) {
-      // Find the first statement without a vote
       const firstUnvotedIndex = statements.findIndex(
-        (statement) => !votes[statement.uid],
+        (statement) => !votes[statement.uid]
       );
-      setCurrentStatementIx(firstUnvotedIndex >= 0 ? firstUnvotedIndex : null);
+      setCurrentStatementIx(
+        firstUnvotedIndex >= 0 && 
+        (!maxVotesPerParticipant || votedCount < maxVotesPerParticipant)
+          ? firstUnvotedIndex 
+          : null
+      );
     }
-  }, [pollId, canVote, statements, votes]);
+  }, [pollId, canVote, statements, votes, maxVotesPerParticipant, votedCount]);
 
-  // Ensure that votes state reflects new initialVotes
+  // Check completion status
   useEffect(() => {
-    setVotes(prevVotes => ({ ...prevVotes, ...initialVotes }));
-  }, [initialVotes]);
+    const checkCompletion = async () => {
+      try {
+        const status = await checkPollCompletion(pollId, getAnonymousId());
+        setIsComplete(status.isComplete);
+        if (status.currentSubmissions !== undefined) {
+          setSubmissionCount(status.currentSubmissions);
+        }
+      } catch (error) {
+        console.error("Error checking completion status:", error);
+      }
+    };
+
+    if (canVote) {
+      checkCompletion();
+    }
+  }, [pollId, votes, submissionCount, canVote]);
 
   const handleVote = async (vote: VoteValue) => {
     if (!canVote || currentStatementIx === null) return;
-    const statementId = statements[currentStatementIx].uid;
-    const previousVote = votes[statementId];
-    setVotes({ ...votes, [statementId]: vote });
-    await submitVote(statementId, vote, previousVote, getAnonymousId());
+    
+    try {
+      const statementId = statements[currentStatementIx].uid;
+      const previousVote = votes[statementId];
+      
+      await submitVote(statementId, vote, previousVote, getAnonymousId());
+      setVotes({ ...votes, [statementId]: vote });
 
-    // Find the next unvoted statement
-    const nextUnvotedIndex = statements.findIndex(
-      (statement, index) =>
-        index > currentStatementIx &&
-        !votes[statement.uid] &&
-        statement.uid !== statementId,
-    );
-    setCurrentStatementIx(nextUnvotedIndex >= 0 ? nextUnvotedIndex : null);
+      const nextUnvotedIndex = statements.findIndex(
+        (statement, index) =>
+          index > currentStatementIx &&
+          !votes[statement.uid] &&
+          statement.uid !== statementId
+      );
+
+      setCurrentStatementIx(
+        nextUnvotedIndex >= 0 && 
+        (!maxVotesPerParticipant || Object.keys(votes).length < maxVotesPerParticipant)
+          ? nextUnvotedIndex 
+          : null
+      );
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Error submitting vote");
+    }
   };
+
+  const handleSubmitStatement = async () => {
+    try {
+      await submitStatement(pollId, statementText, getAnonymousId());
+      setStatementText("");
+      setIsModalOpen(false);
+      setSubmissionCount((prev) => prev + 1);
+      showToast("Statement submitted successfully");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Error submitting statement");
+    }
+  };
+
+  const canSubmitStatement = 
+    allowParticipantStatements &&
+    (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission) &&
+    (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant);
 
   const hasVotedOnAll =
     statements.length > 0 &&
@@ -250,6 +312,17 @@ export default function Voting({
           </div>
         </div>
       </Modal>
+
+      <PollProgress
+        totalStatements={statements.length}
+        votedCount={votedCount}
+        maxVotes={maxVotesPerParticipant}
+        submissionCount={submissionCount}
+        minRequiredSubmissions={minRequiredSubmissions}
+        maxSubmissions={maxSubmissionsPerParticipant}
+        isComplete={isComplete}
+        completionMessage={completionMessage}
+      />
     </>
   );
 }
