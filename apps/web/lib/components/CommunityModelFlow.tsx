@@ -30,6 +30,7 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   polls: Poll[];
   published?: boolean;
   apiEnabled?: boolean;
+  advancedOptionsEnabled?: boolean;
   apiKeys?: ApiKey[];
   owner?: {
     uid: string;
@@ -138,6 +139,7 @@ export default function CommunityModelFlow({
               polls: fetchedModelData.polls || [],
               published: fetchedModelData.published || false,
               apiEnabled: fetchedModelData.apiEnabled || false,
+              advancedOptionsEnabled: fetchedModelData.advancedOptionsEnabled || false,
               apiKeys: fetchedModelData.apiKeys || [],
               owner: fetchedModelData.owner,
             });
@@ -280,6 +282,42 @@ export default function CommunityModelFlow({
   };
 
   const debouncedSaveModelData = debounce(saveModelData, 500);
+
+  const handleUpdatePollOptions = useCallback(async (options: {
+    minVotesBeforeSubmission?: number;
+    maxVotesPerParticipant?: number;
+    maxSubmissionsPerParticipant?: number;
+    minRequiredSubmissions?: number;
+    completionMessage?: string;
+  }) => {
+    if (!modelId) return;
+
+    try {
+      setSavingStatus((prev) => ({ ...prev, advanced: "saving" }));
+      
+      const updatedPoll = await updatePoll(modelId, {
+        ...modelData?.polls?.[0],
+        ...options,
+      });
+
+      setModelData((prevData) => {
+        if (!prevData) return null;
+        return {
+          ...prevData,
+          polls: [updatedPoll, ...(prevData.polls?.slice(1) || [])],
+        };
+      });
+
+      setSavingStatus((prev) => ({ ...prev, advanced: "saved" }));
+      setTimeout(
+        () => setSavingStatus((prev) => ({ ...prev, advanced: "idle" })),
+        2000,
+      );
+    } catch (error) {
+      console.error("Error updating poll options:", error);
+      setSavingStatus((prev) => ({ ...prev, advanced: "idle" }));
+    }
+  }, [modelId, modelData]);
 
   if (isPageLoading || isLoading) {
     return (
@@ -451,7 +489,7 @@ export default function CommunityModelFlow({
                 savingStatus={savingStatus.communityModel}
               />
             </div>
-            {modelData?.apiEnabled && (
+            {(modelData?.apiEnabled || modelData?.advancedOptionsEnabled) && (
               <div ref={zoneRefs.advanced} id="advanced">
                 <AdvancedZone
                   isActive={activeZones.includes("advanced")}
@@ -460,6 +498,10 @@ export default function CommunityModelFlow({
                   apiKeys={modelData.apiKeys || []}
                   onToggle={() => toggleZone("advanced")}
                   savingStatus={savingStatus.advanced}
+                  apiEnabled={modelData.apiEnabled}
+                  advancedOptionsEnabled={modelData.advancedOptionsEnabled}
+                  pollOptions={modelData.polls?.[0] || {}}
+                  onUpdatePollOptions={handleUpdatePollOptions}
                 />
               </div>
             )}

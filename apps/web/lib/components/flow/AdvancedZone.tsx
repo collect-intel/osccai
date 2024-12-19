@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ZoneWrapper from "./ZoneWrapper";
 import { ApiKey } from "@prisma/client";
 import { createApiKey } from "@/lib/actions";
 import Modal from "@/lib/components/Modal";
-import { FaKey, FaCopy, FaTrash } from "react-icons/fa";
+import { FaKey, FaCopy, FaTrash, FaCog } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
+import { debounce } from "lodash";
 
 interface AdvancedZoneProps {
   isActive: boolean;
@@ -13,6 +14,22 @@ interface AdvancedZoneProps {
   apiKeys: ApiKey[];
   onToggle: () => void;
   savingStatus: "idle" | "saving" | "saved";
+  apiEnabled?: boolean;
+  advancedOptionsEnabled?: boolean;
+  pollOptions?: {
+    minVotesBeforeSubmission?: number;
+    maxVotesPerParticipant?: number;
+    maxSubmissionsPerParticipant?: number;
+    minRequiredSubmissions?: number;
+    completionMessage?: string;
+  };
+  onUpdatePollOptions?: (options: {
+    minVotesBeforeSubmission?: number;
+    maxVotesPerParticipant?: number;
+    maxSubmissionsPerParticipant?: number;
+    minRequiredSubmissions?: number;
+    completionMessage?: string;
+  }) => void;
 }
 
 interface NewKeyData {
@@ -29,6 +46,10 @@ export default function AdvancedZone({
   apiKeys,
   onToggle,
   savingStatus,
+  apiEnabled = false,
+  advancedOptionsEnabled = false,
+  pollOptions = {},
+  onUpdatePollOptions,
 }: AdvancedZoneProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newKeyData, setNewKeyData] = useState<NewKeyData | null>(null);
@@ -37,11 +58,95 @@ export default function AdvancedZone({
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize with empty values to prevent hydration mismatch
+  const [minVotes, setMinVotes] = useState("");
+  const [maxVotes, setMaxVotes] = useState("");
+  const [maxSubmissions, setMaxSubmissions] = useState("");
+  const [minRequiredSubmissions, setMinRequiredSubmissions] = useState("");
+  const [completionMessage, setCompletionMessage] = useState("");
+
+  // Set initial values after first render
+  useEffect(() => {
+    setMinVotes(pollOptions.minVotesBeforeSubmission?.toString() || "");
+    setMaxVotes(pollOptions.maxVotesPerParticipant?.toString() || "");
+    setMaxSubmissions(pollOptions.maxSubmissionsPerParticipant?.toString() || "");
+    setMinRequiredSubmissions(pollOptions.minRequiredSubmissions?.toString() || "");
+    setCompletionMessage(pollOptions.completionMessage || "");
+  }, [pollOptions]);
+
+  // Create a ref to store the previous values
+  const prevOptionsRef = useRef({
+    minVotes: "",
+    maxVotes: "",
+    maxSubmissions: "",
+    minRequiredSubmissions: "",
+    completionMessage: "",
+  });
+
+  // Update prevOptionsRef after initial values are set
+  useEffect(() => {
+    prevOptionsRef.current = {
+      minVotes: pollOptions.minVotesBeforeSubmission?.toString() || "",
+      maxVotes: pollOptions.maxVotesPerParticipant?.toString() || "",
+      maxSubmissions: pollOptions.maxSubmissionsPerParticipant?.toString() || "",
+      minRequiredSubmissions: pollOptions.minRequiredSubmissions?.toString() || "",
+      completionMessage: pollOptions.completionMessage || "",
+    };
+  }, [pollOptions]);
+
+  // Create a debounced update function
+  const debouncedUpdate = useRef(
+    debounce((options: any) => {
+      if (onUpdatePollOptions) {
+        onUpdatePollOptions(options);
+      }
+    }, 500)
+  ).current;
+
   useEffect(() => {
     if (!ownerId || ownerId === "") {
       console.error("Invalid owner ID in AdvancedZone:", { modelId, ownerId });
     }
   }, [ownerId, modelId]);
+
+  useEffect(() => {
+    const prevOptions = prevOptionsRef.current;
+    const currentOptions = {
+      minVotes,
+      maxVotes,
+      maxSubmissions,
+      minRequiredSubmissions,
+      completionMessage,
+    };
+
+    // Check if any values have actually changed
+    const hasChanges = Object.entries(currentOptions).some(
+      ([key, value]) => prevOptions[key as keyof typeof prevOptions] !== value
+    );
+
+    if (hasChanges) {
+      const options = {
+        minVotesBeforeSubmission: minVotes ? parseInt(minVotes) : undefined,
+        maxVotesPerParticipant: maxVotes ? parseInt(maxVotes) : undefined,
+        maxSubmissionsPerParticipant: maxSubmissions ? parseInt(maxSubmissions) : undefined,
+        minRequiredSubmissions: minRequiredSubmissions ? parseInt(minRequiredSubmissions) : undefined,
+        completionMessage: completionMessage || undefined,
+      };
+
+      // Update the previous values
+      prevOptionsRef.current = currentOptions;
+      
+      // Call the debounced update
+      debouncedUpdate(options);
+    }
+  }, [minVotes, maxVotes, maxSubmissions, minRequiredSubmissions, completionMessage, debouncedUpdate]);
+
+  // Cleanup the debounced function
+  useEffect(() => {
+    return () => {
+      debouncedUpdate.cancel();
+    };
+  }, [debouncedUpdate]);
 
   const handleCreateKey = async () => {
     setIsCreating(true);
@@ -79,6 +184,97 @@ export default function AdvancedZone({
     setKeyName("");
   };
 
+  const renderPollOptionsSection = () => (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <FaCog className="w-5 h-5 text-gray-600" />
+        <h3 className="text-xl font-semibold">Advanced Poll Options</h3>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Minimum Votes Before Submission
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={minVotes}
+            onChange={(e) => setMinVotes(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent"
+            placeholder="Leave empty for no minimum"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Number of statements a participant must vote on before submitting their own
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Maximum Votes Per Participant
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={maxVotes}
+            onChange={(e) => setMaxVotes(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent"
+            placeholder="Leave empty for no maximum"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Maximum number of statements a participant can vote on
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Maximum Submissions Per Participant
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={maxSubmissions}
+            onChange={(e) => setMaxSubmissions(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent"
+            placeholder="Leave empty for no maximum"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Maximum number of statements a participant can submit
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Minimum Required Submissions
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={minRequiredSubmissions}
+            onChange={(e) => setMinRequiredSubmissions(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent"
+            placeholder="Leave empty for no minimum"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Minimum number of statements a participant must submit to complete the poll
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Completion Message
+          </label>
+          <textarea
+            value={completionMessage}
+            onChange={(e) => setCompletionMessage(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal focus:border-transparent"
+            placeholder="Optional message to show when a participant completes the poll"
+            rows={3}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <ZoneWrapper
       title="Advanced Settings"
@@ -87,65 +283,72 @@ export default function AdvancedZone({
       savingStatus={savingStatus}
     >
       <div className="bg-gray-50 p-6 rounded-lg">
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2">API Keys</h3>
-          <p className="text-gray-600 mb-4">
-            Create and manage API keys for programmatic access to your community
-            model.
-          </p>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-teal text-white px-4 py-2 rounded-md hover:bg-teal-dark transition-colors flex items-center gap-2"
-          >
-            <FaKey className="w-4 h-4" />
-            Create New API Key
-          </button>
-        </div>
+        {advancedOptionsEnabled && renderPollOptionsSection()}
 
-        {apiKeys.length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-lg font-medium mb-3">Existing API Keys</h4>
-            <div className="space-y-3">
-              {apiKeys.map((key) => (
-                <div
-                  key={key.uid}
-                  className="bg-white p-4 rounded-md border border-gray-200 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-medium">{key.name || "Unnamed Key"}</p>
-                    <p className="text-sm text-gray-500">
-                      Created {formatDistanceToNow(key.createdAt)} ago
-                      {key.lastUsedAt && (
-                        <>
-                          {" "}
-                          · Last used {formatDistanceToNow(key.lastUsedAt)} ago
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        key.status === "ACTIVE"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {key.status}
-                    </span>
-                    {key.status === "ACTIVE" && (
-                      <button
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        title="Revoke Key"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {apiEnabled && (
+          <>
+            {advancedOptionsEnabled && <hr className="my-6 border-gray-200" />}
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold mb-2">API Keys</h3>
+              <p className="text-gray-600 mb-4">
+                Create and manage API keys for programmatic access to your community
+                model.
+              </p>
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-teal text-white px-4 py-2 rounded-md hover:bg-teal-dark transition-colors flex items-center gap-2"
+              >
+                <FaKey className="w-4 h-4" />
+                Create New API Key
+              </button>
             </div>
-          </div>
+
+            {apiKeys.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-lg font-medium mb-3">Existing API Keys</h4>
+                <div className="space-y-3">
+                  {apiKeys.map((key) => (
+                    <div
+                      key={key.uid}
+                      className="bg-white p-4 rounded-md border border-gray-200 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">{key.name || "Unnamed Key"}</p>
+                        <p className="text-sm text-gray-500">
+                          Created {formatDistanceToNow(key.createdAt)} ago
+                          {key.lastUsedAt && (
+                            <>
+                              {" "}
+                              · Last used {formatDistanceToNow(key.lastUsedAt)} ago
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            key.status === "ACTIVE"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {key.status}
+                        </span>
+                        {key.status === "ACTIVE" && (
+                          <button
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                            title="Revoke Key"
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <Modal isOpen={isCreateModalOpen} onClose={handleCloseModal}>
