@@ -29,6 +29,19 @@ export default function PollProgress({
     ? Math.min((submissionCount / minRequiredSubmissions) * 100, 100)
     : 100;
 
+  // Add debug logging
+  React.useEffect(() => {
+    console.log('=== Poll Progress State ===', {
+      votedCount,
+      maxVotes: effectiveMaxVotes,
+      voteProgress,
+      submissionCount,
+      minRequiredSubmissions,
+      submissionProgress,
+      isComplete,
+    });
+  }, [votedCount, effectiveMaxVotes, voteProgress, submissionCount, minRequiredSubmissions, submissionProgress, isComplete]);
+
   return (
     <div className="bg-white rounded-lg shadow p-4 mb-6">
       <div className="space-y-4">
@@ -40,7 +53,7 @@ export default function PollProgress({
               <span className="font-medium">Voting Progress</span>
             </div>
             <span className="text-sm text-gray-600">
-              {votedCount} / {effectiveMaxVotes}
+              {votedCount} / {effectiveMaxVotes} votes
             </span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -51,8 +64,8 @@ export default function PollProgress({
           </div>
         </div>
 
-        {/* Submission Progress (if required) */}
-        {minRequiredSubmissions && (
+        {/* Required Submissions Progress */}
+        {minRequiredSubmissions !== undefined && (
           <div>
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-2">
@@ -60,7 +73,7 @@ export default function PollProgress({
                 <span className="font-medium">Required Submissions</span>
               </div>
               <span className="text-sm text-gray-600">
-                {submissionCount} / {minRequiredSubmissions}
+                {submissionCount} / {minRequiredSubmissions} statements
               </span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -72,10 +85,11 @@ export default function PollProgress({
           </div>
         )}
 
-        {/* Submission Limit (if any) */}
-        {maxSubmissions && (
-          <div className="text-sm text-gray-600">
-            Submission limit: {submissionCount} / {maxSubmissions}
+        {/* Submission Limit */}
+        {maxSubmissions !== undefined && (
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>Submission limit:</span>
+            <span>{submissionCount} / {maxSubmissions} statements</span>
           </div>
         )}
 

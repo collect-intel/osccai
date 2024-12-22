@@ -16,6 +16,7 @@ import VotingList from "@/lib/components/polling/VotingList";
 import VoteButtons from "@/lib/components/polling/VoteButtons";
 import ArrowLeftIcon from "../icons/ArrowLeftIcon";
 import PollProgress from "./PollProgress";
+import { FaCheckCircle } from "react-icons/fa";
 
 interface VotingProps {
   statements: Statement[];
@@ -54,21 +55,31 @@ export default function Voting({
   const canVote = isSignedIn || !requireAuth;
   const votedCount = Object.keys(votes).length;
 
+  // Fetch poll completion status
+  const fetchPollStatus = async () => {
+    try {
+      const status = await checkPollCompletion(pollId, getAnonymousId());
+      setIsComplete(status.isComplete);
+      if (status.currentSubmissions !== undefined) {
+        setSubmissionCount(status.currentSubmissions);
+      }
+    } catch (error) {
+      console.error("Error checking completion status:", error);
+    }
+  };
+
   // Sync votes with initialVotes and fetch submission count
   useEffect(() => {
     setVotes(initialVotes);
-    const fetchSubmissionCount = async () => {
-      try {
-        const status = await checkPollCompletion(pollId, getAnonymousId());
-        if (status.currentSubmissions !== undefined) {
-          setSubmissionCount(status.currentSubmissions);
-        }
-      } catch (error) {
-        console.error("Error checking submission count:", error);
-      }
-    };
-    fetchSubmissionCount();
+    fetchPollStatus();
   }, [initialVotes, pollId]);
+
+  // Check completion status after votes or submissions change
+  useEffect(() => {
+    if (canVote) {
+      fetchPollStatus();
+    }
+  }, [pollId, votes, canVote]);
 
   // Add debug logging for votes and state
   useEffect(() => {
@@ -143,25 +154,6 @@ export default function Voting({
     });
   }, [votedCount, submissionCount, canVote, isComplete, currentStatementIx, votes]);
 
-  // Check completion status
-  useEffect(() => {
-    const checkCompletion = async () => {
-      try {
-        const status = await checkPollCompletion(pollId, getAnonymousId());
-        setIsComplete(status.isComplete);
-        if (status.currentSubmissions !== undefined) {
-          setSubmissionCount(status.currentSubmissions);
-        }
-      } catch (error) {
-        console.error("Error checking completion status:", error);
-      }
-    };
-
-    if (canVote) {
-      checkCompletion();
-    }
-  }, [pollId, votes, submissionCount, canVote]);
-
   const handleVote = async (vote: VoteValue) => {
     if (!canVote || currentStatementIx === null) return;
     
@@ -195,10 +187,15 @@ export default function Voting({
       await submitStatement(pollId, statementText, getAnonymousId());
       setStatementText("");
       setIsModalOpen(false);
-      setSubmissionCount((prev) => prev + 1);
+      // Fetch actual submission count instead of optimistic update
+      await fetchPollStatus();
       showToast("Statement submitted successfully");
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Error submitting statement");
+      if (error instanceof Error && error.message === "Maximum submissions limit reached") {
+        showToast("You have reached the maximum number of allowed submissions");
+      } else {
+        showToast(error instanceof Error ? error.message : "Error submitting statement");
+      }
     }
   };
 
@@ -435,6 +432,16 @@ export default function Voting({
           </div>
         </div>
       </Modal>
+
+      {isComplete && completionMessage && (
+        <div className="mt-4 p-4 bg-light-teal rounded-md">
+          <div className="flex items-center gap-2 text-teal mb-2">
+            <FaCheckCircle />
+            <span className="font-medium">Poll Complete!</span>
+          </div>
+          <p className="text-gray-700">{completionMessage}</p>
+        </div>
+      )}
 
       <PollProgress
         totalStatements={statements.length}

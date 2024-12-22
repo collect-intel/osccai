@@ -1232,13 +1232,18 @@ export async function createApiKey(
 // New helper function to check poll completion status
 export async function checkPollCompletion(
   pollId: string,
-  participantId: string,
+  anonymousId: string,
 ): Promise<{
   isComplete: boolean;
   message?: string;
   requiredSubmissions?: number;
   currentSubmissions?: number;
 }> {
+  const participant = await getOrCreateParticipant(null, anonymousId);
+  if (!participant) throw new Error("Participant not found");
+
+  const participantId = participant.uid;
+
   const poll = await prisma.poll.findUnique({
     where: { uid: pollId },
     include: {
