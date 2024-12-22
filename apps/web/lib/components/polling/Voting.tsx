@@ -93,20 +93,55 @@ export default function Voting({
     });
   }, [initialVotes, votes, votedCount, submissionCount, canVote, isComplete]);
 
-  // Update current statement index when votes change
+  // Add this function to sort statements
+  const getSortedStatements = () => {
+    return [...statements].sort((a, b) => {
+      // Calculate total votes for each statement
+      const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
+      const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
+      
+      // First sort by total votes (ascending)
+      if (totalVotesA !== totalVotesB) {
+        return totalVotesA - totalVotesB;
+      }
+      
+      // If total votes are equal, sort by creation date (ascending)
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+  };
+
+  // Update the effect to use sorted statements
   useEffect(() => {
     if (canVote) {
-      const firstUnvotedIndex = statements.findIndex(
+      const sortedStatements = getSortedStatements();
+      const firstUnvotedIndex = sortedStatements.findIndex(
         (statement) => !votes[statement.uid]
       );
-      setCurrentStatementIx(
-        firstUnvotedIndex >= 0 && 
-        (!maxVotesPerParticipant || votedCount < maxVotesPerParticipant)
-          ? firstUnvotedIndex 
-          : null
-      );
+      
+      if (firstUnvotedIndex >= 0 && 
+          (!maxVotesPerParticipant || votedCount < maxVotesPerParticipant)) {
+        // Find the index in the original statements array
+        const originalIndex = statements.findIndex(
+          s => s.uid === sortedStatements[firstUnvotedIndex].uid
+        );
+        setCurrentStatementIx(originalIndex);
+      } else {
+        setCurrentStatementIx(null);
+      }
     }
   }, [canVote, statements, votes, maxVotesPerParticipant, votedCount]);
+
+  // Add debug logging for statement sorting
+  useEffect(() => {
+    const sortedStatements = getSortedStatements();
+    console.log('=== Sorted Statements ===', {
+      statements: sortedStatements.map(s => ({
+        id: s.uid,
+        totalVotes: s.agreeCount + s.disagreeCount + s.passCount,
+        createdAt: s.createdAt,
+      }))
+    });
+  }, [statements]);
 
   // Calculate whether user can submit statements
   const canSubmitStatement = 
