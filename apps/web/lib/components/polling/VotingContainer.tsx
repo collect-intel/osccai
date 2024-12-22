@@ -10,6 +10,11 @@ interface VotingContainerProps {
   requireAuth: boolean;
   initialVotes: Record<string, VoteValue>;
   allowParticipantStatements: boolean;
+  minVotesBeforeSubmission?: number;
+  maxVotesPerParticipant?: number;
+  maxSubmissionsPerParticipant?: number;
+  minRequiredSubmissions?: number;
+  completionMessage?: string;
 }
 
 export default function VotingContainer({
@@ -18,6 +23,11 @@ export default function VotingContainer({
   requireAuth,
   initialVotes,
   allowParticipantStatements,
+  minVotesBeforeSubmission,
+  maxVotesPerParticipant,
+  maxSubmissionsPerParticipant,
+  minRequiredSubmissions,
+  completionMessage,
 }: VotingContainerProps) {
   return (
     <div className="rounded-md">
@@ -35,6 +45,11 @@ export default function VotingContainer({
         requireAuth={requireAuth}
         initialVotes={initialVotes}
         allowParticipantStatements={allowParticipantStatements}
+        minVotesBeforeSubmission={minVotesBeforeSubmission}
+        maxVotesPerParticipant={maxVotesPerParticipant}
+        maxSubmissionsPerParticipant={maxSubmissionsPerParticipant}
+        minRequiredSubmissions={minRequiredSubmissions}
+        completionMessage={completionMessage}
       />
     </div>
   );

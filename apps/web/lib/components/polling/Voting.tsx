@@ -56,6 +56,45 @@ export default function Voting({
   const canVote = isSignedIn || !requireAuth;
   const votedCount = Object.keys(votes).length;
 
+  // Add detailed debug logging for props and state
+  useEffect(() => {
+    console.log('=== Voting Component Props ===', {
+      pollId,
+      requireAuth,
+      allowParticipantStatements,
+      advancedOptions: {
+        minVotesBeforeSubmission,
+        maxVotesPerParticipant,
+        maxSubmissionsPerParticipant,
+        minRequiredSubmissions,
+        completionMessage,
+      },
+      totalStatements: statements.length,
+    });
+  }, [
+    pollId,
+    requireAuth,
+    allowParticipantStatements,
+    minVotesBeforeSubmission,
+    maxVotesPerParticipant,
+    maxSubmissionsPerParticipant,
+    minRequiredSubmissions,
+    completionMessage,
+    statements.length,
+  ]);
+
+  // Add detailed debug logging for state changes
+  useEffect(() => {
+    console.log('=== Voting Component State ===', {
+      votedCount,
+      submissionCount,
+      canVote,
+      isComplete,
+      currentStatementIx,
+      totalVotes: Object.keys(votes).length,
+    });
+  }, [votedCount, submissionCount, canVote, isComplete, currentStatementIx, votes]);
+
   useEffect(() => {
     if (canVote) {
       const firstUnvotedIndex = statements.findIndex(
@@ -131,12 +170,70 @@ export default function Voting({
 
   const canSubmitStatement = 
     allowParticipantStatements &&
+    canVote &&
     (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission) &&
     (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant);
 
   const hasVotedOnAll =
     statements.length > 0 &&
     statements.every((statement) => votes[statement.uid]);
+
+  // Add useEffect for debugging
+  useEffect(() => {
+    console.log('=== Voting Component State ===');
+    console.log('Advanced Options:', {
+      minVotesBeforeSubmission,
+      maxVotesPerParticipant,
+      maxSubmissionsPerParticipant,
+      allowParticipantStatements
+    });
+    console.log('Current State:', {
+      votedCount,
+      submissionCount,
+      canVote,
+      hasVotedOnAll
+    });
+    console.log('Votes Object:', votes);
+    console.log('Total Statements:', statements.length);
+  }, [minVotesBeforeSubmission, maxVotesPerParticipant, maxSubmissionsPerParticipant, 
+      allowParticipantStatements, votedCount, submissionCount, canVote, hasVotedOnAll, 
+      votes, statements.length]);
+
+  // Add immediate logging after calculating canSubmitStatement
+  useEffect(() => {
+    console.log('=== Submit Statement Conditions ===');
+    console.log('canSubmitStatement:', canSubmitStatement);
+    console.log('Condition breakdown:', {
+      allowParticipantStatements,
+      canVote,
+      minVotesCheck: (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission),
+      maxSubmissionsCheck: (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant)
+    });
+  }, [canSubmitStatement, allowParticipantStatements, canVote, 
+      minVotesBeforeSubmission, votedCount, maxSubmissionsPerParticipant, submissionCount]);
+
+  const getSubmissionButtonTooltip = () => {
+    const tooltip = (!allowParticipantStatements) 
+      ? "Statement submissions are not allowed in this poll"
+      : (!canVote) 
+      ? "You must sign in to submit statements"
+      : (minVotesBeforeSubmission && votedCount < minVotesBeforeSubmission)
+      ? `You must vote on at least ${minVotesBeforeSubmission} statements before submitting your own`
+      : (maxSubmissionsPerParticipant && submissionCount >= maxSubmissionsPerParticipant)
+      ? `You have reached the maximum limit of ${maxSubmissionsPerParticipant} submissions`
+      : "Contribute a statement";
+
+    // Log the tooltip calculation
+    console.log('=== Tooltip Calculation ===', {
+      resultingTooltip: tooltip,
+      votedCount,
+      minVotesBeforeSubmission,
+      submissionCount,
+      maxSubmissionsPerParticipant
+    });
+
+    return tooltip;
+  };
 
   const renderContent = () => {
     if (statements.length === 0) {
@@ -257,16 +354,18 @@ export default function Voting({
       </div>
 
       {allowParticipantStatements && (
-        <div className="flex justify-center mt-8">
+        <div className="flex flex-col items-center mt-8">
           <Button
-            title="Contribute a statement"
-            onClick={() => {
-              if (!canVote) return;
-              setIsModalOpen(true);
-            }}
-            disabled={!canVote}
+            title={getSubmissionButtonTooltip()}
+            onClick={() => setIsModalOpen(true)}
+            disabled={!canSubmitStatement}
             icon={<PlusIcon className="w-5 h-5 stroke-white" />}
           />
+          {!canSubmitStatement && canVote && (
+            <p className="text-sm text-gray-600 mt-2">
+              {getSubmissionButtonTooltip()}
+            </p>
+          )}
         </div>
       )}
 
@@ -300,11 +399,7 @@ export default function Voting({
               />
               <Button
                 title="Add statement"
-                onClick={async () => {
-                  await submitStatement(pollId, statementText, getAnonymousId());
-                  setStatementText("");
-                  setIsModalOpen(false);
-                }}
+                onClick={handleSubmitStatement}
                 disabled={!statementText.trim()}
                 icon={<PlusIcon className="w-5 h-5 stroke-white" />}
               />

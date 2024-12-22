@@ -24,6 +24,11 @@ interface PollPageProps {
     published: boolean;
     requireAuth: boolean;
     allowParticipantStatements: boolean;
+    minVotesBeforeSubmission?: number;
+    maxVotesPerParticipant?: number;
+    maxSubmissionsPerParticipant?: number;
+    minRequiredSubmissions?: number;
+    completionMessage?: string;
     statements: (Statement & { votes: { participantId: string }[] })[];
     communityModel: {
       bio: string;
@@ -122,6 +127,11 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
             requireAuth={poll.requireAuth}
             initialVotes={initialVotes}
             allowParticipantStatements={poll.allowParticipantStatements}
+            minVotesBeforeSubmission={poll.minVotesBeforeSubmission}
+            maxVotesPerParticipant={poll.maxVotesPerParticipant}
+            maxSubmissionsPerParticipant={poll.maxSubmissionsPerParticipant}
+            minRequiredSubmissions={poll.minRequiredSubmissions}
+            completionMessage={poll.completionMessage}
           />
         )}
       </div>

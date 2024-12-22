@@ -1150,12 +1150,28 @@ export async function fetchPollData(
     };
   });
 
+  // Convert null values to undefined for optional fields
+  const {
+    minVotesBeforeSubmission,
+    maxVotesPerParticipant,
+    maxSubmissionsPerParticipant,
+    minRequiredSubmissions,
+    completionMessage,
+    ...restPoll
+  } = poll;
+
+  // Return the poll data with properly typed optional fields
   return {
-    ...poll,
+    ...restPoll,
+    minVotesBeforeSubmission: minVotesBeforeSubmission ?? undefined,
+    maxVotesPerParticipant: maxVotesPerParticipant ?? undefined,
+    maxSubmissionsPerParticipant: maxSubmissionsPerParticipant ?? undefined,
+    minRequiredSubmissions: minRequiredSubmissions ?? undefined,
+    completionMessage: completionMessage ?? undefined,
     statements: statementsWithConstitutionable,
     communityModel: {
-      bio: poll.communityModel.bio,
-      goal: poll.communityModel.goal,
+      bio: poll.communityModel.bio ?? "",
+      goal: poll.communityModel.goal ?? "",
       name: poll.communityModel.name,
       uid: poll.communityModel.uid,
       owner: {

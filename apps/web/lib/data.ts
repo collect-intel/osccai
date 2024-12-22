@@ -50,15 +50,29 @@ export async function getPollData(pollId: string): Promise<ExtendedPoll | null> 
     return null;
   }
 
+  const {
+    minVotesBeforeSubmission,
+    maxVotesPerParticipant,
+    maxSubmissionsPerParticipant,
+    minRequiredSubmissions,
+    completionMessage,
+    ...restPoll
+  } = poll;
+
   return {
-    ...poll,
+    ...restPoll,
+    minVotesBeforeSubmission: minVotesBeforeSubmission ?? undefined,
+    maxVotesPerParticipant: maxVotesPerParticipant ?? undefined,
+    maxSubmissionsPerParticipant: maxSubmissionsPerParticipant ?? undefined,
+    minRequiredSubmissions: minRequiredSubmissions ?? undefined,
+    completionMessage: completionMessage ?? undefined,
     statements: poll.statements.map((statement: Statement & { votes: Vote[]; flags: any[] }) => ({
       ...statement,
       isConstitutionable: isStatementConstitutionable(statement),
     })),
     communityModel: {
-      bio: poll.communityModel.bio,
-      goal: poll.communityModel.goal,
+      bio: poll.communityModel.bio ?? "",
+      goal: poll.communityModel.goal ?? "",
       name: poll.communityModel.name,
       uid: poll.communityModel.uid,
       owner: {
