@@ -93,9 +93,66 @@ export default function Voting({
     });
   }, [initialVotes, votes, votedCount, submissionCount, canVote, isComplete]);
 
-  // Add this function to sort statements
-  const getSortedStatements = () => {
-    return [...statements].sort((a, b) => {
+  // Optimize statement sorting to only handle needed statements
+  const getNextUnvotedStatement = () => {
+    if (!canVote) return null;
+    
+    // If we've reached vote limit, return null
+    if (maxVotesPerParticipant && votedCount >= maxVotesPerParticipant) {
+      return null;
+    }
+
+    // Get only unvoted statements
+    const unvotedStatements = statements.filter(s => !votes[s.uid]);
+
+    // If no unvoted statements, return null
+    if (unvotedStatements.length === 0) {
+      return null;
+    }
+
+    // Sort unvoted statements by vote count and date
+    const sortedUnvoted = unvotedStatements.sort((a, b) => {
+      const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
+      const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
+      
+      // First sort by total votes (ascending)
+      if (totalVotesA !== totalVotesB) {
+        return totalVotesA - totalVotesB;
+      }
+      
+      // If total votes are equal, sort by creation date (ascending)
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    // Return the first statement's index in the original array
+    return statements.findIndex(s => s.uid === sortedUnvoted[0].uid);
+  };
+
+  // Update the effect to use the optimized function
+  useEffect(() => {
+    const nextStatementIndex = getNextUnvotedStatement();
+    setCurrentStatementIx(nextStatementIndex);
+
+    // Add debug logging
+    console.log('=== Next Statement Selection ===', {
+      votedCount,
+      maxVotesPerParticipant,
+      remainingVotes: maxVotesPerParticipant ? maxVotesPerParticipant - votedCount : 'unlimited',
+      nextStatementIndex,
+      nextStatement: nextStatementIndex !== null ? {
+        id: statements[nextStatementIndex]?.uid,
+        totalVotes: statements[nextStatementIndex] ? 
+          statements[nextStatementIndex].agreeCount + 
+          statements[nextStatementIndex].disagreeCount + 
+          statements[nextStatementIndex].passCount : null,
+        createdAt: statements[nextStatementIndex]?.createdAt
+      } : null
+    });
+  }, [canVote, statements, votes, maxVotesPerParticipant, votedCount]);
+
+  // Add debug logging for statement sorting
+  useEffect(() => {
+    const sortedStatements = statements.sort((a, b) => {
       // Calculate total votes for each statement
       const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
       const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
@@ -108,32 +165,6 @@ export default function Voting({
       // If total votes are equal, sort by creation date (ascending)
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
-  };
-
-  // Update the effect to use sorted statements
-  useEffect(() => {
-    if (canVote) {
-      const sortedStatements = getSortedStatements();
-      const firstUnvotedIndex = sortedStatements.findIndex(
-        (statement) => !votes[statement.uid]
-      );
-      
-      if (firstUnvotedIndex >= 0 && 
-          (!maxVotesPerParticipant || votedCount < maxVotesPerParticipant)) {
-        // Find the index in the original statements array
-        const originalIndex = statements.findIndex(
-          s => s.uid === sortedStatements[firstUnvotedIndex].uid
-        );
-        setCurrentStatementIx(originalIndex);
-      } else {
-        setCurrentStatementIx(null);
-      }
-    }
-  }, [canVote, statements, votes, maxVotesPerParticipant, votedCount]);
-
-  // Add debug logging for statement sorting
-  useEffect(() => {
-    const sortedStatements = getSortedStatements();
     console.log('=== Sorted Statements ===', {
       statements: sortedStatements.map(s => ({
         id: s.uid,
