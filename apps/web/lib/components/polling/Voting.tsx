@@ -301,6 +301,7 @@ export default function Voting({
         </h2>
         <p>You&apos;ve already voted on all of these statements.</p>
       </div>
+      
     ) : (
       <div
         key={currentStatementIx}
@@ -432,16 +433,6 @@ export default function Voting({
           </div>
         </div>
       </Modal>
-
-      {isComplete && completionMessage && (
-        <div className="mt-4 p-4 bg-light-teal rounded-md">
-          <div className="flex items-center gap-2 text-teal mb-2">
-            <FaCheckCircle />
-            <span className="font-medium">Poll Complete!</span>
-          </div>
-          <p className="text-gray-700">{completionMessage}</p>
-        </div>
-      )}
 
       <PollProgress
         totalStatements={statements.length}
