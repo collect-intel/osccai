@@ -44,9 +44,7 @@ export default function Voting({
 }: VotingProps) {
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
-  const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(
-    null,
-  );
+  const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(null);
   const [statementText, setStatementText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submissionCount, setSubmissionCount] = useState(0);
@@ -55,6 +53,56 @@ export default function Voting({
 
   const canVote = isSignedIn || !requireAuth;
   const votedCount = Object.keys(votes).length;
+
+  // Sync votes with initialVotes and fetch submission count
+  useEffect(() => {
+    setVotes(initialVotes);
+    const fetchSubmissionCount = async () => {
+      try {
+        const status = await checkPollCompletion(pollId, getAnonymousId());
+        if (status.currentSubmissions !== undefined) {
+          setSubmissionCount(status.currentSubmissions);
+        }
+      } catch (error) {
+        console.error("Error checking submission count:", error);
+      }
+    };
+    fetchSubmissionCount();
+  }, [initialVotes, pollId]);
+
+  // Add debug logging for votes and state
+  useEffect(() => {
+    console.log('=== Votes and State ===', {
+      initialVotes,
+      currentVotes: votes,
+      votedCount,
+      submissionCount,
+      canVote,
+      isComplete,
+    });
+  }, [initialVotes, votes, votedCount, submissionCount, canVote, isComplete]);
+
+  // Update current statement index when votes change
+  useEffect(() => {
+    if (canVote) {
+      const firstUnvotedIndex = statements.findIndex(
+        (statement) => !votes[statement.uid]
+      );
+      setCurrentStatementIx(
+        firstUnvotedIndex >= 0 && 
+        (!maxVotesPerParticipant || votedCount < maxVotesPerParticipant)
+          ? firstUnvotedIndex 
+          : null
+      );
+    }
+  }, [canVote, statements, votes, maxVotesPerParticipant, votedCount]);
+
+  // Calculate whether user can submit statements
+  const canSubmitStatement = 
+    allowParticipantStatements &&
+    canVote &&
+    (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission) &&
+    (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant);
 
   // Add detailed debug logging for props and state
   useEffect(() => {
@@ -94,20 +142,6 @@ export default function Voting({
       totalVotes: Object.keys(votes).length,
     });
   }, [votedCount, submissionCount, canVote, isComplete, currentStatementIx, votes]);
-
-  useEffect(() => {
-    if (canVote) {
-      const firstUnvotedIndex = statements.findIndex(
-        (statement) => !votes[statement.uid]
-      );
-      setCurrentStatementIx(
-        firstUnvotedIndex >= 0 && 
-        (!maxVotesPerParticipant || votedCount < maxVotesPerParticipant)
-          ? firstUnvotedIndex 
-          : null
-      );
-    }
-  }, [pollId, canVote, statements, votes, maxVotesPerParticipant, votedCount]);
 
   // Check completion status
   useEffect(() => {
@@ -167,12 +201,6 @@ export default function Voting({
       showToast(error instanceof Error ? error.message : "Error submitting statement");
     }
   };
-
-  const canSubmitStatement = 
-    allowParticipantStatements &&
-    canVote &&
-    (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission) &&
-    (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant);
 
   const hasVotedOnAll =
     statements.length > 0 &&

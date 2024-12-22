@@ -46,16 +46,24 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
   const [anonymousUserVotes, setAnonymousUserVotes] = useState<
     Record<string, VoteValue>
   >({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const anonymousId = getAnonymousId();
-      const isCreator = await isPollOwner(poll.uid);
-      setIsUserCreator(isCreator);
+      setIsLoading(true);
+      try {
+        const anonymousId = getAnonymousId();
+        const isCreator = await isPollOwner(poll.uid);
+        setIsUserCreator(isCreator);
 
-      if (!isLoggedIn) {
-        const votes = await fetchUserVotes(poll.uid, anonymousId);
-        setAnonymousUserVotes(votes as unknown as Record<string, VoteValue>);
+        if (!isLoggedIn) {
+          const votes = await fetchUserVotes(poll.uid, anonymousId);
+          setAnonymousUserVotes(votes as unknown as Record<string, VoteValue>);
+        }
+      } catch (error) {
+        console.error('Error fetching poll data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -69,6 +77,18 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
   ).size;
 
   const initialVotes = isLoggedIn ? userVotes : anonymousUserVotes;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-2 py-8">
+        <div className="bg-white rounded-md shadow-md p-8 max-w-4xl mx-auto">
+          <div className="flex justify-center items-center min-h-[200px]">
+            <div className="text-gray-600">Loading poll data...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-2 py-8">
