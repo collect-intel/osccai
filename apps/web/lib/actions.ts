@@ -1283,8 +1283,8 @@ export async function checkPollCompletion(
 
   return {
     isComplete,
-    message: isComplete ? poll.completionMessage : undefined,
-    requiredSubmissions: poll.minRequiredSubmissions,
+    message: isComplete ? (poll.completionMessage ?? undefined) : undefined,
+    requiredSubmissions: poll.minRequiredSubmissions ?? undefined,
     currentSubmissions: submissionCount,
   };
 }
