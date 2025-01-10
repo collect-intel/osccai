@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "sample_size": 10000,
+    "test_ratio": 0.2,
+    "random_state": 42,
+    "duration_seconds": 4.89578,
+    "matrix_stats": {
+      "matrix_shape": [
+        73,
+        275
+      ],
+      "total_cells": 20075,
+      "filled_cells": 10517,
+      "sparsity": 0.4761145703611457,
+      "votes_per_participant": {
+        "mean": 144.06849315068493,
+        "median": 142.0,
+        "min": 119,
+        "max": 175
+      },
+      "votes_per_statement": {
+        "mean": 38.24363636363636,
+        "median": 38.0,
+        "min": 25,
+        "max": 53
+      }
+    }
+  },
+  "metrics": {
+    "strict_accuracy": 0.9472182596291013,
+    "loose_accuracy": 0.8934854969091773,
+    "rmse": 0.22821286981289884,
+    "directional_accuracy": 0.8934854969091773,
+    "weighted_accuracy": 0.003729962203136941,
+    "strict_confusion": {
+      "agree": {
+        "correct": 6,
+        "total": 74
+      },
+      "disagree": {
+        "correct": 0,
+        "total": 12
+      },
+      "pass": {
+        "correct": 1986,
+        "total": 2017
+      }
+    },
+    "loose_confusion": {
+      "agree": {
+        "correct": 18,
+        "total": 74
+      },
+      "disagree": {
+        "correct": 1,
+        "total": 12
+      },
+      "pass": {
+        "correct": 1860,
+        "total": 2017
+      }
+    }
+  }
+}

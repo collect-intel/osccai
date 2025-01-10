@@ -16,7 +16,7 @@ The `update_gac_scores.py` script calculates GAC scores for statements based on 
 2. For each identified poll, it:
    - Fetches all statements, votes, and participants
    - Generates a vote matrix (participants × statements)
-   - Imputes missing votes using Jaccard similarity
+   - Imputes missing votes using Cosine similarity
    - Performs clustering to identify voting groups
    - Calculates GAC scores considering group consensus
    - Updates statement records with new scores
