@@ -300,7 +300,7 @@ def generate_vote_matrix(statements, votes, participants):
 def calculate_cosine_similarity(matrix):
     """
     Calculate pairwise cosine similarities between participants.
-    Includes uncertainty scaling based on overlap.
+    Includes uncertainty scaling based on number of common votes.
     """
     # Get participation mask
     valid_votes_mask = ~np.isnan(matrix.values)
@@ -314,16 +314,15 @@ def calculate_cosine_similarity(matrix):
     vote_matrix_normalized = vote_matrix_filled / norms[:, np.newaxis]
     vote_similarities = np.dot(vote_matrix_normalized, vote_matrix_normalized.T)
     
-    # Calculate participation overlap
+    # Calculate number of common votes
     n_common_votes = valid_votes_mask @ valid_votes_mask.T
-    n_total_possible = matrix.shape[1]
     
-    # Scale similarities by overlap ratio and add uncertainty factor
-    overlap_ratio = n_common_votes / n_total_possible
-    uncertainty_factor = 1 - (1 / (1 + n_common_votes))  # Approaches 1 as overlap increases
+    # Scale similarities by uncertainty factor only
+    # This approaches 1.0 as number of common votes increases
+    uncertainty_factor = 1 - (1 / (1 + n_common_votes))
     
-    # Combine similarity with scaled uncertainty
-    similarities = vote_similarities * overlap_ratio * uncertainty_factor
+    # Apply uncertainty scaling to similarities
+    similarities = vote_similarities * uncertainty_factor
     
     return pd.DataFrame(similarities, index=matrix.index, columns=matrix.index)
 
@@ -357,11 +356,8 @@ def cosine_impute(vote_matrix, n_neighbors):
                 weights = strongest_correlations[similar_votes.index].abs()
                 
                 if weights.sum() > 0:
-                    # Calculate base weighted vote
-                    weighted_vote = np.average(adjusted_votes, weights=weights)
-                    # Scale by average correlation strength
-                    confidence = weights.mean()  # Use mean correlation as confidence
-                    imputed_matrix.at[participant, statement] = weighted_vote * confidence
+                    # Calculate weighted vote without additional confidence scaling
+                    imputed_matrix.at[participant, statement] = np.average(adjusted_votes, weights=weights)
                 else:
                     imputed_matrix.at[participant, statement] = 0
             else:
