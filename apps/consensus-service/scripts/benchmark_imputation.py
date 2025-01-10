@@ -11,6 +11,7 @@ import multiprocessing
 from joblib import Parallel, delayed
 
 # Add parent directory to path to import from api
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api.update_gac_scores import cosine_impute
 
 @contextlib.contextmanager
