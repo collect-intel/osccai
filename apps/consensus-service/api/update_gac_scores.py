@@ -298,48 +298,31 @@ def generate_vote_matrix(statements, votes, participants):
     return vote_df
 
 def calculate_cosine_similarity(matrix):
-    """Calculate pairwise cosine similarities between participants."""
-    # Get participation mask and convert to float
+    """Calculate pairwise cosine similarities between participants with realistic confidence scaling."""
     valid_votes_mask = (~np.isnan(matrix.values)).astype(np.float64)
-    
-    # Calculate common votes (already float64)
     common_votes = valid_votes_mask @ valid_votes_mask.T
     
-    # Replace nans with 0 for computation
     vote_matrix_filled = np.nan_to_num(matrix.values, nan=0, copy=True)
     
-    # Ensure float type for all calculations
-    vote_matrix_filled = vote_matrix_filled.astype(np.float64)
-    
-    # Calculate vote similarity
+    # Calculate normalized vote similarities
     norms = np.linalg.norm(vote_matrix_filled, axis=1)
     norms[norms == 0] = 1
     vote_matrix_normalized = vote_matrix_filled / norms[:, np.newaxis]
     vote_similarities = np.dot(vote_matrix_normalized, vote_matrix_normalized.T)
     
-    # Scale similarities by uncertainty factor
-    uncertainty_factor = 1 - (1 / (1 + common_votes))
-    similarities = vote_similarities * uncertainty_factor
+    # New confidence scaling that rises more quickly for realistic vote counts
+    # Square root makes confidence rise more quickly initially while still smoothly approaching 1
+    # Dividing by 5 means 5 common votes gives 0.5 confidence, 20 common votes gives 0.8 confidence
+    confidence = np.sqrt(common_votes / (common_votes + 5))
+    
+    similarities = vote_similarities * confidence
     
     return pd.DataFrame(similarities, index=matrix.index, columns=matrix.index)
 
 def cosine_impute(vote_matrix, n_neighbors):
-    """Impute missing votes with improved confidence scaling."""
+    """Impute missing votes using cosine similarity with realistic confidence scaling."""
     similarity_matrix = calculate_cosine_similarity(vote_matrix)
     imputed_matrix = vote_matrix.copy()
-    
-    # Calculate confidence factors
-    # Convert boolean mask to float so we can safely perform division
-    valid_votes_mask = (~vote_matrix.isna()).astype(np.float64)
-    common_votes = valid_votes_mask.dot(valid_votes_mask.T)
-    
-    # Scale confidence based on both common votes and total available votes
-    max_common = common_votes.max()
-    total_statements = len(vote_matrix.columns)
-    
-    base_confidence = common_votes / max_common
-    vote_ratio = common_votes / total_statements
-    confidence_scale = base_confidence * (1 - 1/(1 + vote_ratio))
     
     for participant in vote_matrix.index:
         missing_statements = vote_matrix.columns[vote_matrix.loc[participant].isna()]
@@ -354,21 +337,18 @@ def cosine_impute(vote_matrix, n_neighbors):
             similar_votes = vote_matrix.loc[strongest_correlations.index, statement].dropna()
             
             if not similar_votes.empty:
-                # Calculate confidence-weighted votes
-                adjusted_votes = similar_votes * np.sign(strongest_correlations[similar_votes.index])
-                raw_weights = strongest_correlations[similar_votes.index].abs()
-                
-                # Scale weights by confidence based on common votes
-                confidence = confidence_scale.loc[participant, similar_votes.index]
-                weights = raw_weights * confidence
+                weights = strongest_correlations[similar_votes.index].abs()
                 
                 if weights.sum() > 0:
-                    # Calculate weighted average with confidence scaling
-                    raw_imputed = np.average(adjusted_votes, weights=weights)
-                    # Scale based on both weight confidence and number of neighbors
-                    neighbor_factor = len(similar_votes) / n_neighbors
-                    confidence_factor = min(0.95, (weights.sum() / n_neighbors) * neighbor_factor)
-                    imputed_matrix.at[participant, statement] = raw_imputed * confidence_factor
+                    # New confidence scaling that better respects strong signals
+                    # Cube root provides faster initial growth while maintaining smooth scaling
+                    confidence = np.cbrt(weights.sum() / (weights.sum() + 1))
+                    
+                    raw_imputed = np.average(
+                        similar_votes * np.sign(strongest_correlations[similar_votes.index]), 
+                        weights=weights
+                    )
+                    imputed_matrix.at[participant, statement] = raw_imputed * confidence
                 else:
                     imputed_matrix.at[participant, statement] = 0
             else:
