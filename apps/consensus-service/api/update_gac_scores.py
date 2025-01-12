@@ -249,10 +249,10 @@ def generate_vote_matrix(statements, votes, participants):
     """
     Generate a vote matrix where rows represent participants and columns represent statements.
     Values:
-        1  - Agree
-       -1  - Disagree
-        0  - Pass
-       np.nan - No vote (changed from None)
+        1.0  - Agree
+       -1.0  - Disagree
+        0.0  - Pass
+        np.nan - No vote
     """
     poll_id = statements[0]['pollId'] if statements else None
     
@@ -265,29 +265,29 @@ def generate_vote_matrix(statements, votes, participants):
     # Create mappings from IDs to indices
     participant_ids = [participant['uid'] for participant in participants]
     statement_ids = [statement['uid'] for statement in statements]
-
+    
     participant_index = {pid: idx for idx, pid in enumerate(participant_ids)}
     statement_index = {sid: idx for idx, sid in enumerate(statement_ids)}
-
-    # Initialize matrix with np.nan instead of None
-    vote_matrix = np.full((len(participant_ids), len(statement_ids)), np.nan)
-
+    
+    # Initialize matrix with np.nan
+    vote_matrix = np.full((len(participant_ids), len(statement_ids)), np.nan, dtype=np.float64)
+    
     for vote in votes:
         participant_id = vote['participantId']
         statement_id = vote['statementId']
         vote_value = vote['voteValue']
-
+        
         row = participant_index.get(participant_id)
         col = statement_index.get(statement_id)
-
+        
         if row is not None and col is not None:
             if vote_value == "AGREE":
-                vote_matrix[row][col] = 1
+                vote_matrix[row][col] = 1.0
             elif vote_value == "DISAGREE":
-                vote_matrix[row][col] = -1
+                vote_matrix[row][col] = -1.0
             elif vote_value == "PASS":
-                vote_matrix[row][col] = 0
-
+                vote_matrix[row][col] = 0.0
+    
     # Convert to DataFrame for easier handling
     vote_df = pd.DataFrame(vote_matrix, index=participant_ids, columns=statement_ids)
     
@@ -298,15 +298,18 @@ def generate_vote_matrix(statements, votes, participants):
     return vote_df
 
 def calculate_cosine_similarity(matrix):
-    """
-    Calculate pairwise cosine similarities between participants.
-    Includes uncertainty scaling based on number of common votes.
-    """
-    # Get participation mask
-    valid_votes_mask = ~np.isnan(matrix.values)
+    """Calculate pairwise cosine similarities between participants."""
+    # Get participation mask and convert to float
+    valid_votes_mask = (~np.isnan(matrix.values)).astype(np.float64)
+    
+    # Calculate common votes (already float64)
+    common_votes = valid_votes_mask @ valid_votes_mask.T
     
     # Replace nans with 0 for computation
     vote_matrix_filled = np.nan_to_num(matrix.values, nan=0, copy=True)
+    
+    # Ensure float type for all calculations
+    vote_matrix_filled = vote_matrix_filled.astype(np.float64)
     
     # Calculate vote similarity
     norms = np.linalg.norm(vote_matrix_filled, axis=1)
@@ -314,27 +317,29 @@ def calculate_cosine_similarity(matrix):
     vote_matrix_normalized = vote_matrix_filled / norms[:, np.newaxis]
     vote_similarities = np.dot(vote_matrix_normalized, vote_matrix_normalized.T)
     
-    # Calculate number of common votes
-    n_common_votes = valid_votes_mask @ valid_votes_mask.T
-    
-    # Scale similarities by uncertainty factor only
-    # This approaches 1.0 as number of common votes increases
-    uncertainty_factor = 1 - (1 / (1 + n_common_votes))
-    
-    # Apply uncertainty scaling to similarities
+    # Scale similarities by uncertainty factor
+    uncertainty_factor = 1 - (1 / (1 + common_votes))
     similarities = vote_similarities * uncertainty_factor
     
     return pd.DataFrame(similarities, index=matrix.index, columns=matrix.index)
 
 def cosine_impute(vote_matrix, n_neighbors):
-    """
-    Impute missing votes using cosine similarity between participants.
-    Uses both similar and opposite voting patterns as signals.
-    """
+    """Impute missing votes with improved confidence scaling."""
     similarity_matrix = calculate_cosine_similarity(vote_matrix)
-    logger.info(f"Similarity matrix:\n{similarity_matrix}")
-    
     imputed_matrix = vote_matrix.copy()
+    
+    # Calculate confidence factors
+    # Convert boolean mask to float so we can safely perform division
+    valid_votes_mask = (~vote_matrix.isna()).astype(np.float64)
+    common_votes = valid_votes_mask.dot(valid_votes_mask.T)
+    
+    # Scale confidence based on both common votes and total available votes
+    max_common = common_votes.max()
+    total_statements = len(vote_matrix.columns)
+    
+    base_confidence = common_votes / max_common
+    vote_ratio = common_votes / total_statements
+    confidence_scale = base_confidence * (1 - 1/(1 + vote_ratio))
     
     for participant in vote_matrix.index:
         missing_statements = vote_matrix.columns[vote_matrix.loc[participant].isna()]
@@ -344,24 +349,29 @@ def cosine_impute(vote_matrix, n_neighbors):
             
         correlations = similarity_matrix[participant].drop(participant)
         strongest_correlations = correlations[correlations.abs().nlargest(n_neighbors).index]
-        logger.info(f"\nFor {participant}:")
-        logger.info(f"Strongest correlations:\n{strongest_correlations}")
         
         for statement in missing_statements:
             similar_votes = vote_matrix.loc[strongest_correlations.index, statement].dropna()
             
             if not similar_votes.empty:
-                # For each correlated participant, use their vote but flip it if correlation is negative
+                # Calculate confidence-weighted votes
                 adjusted_votes = similar_votes * np.sign(strongest_correlations[similar_votes.index])
-                weights = strongest_correlations[similar_votes.index].abs()
+                raw_weights = strongest_correlations[similar_votes.index].abs()
+                
+                # Scale weights by confidence based on common votes
+                confidence = confidence_scale.loc[participant, similar_votes.index]
+                weights = raw_weights * confidence
                 
                 if weights.sum() > 0:
-                    # Calculate weighted vote without additional confidence scaling
-                    imputed_matrix.at[participant, statement] = np.average(adjusted_votes, weights=weights)
+                    # Calculate weighted average with confidence scaling
+                    raw_imputed = np.average(adjusted_votes, weights=weights)
+                    # Scale based on both weight confidence and number of neighbors
+                    neighbor_factor = len(similar_votes) / n_neighbors
+                    confidence_factor = min(0.95, (weights.sum() / n_neighbors) * neighbor_factor)
+                    imputed_matrix.at[participant, statement] = raw_imputed * confidence_factor
                 else:
                     imputed_matrix.at[participant, statement] = 0
             else:
-                logger.info("No similar votes - defaulting to 0")
                 imputed_matrix.at[participant, statement] = 0
     
     return imputed_matrix
