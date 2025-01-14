@@ -129,16 +129,18 @@ def verify_poll_exists(cursor, poll_id):
     
     return True
 
-def main(poll_id=None, dry_run=False):
+def main(poll_id=None, dry_run=False, force=False):
     """
     Main function to update GAC scores.
     Args:
         poll_id: Optional specific poll to process
         dry_run: If True, only show calculations without modifying data
+        force: If True, process all polls regardless of changes
     """
     logger.info(f"Starting update-gac-scores.py script version {VERSION}")
     logger.info(f"Mode: {'Dry Run' if dry_run else 'Normal'}")
-    logger.info(f"Target: {'Specific Poll: ' + poll_id if poll_id else 'All Modified Polls'}")
+    logger.info(f"Force Update: {force}")
+    logger.info(f"Target: {'Specific Poll: ' + poll_id if poll_id else 'All Polls' if force else 'Modified Polls'}")
 
     try:
         conn = create_connection()
@@ -151,9 +153,9 @@ def main(poll_id=None, dry_run=False):
             polls = [{'uid': poll_id}]
             logger.info(f"Processing specific poll: {poll_id}")
         else:
-            # Fetch polls with changes
-            polls = fetch_polls_with_changes(cursor)
-            logger.info(f"Fetched {len(polls)} polls with changes")
+            # Fetch all polls or only modified polls based on force flag
+            polls = fetch_all_polls(cursor) if force else fetch_polls_with_changes(cursor)
+            logger.info(f"Fetched {len(polls)} polls to process")
 
         # Process each poll
         for poll in polls:
@@ -674,10 +676,28 @@ def process_votes(participants, statements, votes):
         logger.error(f"Error processing votes: {e}")
         return {}
 
+def fetch_all_polls(cursor):
+    query = """
+        SELECT DISTINCT "Poll".uid
+        FROM "Poll"
+        JOIN "Statement" ON "Poll".uid = "Statement"."pollId"
+        JOIN "Vote" ON "Statement".uid = "Vote"."statementId"
+        WHERE NOT "Poll".deleted
+        AND EXISTS (
+            SELECT 1 FROM "Vote" v
+            WHERE v."statementId" = "Statement".uid
+        );
+    """
+    cursor.execute(query)
+    columns = [col[0] for col in cursor.description]
+    polls = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return polls
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Update GAC scores for statements')
     parser.add_argument('--poll-id', help='Specific poll ID to process')
     parser.add_argument('--dry-run', action='store_true', help='Show calculations without modifying data')
+    parser.add_argument('--force', action='store_true', help='Force update all polls regardless of changes')
     args = parser.parse_args()
     
-    main(poll_id=args.poll_id, dry_run=args.dry_run)
+    main(poll_id=args.poll_id, dry_run=args.dry_run, force=args.force)
