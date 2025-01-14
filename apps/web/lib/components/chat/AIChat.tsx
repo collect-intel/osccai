@@ -66,7 +66,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
     }, [onUserMessage]);
 
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-full w-full flex flex-col">
         {messages.length === 0 ? (
           <div className="flex-grow flex items-center justify-center text-gray-500">
             No messages to show

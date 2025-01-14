@@ -1,7 +1,6 @@
 "use client";
 
 import React, { forwardRef, useCallback, useState, useEffect, useRef } from "react";
-import ReactMarkdown, { Components } from "react-markdown";
 import AIChat, { AIChatHandle } from "./AIChat";
 import { MessageWithFields } from "../../types";
 import { ClientProvider, xmllm } from "xmllm/client";
@@ -25,6 +24,7 @@ interface ChatState {
 interface ConstitutionalAIChatProps {
   chatId: string;
   modelId: string;
+  model?: string | string[];
   constitution: {
     text: string;
     icon?: React.ReactNode;
@@ -45,6 +45,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
   ({
     chatId,
     modelId,
+    model,
     constitution,
     customStyles = {},
     onInputChange,
@@ -91,7 +92,7 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
       return await xmllm(({ prompt }: { prompt: any }) => {
         return [
           prompt({
-            model: ["claude:good", "openai:good", "claude:fast", "openai:fast"],
+            model: model || ["claude:good", "openai:good", "claude:fast", "openai:fast"],
             messages: convertedMessages,
             schema: {
               thinking: String,
@@ -340,7 +341,7 @@ I observe a peculiar atmospheric phenomenon...
     }, [modelId, chatId, ephemeral]);
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full">
         <div className="flex-1 overflow-y-auto">
           <AIChat
             ref={ref}
