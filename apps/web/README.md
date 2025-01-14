@@ -1,6 +1,44 @@
 # Community Models (OSCCAI) Web App
+## Database Management
 
-## Database Migration Setup
+### Local Development
+
+1. **Reset and test migrations locally:**
+   ```bash
+   # Reset local database to a clean state
+   pnpm run db:reset
+
+   # Inspect database changes
+   pnpm run prisma:studio:local
+   ```
+
+2. **Create new migrations:**
+   ```bash
+   # Generate a new migration after schema changes
+   pnpm run db:migrate
+   ```
+
+### Production Database Management
+
+1. **Check current migration status:**
+   ```bash
+   pnpm run db:status:prod
+   ```
+
+2. **Deploy migrations to production:**
+   ```bash
+   # This will prompt for confirmation
+   pnpm run db:migrate:prod
+   ```
+
+3. **Verify production changes:**
+   ```bash
+   # Check migration status
+   pnpm run db:status:prod
+
+   # Optionally inspect database
+   pnpm run prisma:studio:prod
+   ```
 
 ### Initial Production Database Setup
 
@@ -22,15 +60,19 @@ CREATE TABLE "_prisma_migrations" (
 ```
 
 2. Mark the initial migration as applied:
-
 ```bash
 pnpm run db:init:prod
 ```
 
 3. Verify the migration status:
-
 ```bash
 pnpm run db:status:prod
 ```
 
-This process ensures that Prisma knows about your existing schema and won't try to recreate tables when running future migrations.
+### Important Notes
+
+- Always test migrations locally before applying to production
+- Production migrations require confirmation to prevent accidental execution
+- After production migrations, redeploy your Vercel application to ensure the Prisma client is updated
+- The `db:migrate:prod` command includes safety prompts for production database changes
+- Use `prisma:studio:prod` with caution as it provides direct access to production data

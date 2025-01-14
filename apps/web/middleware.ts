@@ -16,6 +16,8 @@ const isPublicRoute = createRouteMatcher([
   "/community-models/chat(.*)",
   "/(.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|ico))$",
   "/_next/:path*",
+  "/custom",
+  "/custom/:path*",
 ]);
 
 export default clerkMiddleware((auth, req) => {

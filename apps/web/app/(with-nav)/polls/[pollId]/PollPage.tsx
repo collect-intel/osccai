@@ -68,7 +68,7 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
   const initialVotes = isLoggedIn ? userVotes : anonymousUserVotes;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-2 py-8">
       <BannerShareLink />
       <div className="bg-white rounded-md shadow-md p-8 max-w-4xl mx-auto">
         <div className="flex justify-between items-start mb-4">

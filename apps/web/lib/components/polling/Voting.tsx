@@ -172,22 +172,22 @@ export default function Voting({
       )}
 
       <div className="flex flex-col rounded-md shadow-sm p-6 bg-light-beige relative">
-        <div className="absolute top-4 right-4">
-          <div className="relative">
-            <Toast message={message} isVisible={isVisible} />
-            <button
-              className="hover:bg-almost-white p-3 rounded stroke-gray hover:stroke-charcoal"
-              onClick={() => {
-                if (currentStatementIx !== null) {
+        {currentStatementIx !== null && (
+          <div className="absolute top-4 right-4">
+            <div className="relative">
+              <Toast message={message} isVisible={isVisible} />
+              <button
+                className="hover:bg-almost-white p-3 rounded stroke-gray hover:stroke-charcoal"
+                onClick={() => {
                   handleFlag(statements[currentStatementIx].uid);
-                }
-              }}
-              disabled={!canVote}
-            >
-              <FlagIcon className="fill-none" />
-            </button>
+                }}
+                disabled={!canVote}
+              >
+                <FlagIcon className="fill-none" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <div>{renderContent()}</div>
       </div>
 
