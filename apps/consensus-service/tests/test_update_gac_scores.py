@@ -581,6 +581,23 @@ def test_all_disagree():
     # Statement should not be constitutionable
     assert not is_constitutionable(gac_scores['statement1'])
 
+def test_strong_disagreement():
+    # Scenario: Clear majority DISAGREE (7 DISAGREE, 3 AGREE)
+    participants = create_participants(10)
+    statements = create_statements(1, ids=['statement1'])
+    
+    # Create voting pattern with strong disagreement
+    vote_value_map = {}
+    for i, participant in enumerate(participants):
+        vote_value = 'AGREE' if i < 3 else 'DISAGREE'
+        vote_value_map[(participant['uid'], 'statement1')] = vote_value
+    
+    votes = create_votes(participants, statements, vote_value_map)
+    gac_scores = process_votes(participants, statements, votes)
+    
+    # Statement with strong disagreement should not be constitutionable
+    assert not is_constitutionable(gac_scores['statement1'])
+
 def test_one_pass_rest_agree():
     # Scenario: One participant passes, the rest agree
     participants = create_participants(5)
