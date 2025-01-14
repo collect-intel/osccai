@@ -1,6 +1,12 @@
 "use client";
 
-import React, { forwardRef, useCallback, useState, useEffect, useRef } from "react";
+import React, {
+  forwardRef,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import AIChat, { AIChatHandle } from "./AIChat";
 import { MessageWithFields } from "../../types";
 import { ClientProvider, xmllm } from "xmllm/client";
@@ -8,7 +14,7 @@ import { FaInfoCircle } from "react-icons/fa";
 import AIResponseModal from "./AIResponseModal";
 import LoadingMessage from "./LoadingMessage";
 import StreamingMessage from "./StreamingMessage";
-import { getChat, saveChat } from '@/lib/utils/chatStorage';
+import { getChat, saveChat } from "@/lib/utils/chatStorage";
 
 declare const process: {
   env: {
@@ -41,21 +47,28 @@ interface ConstitutionalAIChatProps {
   ephemeral?: boolean;
 }
 
-const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>(
-  ({
-    chatId,
-    modelId,
-    model,
-    constitution,
-    customStyles = {},
-    onInputChange,
-    draftInput,
-    initialMessage,
-    ephemeral = false,
-  }, ref) => {
+const ConstitutionalAIChat = forwardRef<
+  AIChatHandle,
+  ConstitutionalAIChatProps
+>(
+  (
+    {
+      chatId,
+      modelId,
+      model,
+      constitution,
+      customStyles = {},
+      onInputChange,
+      draftInput,
+      initialMessage,
+      ephemeral = false,
+    },
+    ref,
+  ) => {
     const [chats, setChats] = useState<Record<string, ChatState>>({});
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedMessage, setSelectedMessage] = useState<MessageWithFields | null>(null);
+    const [selectedMessage, setSelectedMessage] =
+      useState<MessageWithFields | null>(null);
 
     // Initialize messages
     useEffect(() => {
@@ -67,21 +80,23 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
         isInitialMessage: true,
       };
 
-      const messages = ephemeral ? 
-        [defaultMessage] : 
-        getChat(modelId, chatId)?.messages || [defaultMessage];
+      const messages = ephemeral
+        ? [defaultMessage]
+        : getChat(modelId, chatId)?.messages || [defaultMessage];
 
-      setChats(current => ({
+      setChats((current) => ({
         ...current,
         [chatId]: {
           messages,
-          isStreaming: false
-        }
+          isStreaming: false,
+        },
       }));
     }, [chatId, initialMessage, modelId, ephemeral]);
 
     const genStream = async (messages: MessageWithFields[]) => {
-      const proxyUrl = process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+      const proxyUrl =
+        process.env.NEXT_PUBLIC_PROXY_API_URL ||
+        "https://proxyai.cip.org/api/stream";
       const clientProvider = new ClientProvider(proxyUrl);
 
       const convertedMessages = messages.map((message) => ({
@@ -92,7 +107,12 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
       return await xmllm(({ prompt }: { prompt: any }) => {
         return [
           prompt({
-            model: model || ["claude:good", "openai:good", "claude:fast", "openai:fast"],
+            model: model || [
+              "claude:good",
+              "openai:good",
+              "claude:fast",
+              "openai:fast",
+            ],
             messages: convertedMessages,
             schema: {
               thinking: String,
@@ -110,92 +130,95 @@ const ConstitutionalAIChat = forwardRef<AIChatHandle, ConstitutionalAIChatProps>
       }, clientProvider);
     };
 
-    const handleUserMessage = useCallback(async (content: string) => {
-      setChats(current => {
-        const chatState = current[chatId];
-        const updatedMessages = [...(chatState?.messages || []), 
-          { 
-            role: "user" as const, 
-            content,
-            isNewMessage: true 
-          },
-          { 
-            role: "assistant" as const, 
-            content: "",
-            isStreaming: true,
-            isNewMessage: true 
-          }
+    const handleUserMessage = useCallback(
+      async (content: string) => {
+        setChats((current) => {
+          const chatState = current[chatId];
+          const updatedMessages = [
+            ...(chatState?.messages || []),
+            {
+              role: "user" as const,
+              content,
+              isNewMessage: true,
+            },
+            {
+              role: "assistant" as const,
+              content: "",
+              isStreaming: true,
+              isNewMessage: true,
+            },
+          ];
+
+          return {
+            ...current,
+            [chatId]: {
+              messages: updatedMessages,
+              isStreaming: true,
+            },
+          };
+        });
+
+        const currentChat = chats[chatId];
+        const messagesForStream = [
+          ...(currentChat?.messages || []),
+          { role: "user" as const, content },
         ];
-        
-        return {
-          ...current,
-          [chatId]: {
-            messages: updatedMessages,
-            isStreaming: true
+
+        try {
+          const stream = await genStream(messagesForStream);
+
+          for await (const chunk of stream) {
+            setChats((current) => {
+              const chatState = current[chatId];
+              const newMessages = [...(chatState?.messages || [])];
+              const streamingIndex = newMessages.length - 1;
+
+              if (typeof chunk === "string") {
+                newMessages[streamingIndex] = {
+                  ...newMessages[streamingIndex],
+                  content: (newMessages[streamingIndex].content || "") + chunk,
+                };
+              } else {
+                newMessages[streamingIndex] = {
+                  ...newMessages[streamingIndex],
+                  ...chunk,
+                };
+              }
+
+              saveMessages(newMessages);
+              return {
+                ...current,
+                [chatId]: {
+                  messages: newMessages,
+                  isStreaming: true,
+                },
+              };
+            });
           }
-        };
-      });
 
-      const currentChat = chats[chatId];
-      const messagesForStream = [
-        ...(currentChat?.messages || []),
-        { role: "user" as const, content }
-      ];
-
-      try {
-        const stream = await genStream(messagesForStream);
-        
-        for await (const chunk of stream) {
-          setChats(current => {
+          setChats((current) => {
             const chatState = current[chatId];
             const newMessages = [...(chatState?.messages || [])];
             const streamingIndex = newMessages.length - 1;
-
-            if (typeof chunk === "string") {
-              newMessages[streamingIndex] = {
-                ...newMessages[streamingIndex],
-                content: (newMessages[streamingIndex].content || "") + chunk
-              };
-            } else {
-              newMessages[streamingIndex] = {
-                ...newMessages[streamingIndex],
-                ...chunk
-              };
-            }
-
+            newMessages[streamingIndex] = {
+              ...newMessages[streamingIndex],
+              isStreaming: false,
+            };
             saveMessages(newMessages);
             return {
               ...current,
               [chatId]: {
                 messages: newMessages,
-                isStreaming: true
-              }
+                isStreaming: false,
+              },
             };
           });
+        } catch (error) {
+          console.error("Error in AI response:", error);
         }
-
-        setChats(current => {
-          const chatState = current[chatId];
-          const newMessages = [...(chatState?.messages || [])];
-          const streamingIndex = newMessages.length - 1;
-          newMessages[streamingIndex] = {
-            ...newMessages[streamingIndex],
-            isStreaming: false
-          };
-          saveMessages(newMessages);
-          return {
-            ...current,
-            [chatId]: {
-              messages: newMessages,
-              isStreaming: false
-            }
-          };
-        });
-
-      } catch (error) {
-        console.error("Error in AI response:", error);
-      }
-    }, [chatId, chats, modelId]);
+      },
+      [chatId, chats, modelId],
+    );
 
     const activeChat = chats[chatId] || { messages: [], isStreaming: false };
 
@@ -275,7 +298,7 @@ I observe a peculiar atmospheric phenomenon...
 
       if (message.isStreaming && !hasVisibleContent) {
         if (!chatId) return null;
-        
+
         if (activeChat.isStreaming) {
           if (message.draft_response && !message.response_metrics) {
             return (
@@ -310,7 +333,9 @@ I observe a peculiar atmospheric phenomenon...
       }
 
       return (
-        <div className={`relative ${messageStyle} ${hasAdditionalInfo ? "pr-8" : ""}`}>
+        <div
+          className={`relative ${messageStyle} ${hasAdditionalInfo ? "pr-8" : ""}`}
+        >
           {hasAdditionalInfo && (
             <FaInfoCircle
               className={`absolute top-2 right-2 cursor-pointer ${customStyles.infoIcon || "text-blue-500"}`}
@@ -324,7 +349,10 @@ I observe a peculiar atmospheric phenomenon...
             content={message.final_response || message.content}
             speed="normal"
             streaming={
-              activeChat.isStreaming && message.isStreaming && message.role === "assistant" && !message.isInitialMessage
+              activeChat.isStreaming &&
+              message.isStreaming &&
+              message.role === "assistant" &&
+              !message.isInitialMessage
             }
             className="prose max-w-none"
             variant="dark"
@@ -334,11 +362,14 @@ I observe a peculiar atmospheric phenomenon...
     };
 
     // Only save if not ephemeral
-    const saveMessages = useCallback((messages: MessageWithFields[]) => {
-      if (!ephemeral) {
-        saveChat(modelId, chatId, messages);
-      }
-    }, [modelId, chatId, ephemeral]);
+    const saveMessages = useCallback(
+      (messages: MessageWithFields[]) => {
+        if (!ephemeral) {
+          saveChat(modelId, chatId, messages);
+        }
+      },
+      [modelId, chatId, ephemeral],
+    );
 
     return (
       <div className="flex flex-col h-full w-full">
@@ -364,7 +395,7 @@ I observe a peculiar atmospheric phenomenon...
         />
       </div>
     );
-  }
+  },
 );
 
 ConstitutionalAIChat.displayName = "ConstitutionalAIChat";
