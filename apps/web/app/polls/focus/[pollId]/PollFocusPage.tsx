@@ -27,8 +27,14 @@ interface PollFocusPageProps {
   userVotes: Record<string, VoteValue>;
 }
 
-const PollFocusPage: React.FC<PollFocusPageProps> = ({ poll, isLoggedIn, userVotes }) => {
-  const [anonymousUserVotes, setAnonymousUserVotes] = useState<Record<string, VoteValue>>({});
+const PollFocusPage: React.FC<PollFocusPageProps> = ({
+  poll,
+  isLoggedIn,
+  userVotes,
+}) => {
+  const [anonymousUserVotes, setAnonymousUserVotes] = useState<
+    Record<string, VoteValue>
+  >({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,7 +55,7 @@ const PollFocusPage: React.FC<PollFocusPageProps> = ({ poll, isLoggedIn, userVot
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-4 sm:p-8">
         <div className="mb-8 text-center">
           <PageTitle title={poll.title} size="small" alignment="center" />
-          
+
           {/* About section */}
           <div className="mt-6 text-sm text-medium-gray">
             <h2 className="font-semibold text-charcoal mb-2">About</h2>
@@ -61,9 +67,7 @@ const PollFocusPage: React.FC<PollFocusPageProps> = ({ poll, isLoggedIn, userVot
           {/* Goal section */}
           <div className="text-sm text-medium-gray">
             <h2 className="font-semibold text-charcoal mb-2">Goal</h2>
-            <p className="whitespace-pre-wrap">
-              {poll.communityModel.goal}
-            </p>
+            <p className="whitespace-pre-wrap">{poll.communityModel.goal}</p>
           </div>
         </div>
 
@@ -83,4 +87,4 @@ const PollFocusPage: React.FC<PollFocusPageProps> = ({ poll, isLoggedIn, userVot
   );
 };
 
-export default PollFocusPage; 
+export default PollFocusPage;

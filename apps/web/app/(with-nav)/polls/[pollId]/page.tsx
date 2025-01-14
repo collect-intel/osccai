@@ -49,13 +49,15 @@ export default function PollPageWrapper({
     return (
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="bg-white rounded-md shadow-md p-4 sm:p-8 max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl font-semibold text-charcoal mb-4">Poll Not Found</h1>
+          <h1 className="text-2xl font-semibold text-charcoal mb-4">
+            Poll Not Found
+          </h1>
           <p className="text-medium-gray mb-6">
-            {error === "Poll not found" 
+            {error === "Poll not found"
               ? "This poll doesn't exist or may have been deleted."
               : "There was a problem loading this poll."}
           </p>
-          <a 
+          <a
             href="/"
             className="inline-block text-sm text-teal hover:text-teal-700 transition-colors"
           >
