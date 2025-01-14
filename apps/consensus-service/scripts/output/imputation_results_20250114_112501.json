@@ -1,0 +1,111 @@
+{
+  "metadata": {
+    "sample_size": 50,
+    "min_votes": 10,
+    "max_k": 1,
+    "random_state": 42,
+    "duration_seconds": 252.549441,
+    "matrix_stats": {
+      "matrix_shape": [
+        1002,
+        275
+      ],
+      "sparsity": 0.8745672291780076
+    }
+  },
+  "metrics": {
+    "overall": {
+      "total_predictions": 50,
+      "correct_predictions": 34,
+      "mean_confidence": 0.5616641966450497,
+      "rmse": 0.6173116286831986
+    },
+    "votes_24": {
+      "total_predictions": 1,
+      "accuracy": 1.0,
+      "mean_confidence": 0.0,
+      "rmse": 0.0
+    },
+    "votes_26": {
+      "total_predictions": 1,
+      "accuracy": 1.0,
+      "mean_confidence": 0.7316626937092513,
+      "rmse": 0.2683373062907487
+    },
+    "votes_28": {
+      "total_predictions": 7,
+      "accuracy": 0.8571428571428571,
+      "mean_confidence": 0.5686085352080575,
+      "rmse": 0.5605256761189936
+    },
+    "votes_29": {
+      "total_predictions": 13,
+      "accuracy": 0.6153846153846154,
+      "mean_confidence": 0.5922031426970148,
+      "rmse": 0.6388866173394583
+    },
+    "votes_30": {
+      "total_predictions": 7,
+      "accuracy": 0.5714285714285714,
+      "mean_confidence": 0.5890825487637715,
+      "rmse": 0.7279958626718908
+    },
+    "votes_35": {
+      "total_predictions": 1,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9043461699517681,
+      "rmse": 0.09565383004823191
+    },
+    "votes_39": {
+      "total_predictions": 16,
+      "accuracy": 0.625,
+      "mean_confidence": 0.5258956057299236,
+      "rmse": 0.6398648924677243
+    },
+    "votes_42": {
+      "total_predictions": 1,
+      "accuracy": 1.0,
+      "mean_confidence": 0.66693167547537,
+      "rmse": 0.33306832452463
+    },
+    "votes_58": {
+      "total_predictions": 1,
+      "accuracy": 1.0,
+      "mean_confidence": 0.7786969025394043,
+      "rmse": 0.22130309746059573
+    },
+    "votes_59": {
+      "total_predictions": 1,
+      "accuracy": 0.0,
+      "mean_confidence": 0.0,
+      "rmse": 1.0
+    },
+    "votes_60": {
+      "total_predictions": 1,
+      "accuracy": 1.0,
+      "mean_confidence": 0.7847642560339159,
+      "rmse": 0.21523574396608414
+    },
+    "k_1": {
+      "total_predictions": 50,
+      "accuracy": 0.68,
+      "mean_confidence": 0.5616641966450497,
+      "rmse": 0.6173116286831986
+    },
+    "confidence_high": {
+      "total_predictions": 32,
+      "accuracy": 0.84375,
+      "mean_confidence": 0.7821476398179188
+    },
+    "confidence_medium": {
+      "total_predictions": 37,
+      "accuracy": 0.8378378378378378,
+      "mean_confidence": 0.7437320375176103
+    },
+    "confidence_low": {
+      "total_predictions": 50,
+      "accuracy": 0.68,
+      "mean_confidence": 0.5616641966450497
+    }
+  }
+}
