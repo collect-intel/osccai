@@ -1,7 +1,12 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { ClerkUser, ClerkEmailAddress, ExtendedStatement, ExtendedPoll } from "@/lib/types";
+import type {
+  ClerkUser,
+  ClerkEmailAddress,
+  ExtendedStatement,
+  ExtendedPoll,
+} from "@/lib/types";
 import type {
   Poll,
   VoteValue as VoteValueType,
@@ -171,7 +176,10 @@ export async function fetchUserVotes(
   console.log("votes", votes);
 
   return votes.reduce(
-    (acc: Record<string, VoteValue>, vote: { statementId: string; voteValue: VoteValue }) => {
+    (
+      acc: Record<string, VoteValue>,
+      vote: { statementId: string; voteValue: VoteValue },
+    ) => {
       acc[vote.statementId] = vote.voteValue;
       return acc;
     },
@@ -880,143 +888,145 @@ export async function updateCommunityModel(
   } = data;
 
   try {
-    const updatedModel = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Update the community model
-      const model = await tx.communityModel.update({
-        where: { uid: modelId },
-        data: {
-          ...modelData,
-          activeConstitutionId:
-            activeConstitutionId !== undefined
-              ? activeConstitutionId
-              : undefined,
-        },
-        include: { polls: true, owner: true },
-      });
-
-      // Update all associated polls
-      if (requireAuth !== undefined || allowContributions !== undefined) {
-        await tx.poll.updateMany({
-          where: { communityModelId: modelId },
+    const updatedModel = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // Update the community model
+        const model = await tx.communityModel.update({
+          where: { uid: modelId },
           data: {
-            ...(requireAuth !== undefined && { requireAuth }),
-            ...(allowContributions !== undefined && {
-              allowParticipantStatements: allowContributions,
-            }),
+            ...modelData,
+            activeConstitutionId:
+              activeConstitutionId !== undefined
+                ? activeConstitutionId
+                : undefined,
           },
-        });
-      }
-
-      // Handle principles update if provided
-      if (principles) {
-        const poll = await tx.poll.findFirst({
-          where: { communityModelId: modelId },
-          include: { statements: true },
+          include: { polls: true, owner: true },
         });
 
-        if (poll) {
-          // Ensure the owner has a linked participant
-          let participantId = model.owner.participantId;
-          if (!participantId) {
-            const participant = await tx.participant.create({
-              data: {
-                clerkUserId: model.owner.clerkUserId,
-              },
-            });
-            participantId = participant.uid;
-            await tx.communityModelOwner.update({
-              where: { uid: model.owner.uid },
-              data: { participantId: participantId },
-            });
-          }
+        // Update all associated polls
+        if (requireAuth !== undefined || allowContributions !== undefined) {
+          await tx.poll.updateMany({
+            where: { communityModelId: modelId },
+            data: {
+              ...(requireAuth !== undefined && { requireAuth }),
+              ...(allowContributions !== undefined && {
+                allowParticipantStatements: allowContributions,
+              }),
+            },
+          });
+        }
 
-          const updatedPrinciples = [];
+        // Handle principles update if provided
+        if (principles) {
+          const poll = await tx.poll.findFirst({
+            where: { communityModelId: modelId },
+            include: { statements: true },
+          });
 
-          // Update existing principles and add new ones
-          for (const principle of principles) {
-            if (principle.id.startsWith("new-")) {
-              // This is a new principle, create it
-              const newStatement = await tx.statement.create({
+          if (poll) {
+            // Ensure the owner has a linked participant
+            let participantId = model.owner.participantId;
+            if (!participantId) {
+              const participant = await tx.participant.create({
                 data: {
-                  pollId: poll.uid,
-                  text: principle.text,
-                  gacScore: principle.gacScore,
-                  participantId: participantId,
+                  clerkUserId: model.owner.clerkUserId,
                 },
               });
-              updatedPrinciples.push(newStatement);
-            } else {
-              // This is an existing principle, update it
-              const updatedStatement = await tx.statement.update({
-                where: { uid: principle.id },
-                data: {
-                  text: principle.text,
-                  gacScore: principle.gacScore,
-                },
+              participantId = participant.uid;
+              await tx.communityModelOwner.update({
+                where: { uid: model.owner.uid },
+                data: { participantId: participantId },
               });
-              updatedPrinciples.push(updatedStatement);
+            }
+
+            const updatedPrinciples = [];
+
+            // Update existing principles and add new ones
+            for (const principle of principles) {
+              if (principle.id.startsWith("new-")) {
+                // This is a new principle, create it
+                const newStatement = await tx.statement.create({
+                  data: {
+                    pollId: poll.uid,
+                    text: principle.text,
+                    gacScore: principle.gacScore,
+                    participantId: participantId,
+                  },
+                });
+                updatedPrinciples.push(newStatement);
+              } else {
+                // This is an existing principle, update it
+                const updatedStatement = await tx.statement.update({
+                  where: { uid: principle.id },
+                  data: {
+                    text: principle.text,
+                    gacScore: principle.gacScore,
+                  },
+                });
+                updatedPrinciples.push(updatedStatement);
+              }
+            }
+
+            // Get all principle IDs, including newly created ones
+            const allPrincipleIds = updatedPrinciples.map((p) => p.uid);
+
+            // Find principles that are no longer in the list
+            const statementsToDelete = poll.statements.filter(
+              (s) => !allPrincipleIds.includes(s.uid),
+            );
+
+            // Delete principles that are no longer in the list
+            for (const statement of statementsToDelete) {
+              await tx.vote.deleteMany({
+                where: { statementId: statement.uid },
+              });
+
+              await tx.flag.deleteMany({
+                where: { statementId: statement.uid },
+              });
+
+              await tx.statement.delete({
+                where: { uid: statement.uid },
+              });
             }
           }
+        }
 
-          // Get all principle IDs, including newly created ones
-          const allPrincipleIds = updatedPrinciples.map((p) => p.uid);
-
-          // Find principles that are no longer in the list
-          const statementsToDelete = poll.statements.filter(
-            (s) => !allPrincipleIds.includes(s.uid),
-          );
-
-          // Delete principles that are no longer in the list
-          for (const statement of statementsToDelete) {
-            await tx.vote.deleteMany({
-              where: { statementId: statement.uid },
-            });
-
-            await tx.flag.deleteMany({
-              where: { statementId: statement.uid },
-            });
-
-            await tx.statement.delete({
-              where: { uid: statement.uid },
-            });
+        // Handle constitutions update if provided
+        if (constitutions) {
+          // Update or create constitutions
+          for (const constitution of constitutions) {
+            if (constitution.uid) {
+              await tx.constitution.update({
+                where: { uid: constitution.uid },
+                data: {
+                  content: constitution.content,
+                  status: constitution.status,
+                },
+              });
+            } else {
+              await tx.constitution.create({
+                data: {
+                  modelId: modelId,
+                  content: constitution.content,
+                  status: constitution.status,
+                  version: constitution.version,
+                },
+              });
+            }
           }
         }
-      }
 
-      // Handle constitutions update if provided
-      if (constitutions) {
-        // Update or create constitutions
-        for (const constitution of constitutions) {
-          if (constitution.uid) {
-            await tx.constitution.update({
-              where: { uid: constitution.uid },
-              data: {
-                content: constitution.content,
-                status: constitution.status,
-              },
-            });
-          } else {
-            await tx.constitution.create({
-              data: {
-                modelId: modelId,
-                content: constitution.content,
-                status: constitution.status,
-                version: constitution.version,
-              },
-            });
-          }
-        }
-      }
-
-      // Fetch the updated model with polls and constitutions
-      return tx.communityModel.findUnique({
-        where: { uid: modelId },
-        include: {
-          polls: { include: { statements: true } },
-          constitutions: true,
-        },
-      });
-    });
+        // Fetch the updated model with polls and constitutions
+        return tx.communityModel.findUnique({
+          where: { uid: modelId },
+          include: {
+            polls: { include: { statements: true } },
+            constitutions: true,
+          },
+        });
+      },
+    );
 
     if (!updatedModel) {
       throw new Error("Failed to update community model");
@@ -1029,9 +1039,7 @@ export async function updateCommunityModel(
   }
 }
 
-export async function fetchPollData(
-  modelId: string,
-): Promise<ExtendedPoll> {
+export async function fetchPollData(modelId: string): Promise<ExtendedPoll> {
   const poll = await prisma.poll.findFirst({
     where: {
       communityModelId: modelId,
@@ -1061,19 +1069,22 @@ export async function fetchPollData(
   }
 
   // Calculate isConstitutionable for each statement
-  const statementsWithConstitutionable = poll.statements.map((statement: ExtendedStatement) => {
-    const totalVotes = statement.votes.length;
-    const agreeVotes = statement.votes.filter(
-      (vote: Vote) => vote.voteValue === VoteValue.AGREE,
-    ).length;
-    const agreePercentage = totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
+  const statementsWithConstitutionable = poll.statements.map(
+    (statement: ExtendedStatement) => {
+      const totalVotes = statement.votes.length;
+      const agreeVotes = statement.votes.filter(
+        (vote: Vote) => vote.voteValue === VoteValue.AGREE,
+      ).length;
+      const agreePercentage =
+        totalVotes > 0 ? (agreeVotes / totalVotes) * 100 : 0;
 
-    return {
-      ...statement,
-      isConstitutionable:
-        statement.isConstitutionable ?? agreePercentage >= 66.67,
-    };
-  });
+      return {
+        ...statement,
+        isConstitutionable:
+          statement.isConstitutionable ?? agreePercentage >= 66.67,
+      };
+    },
+  );
 
   return {
     ...poll,

@@ -72,12 +72,8 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({
       <ReactMarkdown
         className={`prose ${variant === "dark" ? "prose-invert" : ""} max-w-none`}
         components={{
-          p: ({ children }) => (
-            <p className="mb-4 last:mb-0">{children}</p>
-          ),
-          hr: () => (
-            <hr className="my-1" />
-          ),
+          p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+          hr: () => <hr className="my-1" />,
           ul: ({ children }) => (
             <ul className="list-disc pl-4 mb-4 last:mb-0 [&>li::marker]:text-inherit">
               {children}
@@ -88,11 +84,7 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({
               {children}
             </ol>
           ),
-          li: ({ children }) => (
-            <li className="mb-1 last:mb-0">
-              {children}
-            </li>
-          ),
+          li: ({ children }) => <li className="mb-1 last:mb-0">{children}</li>,
           h1: ({ children }) => (
             <h1 className="text-2xl font-bold mb-4 mt-6 first:mt-0">
               {children}

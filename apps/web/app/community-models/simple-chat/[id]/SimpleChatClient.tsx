@@ -12,7 +12,7 @@ export default function SimpleChatClient({ model }: { model: any }) {
   const initialMessage = {
     role: "assistant" as const,
     content: `Hi there! I'm an AI assistant guided by ${model.name}. How can I help you today?`,
-    isInitialMessage: true
+    isInitialMessage: true,
   };
 
   const PreviewBanner = () => {
@@ -37,14 +37,14 @@ export default function SimpleChatClient({ model }: { model: any }) {
         constitution={{
           text: latestConstitution.content,
           icon: <ConstitutionIcon />,
-          color: 'teal',
+          color: "teal",
         }}
         customStyles={{
-          userMessage: 'bg-white rounded-lg p-3 mb-4 shadow-sm',
-          aiMessage: 'bg-teal rounded-lg p-3 mb-4 shadow-sm text-white',
-          infoIcon: 'text-teal-600 hover:text-teal-700 transition-colors',
+          userMessage: "bg-white rounded-lg p-3 mb-4 shadow-sm",
+          aiMessage: "bg-teal rounded-lg p-3 mb-4 shadow-sm text-white",
+          infoIcon: "text-teal-600 hover:text-teal-700 transition-colors",
         }}
       />
     </div>
   );
-} 
+}

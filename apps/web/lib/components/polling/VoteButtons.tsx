@@ -21,14 +21,14 @@ export default function VoteButtons({
             currentVote === "AGREE"
               ? "bg-teal-700"
               : currentVote === "DISAGREE"
-              ? "bg-teal/50"
-              : "bg-teal"
+                ? "bg-teal/50"
+                : "bg-teal"
           } ${disabled ? "opacity-50" : "hover:bg-teal-700"}`}
           onClick={() => onClick("AGREE")}
           disabled={disabled}
         >
-          <ThumbIcon className="fill-white stroke-white w-3.5 h-3.5" />
-          I agree{currentVote === "AGREE" && " (already voted)"}
+          <ThumbIcon className="fill-white stroke-white w-3.5 h-3.5" />I agree
+          {currentVote === "AGREE" && " (already voted)"}
         </button>
 
         <button
@@ -36,8 +36,8 @@ export default function VoteButtons({
             currentVote === "DISAGREE"
               ? "bg-teal-700"
               : currentVote === "AGREE"
-              ? "bg-teal/50"
-              : "bg-teal"
+                ? "bg-teal/50"
+                : "bg-teal"
           } ${disabled ? "opacity-50" : "hover:bg-teal-700"}`}
           onClick={() => onClick("DISAGREE")}
           disabled={disabled}

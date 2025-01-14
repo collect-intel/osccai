@@ -5,4 +5,4 @@ export default function SimpleChatLayout({
 }) {
   // This layout has no navbar or other UI elements
   return children;
-} 
+}

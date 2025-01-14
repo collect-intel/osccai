@@ -1,4 +1,4 @@
-import { FaExclamationTriangle } from 'react-icons/fa';
+import { FaExclamationTriangle } from "react-icons/fa";
 
 interface ConstitutionRefinerProps {
   constitution: string;
@@ -13,20 +13,22 @@ export default function ConstitutionRefiner({
   onConstitutionChange,
   isRefining,
   error,
-  onRefine
+  onRefine,
 }: ConstitutionRefinerProps) {
   return (
     <div className="p-4 flex flex-col">
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">Enter Constitution</h2>
-      
+      <h2 className="text-lg font-semibold text-gray-800 mb-3">
+        Enter Constitution
+      </h2>
+
       {/* Experimental Warning */}
       <div className="mb-3 flex items-center gap-2 text-amber-800 bg-amber-50 rounded-lg p-3 text-sm">
         <div className="hidden sm:flex items-center justify-center w-5 h-5 rounded-full bg-amber-100">
           <span className="text-xs font-medium">β</span>
         </div>
         <p>
-          <span className="font-medium">Experimental Feature:</span>
-          {" "}Changes are not saved between sessions.
+          <span className="font-medium">Experimental Feature:</span> Changes are
+          not saved between sessions.
         </p>
       </div>
 
@@ -59,10 +61,10 @@ export default function ConstitutionRefiner({
               Refining...
             </span>
           ) : (
-            'Refine Constitution'
+            "Refine Constitution"
           )}
         </button>
       </div>
     </div>
   );
-} 
+}

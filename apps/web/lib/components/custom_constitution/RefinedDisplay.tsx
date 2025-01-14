@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import LoadingMessage from '../chat/LoadingMessage';
-import ReactMarkdown from 'react-markdown';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { useState } from "react";
+import LoadingMessage from "../chat/LoadingMessage";
+import ReactMarkdown from "react-markdown";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 interface RefinedDisplayProps {
   isRefining: boolean;
@@ -14,7 +14,7 @@ export default function RefinedDisplay({
   isRefining,
   refinedConstitution,
   reflection,
-  metrics
+  metrics,
 }: RefinedDisplayProps) {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -27,11 +27,13 @@ export default function RefinedDisplay({
           className="w-full px-4 py-2 flex items-center justify-between text-gray-600 hover:bg-gray-50"
         >
           <span className="text-sm font-medium">
-            {showDetails ? 'Show Constitution' : 'Show AI Analysis'}
+            {showDetails ? "Show Constitution" : "Show AI Analysis"}
           </span>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">
-              {showDetails ? 'View Constitution' : 'View AI Reasoning & Metrics'}
+              {showDetails
+                ? "View Constitution"
+                : "View AI Reasoning & Metrics"}
             </span>
             {showDetails ? <FaChevronDown /> : <FaChevronUp />}
           </div>
@@ -78,4 +80,4 @@ export default function RefinedDisplay({
       </div>
     </div>
   );
-} 
+}

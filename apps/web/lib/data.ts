@@ -1,7 +1,14 @@
 "use server";
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { CommunityModel, Constitution, Poll, ApiKey, Statement, Vote } from "@prisma/client";
+import {
+  CommunityModel,
+  Constitution,
+  Poll,
+  ApiKey,
+  Statement,
+  Vote,
+} from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import type { ExtendedPoll } from "@/lib/types";
@@ -28,7 +35,9 @@ export async function getUserCommunityModels() {
   return communityModels;
 }
 
-export async function getPollData(pollId: string): Promise<ExtendedPoll | null> {
+export async function getPollData(
+  pollId: string,
+): Promise<ExtendedPoll | null> {
   const poll = await prisma.poll.findUnique({
     where: { uid: pollId },
     include: {
@@ -52,10 +61,12 @@ export async function getPollData(pollId: string): Promise<ExtendedPoll | null> 
 
   return {
     ...poll,
-    statements: poll.statements.map((statement: Statement & { votes: Vote[]; flags: any[] }) => ({
-      ...statement,
-      isConstitutionable: isStatementConstitutionable(statement),
-    })),
+    statements: poll.statements.map(
+      (statement: Statement & { votes: Vote[]; flags: any[] }) => ({
+        ...statement,
+        isConstitutionable: isStatementConstitutionable(statement),
+      }),
+    ),
     communityModel: {
       bio: poll.communityModel.bio,
       goal: poll.communityModel.goal,

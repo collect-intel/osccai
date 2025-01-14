@@ -1,4 +1,10 @@
-import type { Prisma, CommunityModel, Statement, Vote, Poll } from "@prisma/client";
+import type {
+  Prisma,
+  CommunityModel,
+  Statement,
+  Vote,
+  Poll,
+} from "@prisma/client";
 
 export interface ExtendedCommunityModel extends CommunityModel {
   owner: {
@@ -13,7 +19,7 @@ export interface ExtendedStatement extends Statement {
   flags: { uid: string }[];
 }
 
-export interface ExtendedPoll extends Omit<Poll, 'statements'> {
+export interface ExtendedPoll extends Omit<Poll, "statements"> {
   statements: ExtendedStatement[];
   communityModel: ExtendedCommunityModel;
 }
@@ -135,7 +141,7 @@ export interface MessageWithFields {
  * 1. The base CommunityModel type doesn't include relations by default
  * 2. This type exactly matches our specific SELECT query structure
  * 3. It automatically updates if we change the Prisma schema or query
- * 
+ *
  * This is particularly important when dealing with relations like 'constitutions',
  * which need to be explicitly selected and typed according to what we're actually querying.
  */

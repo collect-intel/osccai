@@ -126,7 +126,6 @@ This setup presumes you have the following installed:
 - `pnpm run db:migrate`: Run Prisma migrations for local development.
 - `pnpm run db:reset`: Reset the local database (with confirmation prompt).
 - `pnpm run prisma:studio:local`: Open Prisma Studio to interact with your local database.
-- `pnpm run cron:local`: Run the local cron job for updating GAC scores.
 
 **Note:** Always use caution when running database reset, seeding, or migration scripts, especially in a production environment.
 

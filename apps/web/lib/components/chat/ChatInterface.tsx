@@ -105,8 +105,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {interactive && isActiveChat && (
-        <form 
-          onSubmit={handleSubmit} 
+        <form
+          onSubmit={handleSubmit}
           className="flex p-4 bg-white relative z-10 shadow-[0_-8px_16px_-4px_rgba(255,255,255,0.9)]"
         >
           <input
@@ -120,8 +120,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <button
             type="submit"
             className={`px-6 py-2 rounded-r-md transition-all ${
-              isLoading 
-                ? "bg-gray-200 text-gray-500" 
+              isLoading
+                ? "bg-gray-200 text-gray-500"
                 : `bg-${color} hover:bg-${color}/80 text-white`
             } disabled:cursor-not-allowed`}
             disabled={isLoading || !inputValue.trim()}
