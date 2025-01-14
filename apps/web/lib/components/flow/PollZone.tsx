@@ -18,7 +18,11 @@ import Modal from "@/lib/components/Modal";
 import ConstitutionableExplanation from "@/lib/components/ConstitutionableExplanation";
 import ZoneWrapper from "./ZoneWrapper";
 import { Poll, Statement, Vote } from "@prisma/client";
-import type { ExtendedPoll, ExtendedStatement, ExtendedCommunityModel } from "@/lib/types";
+import type {
+  ExtendedPoll,
+  ExtendedStatement,
+  ExtendedCommunityModel,
+} from "@/lib/types";
 
 const crimson = Crimson_Text({ subsets: ["latin"], weight: "400" });
 
@@ -96,12 +100,13 @@ export default function PollZone({
       0,
     ) ?? 0;
 
-  const uniqueParticipants = localPollData?.statements?.reduce((set, statement) => {
-    statement.votes?.forEach((vote: Vote) => {
-      set.add(vote.participantId);
-    });
-    return set;
-  }, new Set<string>()).size ?? 0;
+  const uniqueParticipants =
+    localPollData?.statements?.reduce((set, statement) => {
+      statement.votes?.forEach((vote: Vote) => {
+        set.add(vote.participantId);
+      });
+      return set;
+    }, new Set<string>()).size ?? 0;
 
   const handleShare = () => {
     if (localPollData?.uid) {
@@ -226,8 +231,9 @@ export default function PollZone({
                   agreeRatio === disagreeRatio && disagreeRatio === skipRatio;
                 const flexBasis = areAllEqual ? "33.33%" : "0%";
 
-                const isConstitutionable =
-                  isStatementConstitutionable(statement as Statement);
+                const isConstitutionable = isStatementConstitutionable(
+                  statement as Statement,
+                );
 
                 return (
                   <li

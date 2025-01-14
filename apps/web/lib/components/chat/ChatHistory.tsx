@@ -1,7 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
-import { SavedChat, formatTimeAgo, getChats, createNewChatId } from '@/lib/utils/chatStorage';
-import { FaPlus, FaTrash, FaComments } from 'react-icons/fa';
-import Modal from '@/lib/components/Modal';
+import { useState, useMemo, useEffect } from "react";
+import {
+  SavedChat,
+  formatTimeAgo,
+  getChats,
+  createNewChatId,
+} from "@/lib/utils/chatStorage";
+import { FaPlus, FaTrash, FaComments } from "react-icons/fa";
+import Modal from "@/lib/components/Modal";
 
 interface ChatHistoryProps {
   modelId: string;
@@ -40,11 +45,11 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
       setChats(getChats(modelId));
     };
 
-    window.addEventListener('storage', handleStorage);
+    window.addEventListener("storage", handleStorage);
     const interval = setInterval(handleStorage, 1000);
 
     return () => {
-      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener("storage", handleStorage);
       clearInterval(interval);
     };
   }, [isClient, modelId]);
@@ -63,16 +68,19 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
 
   const sortedChats = useMemo(() => {
     const savedChats = Object.values(chats)
-      .filter(chat => chat.id !== newChatId)
+      .filter((chat) => chat.id !== newChatId)
       .sort((a, b) => b.lastUpdated - a.lastUpdated);
-    
-    return [{ 
-      id: newChatId, 
-      title: "New Chat", 
-      messages: [], 
-      lastUpdated: 0,
-      isPseudoEntry: true
-    }, ...savedChats];
+
+    return [
+      {
+        id: newChatId,
+        title: "New Chat",
+        messages: [],
+        lastUpdated: 0,
+        isPseudoEntry: true,
+      },
+      ...savedChats,
+    ];
   }, [chats, newChatId]);
 
   const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
@@ -121,17 +129,20 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
                 key={`chat-${chat.id}`}
                 className={`group flex items-center gap-3 p-3 mx-2 rounded-lg cursor-pointer
                              transition-all duration-200
-                             ${chat.id === currentChatId 
-                               ? 'bg-teal/10 text-teal-700 dark:text-teal-300' 
-                               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                             ${
+                               chat.id === currentChatId
+                                 ? "bg-teal/10 text-teal-700 dark:text-teal-300"
+                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                              }`}
                 onClick={() => onChatSelect(chat.id)}
               >
-                <FaComments className={`w-4 h-4 flex-shrink-0
-                                     ${chat.id === currentChatId 
-                                       ? 'text-teal-600' 
-                                       : 'text-gray-400 group-hover:text-gray-500'
-                                     }`} 
+                <FaComments
+                  className={`w-4 h-4 flex-shrink-0
+                                     ${
+                                       chat.id === currentChatId
+                                         ? "text-teal-600"
+                                         : "text-gray-400 group-hover:text-gray-500"
+                                     }`}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">
@@ -185,7 +196,8 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
           <FaTrash className="w-12 h-12 mx-auto text-red-500 mb-4" />
           <h2 className="text-xl font-semibold mb-4">Delete Chat</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Are you sure you want to delete this chat? This action cannot be undone.
+            Are you sure you want to delete this chat? This action cannot be
+            undone.
           </p>
           <div className="flex justify-center gap-4">
             <button
@@ -213,7 +225,8 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
           <FaTrash className="w-12 h-12 mx-auto text-red-500 mb-4" />
           <h2 className="text-xl font-semibold mb-4">Clear All Chats</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Are you sure you want to delete all chats? This action cannot be undone.
+            Are you sure you want to delete all chats? This action cannot be
+            undone.
           </p>
           <div className="flex justify-center gap-4">
             <button
@@ -235,4 +248,4 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   );
 };
 
-export default ChatHistory; 
+export default ChatHistory;

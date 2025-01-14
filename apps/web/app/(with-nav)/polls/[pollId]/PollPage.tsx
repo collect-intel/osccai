@@ -59,7 +59,9 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
 
   const participantCount = new Set(
     poll.statements.flatMap((statement) =>
-      statement.votes.map((vote: { participantId: string }) => vote.participantId),
+      statement.votes.map(
+        (vote: { participantId: string }) => vote.participantId,
+      ),
     ),
   ).size;
 
@@ -69,7 +71,6 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
     <div className="container mx-auto px-4 py-8">
       <BannerShareLink />
       <div className="bg-white rounded-md shadow-md p-8 max-w-4xl mx-auto">
-
         <div className="flex justify-between items-start mb-4">
           <div className="flex-grow">
             <PageTitle title={poll.title} size="small" alignment="left" />
@@ -106,11 +107,14 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
         </div>
 
         <div className="mb-8">
-
           <h2 className="text-lg font-semibold mb-2">About the community</h2>
-          <p className="text-sm whitespace-pre-wrap mb-4">{poll.communityModel.bio}</p>
+          <p className="text-sm whitespace-pre-wrap mb-4">
+            {poll.communityModel.bio}
+          </p>
           <h2 className="text-lg font-semibold mb-2">Goal of the model</h2>
-          <p className="text-sm whitespace-pre-wrap mb-4">{poll.communityModel.goal}</p>
+          <p className="text-sm whitespace-pre-wrap mb-4">
+            {poll.communityModel.goal}
+          </p>
         </div>
 
         {poll.requireAuth && !isLoggedIn ? (

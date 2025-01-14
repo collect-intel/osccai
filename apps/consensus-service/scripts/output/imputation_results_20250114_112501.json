@@ -6,10 +6,7 @@
     "random_state": 42,
     "duration_seconds": 252.549441,
     "matrix_stats": {
-      "matrix_shape": [
-        1002,
-        275
-      ],
+      "matrix_shape": [1002, 275],
       "sparsity": 0.8745672291780076
     }
   },

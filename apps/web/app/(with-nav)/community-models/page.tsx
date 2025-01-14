@@ -3,7 +3,7 @@ import CommunityModelCard from "@/lib/components/CommunityModelCard";
 import Link from "next/link";
 import { getUserCommunityModels } from "@/lib/data";
 import { ExtendedCommunityModel } from "@/lib/types";
-import { CommunityModel } from '@prisma/client';
+import { CommunityModel } from "@prisma/client";
 
 export default async function CommunityModelsPage() {
   const communityModels = await getUserCommunityModels();
@@ -14,7 +14,9 @@ export default async function CommunityModelsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">My Community Models</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">
+        My Community Models
+      </h1>
 
       <div className="bg-white border border-yellow rounded-lg p-4 md:p-6 mb-6 md:mb-8">
         <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">
@@ -25,7 +27,9 @@ export default async function CommunityModelsPage() {
           represent a shared vision of how AI should behave, based on the votes
           and contributions of community members.
         </p>
-        <p className="text-sm md:text-base mb-3">With your Community Models, you can:</p>
+        <p className="text-sm md:text-base mb-3">
+          With your Community Models, you can:
+        </p>
         <ul className="list-disc list-inside mb-4 text-sm md:text-base space-y-2">
           <li>Create new models based on initial ideas</li>
           <li>Run polls to gather community input</li>

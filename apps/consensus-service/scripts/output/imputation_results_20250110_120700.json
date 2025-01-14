@@ -5,10 +5,7 @@
     "random_state": 42,
     "duration_seconds": 0.493221,
     "matrix_stats": {
-      "matrix_shape": [
-        8,
-        273
-      ],
+      "matrix_shape": [8, 273],
       "total_cells": 2184,
       "filled_cells": 1253,
       "sparsity": 0.4262820512820513,

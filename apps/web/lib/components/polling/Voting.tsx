@@ -52,7 +52,7 @@ export default function Voting({
 
   // Ensure that votes state reflects new initialVotes
   useEffect(() => {
-    setVotes(prevVotes => ({ ...prevVotes, ...initialVotes }));
+    setVotes((prevVotes) => ({ ...prevVotes, ...initialVotes }));
   }, [initialVotes]);
 
   const handleVote = async (vote: VoteValue) => {
@@ -118,10 +118,7 @@ export default function Voting({
         <p>You&apos;ve already voted on all of these statements.</p>
       </div>
     ) : (
-      <div
-        key={currentStatementIx}
-        className="animate-slide-in"
-      >
+      <div key={currentStatementIx} className="animate-slide-in">
         <div className="text-lg mb-4 pr-12">
           {statements[currentStatementIx].text}
         </div>
@@ -139,7 +136,7 @@ export default function Voting({
   };
 
   const getRemainingVotesCount = () => {
-    return statements.filter(statement => !votes[statement.uid]).length;
+    return statements.filter((statement) => !votes[statement.uid]).length;
   };
 
   return (
@@ -173,7 +170,7 @@ export default function Voting({
           </div>
         </div>
       )}
-      
+
       <div className="flex flex-col rounded-md shadow-sm p-6 bg-light-beige relative">
         <div className="absolute top-4 right-4">
           <div className="relative">
@@ -239,7 +236,11 @@ export default function Voting({
               <Button
                 title="Add statement"
                 onClick={async () => {
-                  await submitStatement(pollId, statementText, getAnonymousId());
+                  await submitStatement(
+                    pollId,
+                    statementText,
+                    getAnonymousId(),
+                  );
                   setStatementText("");
                   setIsModalOpen(false);
                 }}

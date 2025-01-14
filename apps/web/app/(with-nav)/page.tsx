@@ -15,7 +15,9 @@ export default async function Home() {
       <DefaultLayout>
         <main className="max-w-7xl mx-auto px-4 py-8 md:py-12">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Welcome to Community Models</h1>
+            <h1 className="text-4xl font-bold mb-4">
+              Welcome to Community Models
+            </h1>
             <p className="text-xl text-gray-600">
               Open-Source Collective Constitutional AI
             </p>
@@ -24,7 +26,9 @@ export default async function Home() {
           <div className="max-w-lg mx-auto mb-12">
             <div className="bg-white border border-yellow rounded-lg p-6">
               <p className="text-lg font-semibold mb-3">Welcome back!</p>
-              <p className="text-gray-600 mb-6">Ready to continue shaping the future of AI?</p>
+              <p className="text-gray-600 mb-6">
+                Ready to continue shaping the future of AI?
+              </p>
               <Link
                 href="/community-models"
                 className="block w-full bg-teal text-white text-center font-medium py-3 px-4 rounded hover:bg-teal-dark transition-colors"
@@ -35,22 +39,24 @@ export default async function Home() {
           </div>
 
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-semibold mb-6">About Community Models</h2>
+            <h2 className="text-2xl font-semibold mb-6">
+              About Community Models
+            </h2>
             <div className="prose prose-lg max-w-none text-gray-600 space-y-6">
               <p className="text-left">
-                <strong>Community Models</strong> is a platform
-                that enables communities to collaboratively create and refine AI
-                models based on collectively defined constitutions.
+                <strong>Community Models</strong> is a platform that enables
+                communities to collaboratively create and refine AI models based
+                on collectively defined constitutions.
               </p>
               <p className="text-left">
-                Our goal is to democratize AI alignment by allowing diverse groups
-                to shape AI behavior according to their shared values and
+                Our goal is to democratize AI alignment by allowing diverse
+                groups to shape AI behavior according to their shared values and
                 preferences.
               </p>
               <p className="text-left">
-                Continue contributing to the development of open-source AI models,
-                participate in polls, and help shape the future of artificial
-                intelligence!
+                Continue contributing to the development of open-source AI
+                models, participate in polls, and help shape the future of
+                artificial intelligence!
               </p>
             </div>
           </div>
@@ -63,15 +69,20 @@ export default async function Home() {
     <DefaultLayout>
       <main className="max-w-7xl mx-auto px-4 py-8 md:py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Community Models</h1>
-          <p className="text-xl text-gray-600">Create a custom AI for your community</p>
+          <h1 className="text-4xl font-bold mb-4">
+            Welcome to Community Models
+          </h1>
+          <p className="text-xl text-gray-600">
+            Create a custom AI for your community
+          </p>
         </div>
 
         <div className="max-w-lg mx-auto mb-12">
           <div className="bg-light-yellow border border-yellow rounded-lg p-6">
             <p className="text-lg font-semibold mb-3">Join the community!</p>
             <p className="text-gray-600 mb-6">
-              Sign up or log in to participate in polls and create community models.
+              Sign up or log in to participate in polls and create community
+              models.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <SignUpButton mode="modal">
@@ -89,7 +100,9 @@ export default async function Home() {
         </div>
 
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-semibold mb-6">About Community Models</h2>
+          <h2 className="text-2xl font-semibold mb-6">
+            About Community Models
+          </h2>
           <div className="prose prose-lg max-w-none text-gray-600 space-y-6">
             <p className="text-left">
               Community Models enable groups of people to collaboratively create
