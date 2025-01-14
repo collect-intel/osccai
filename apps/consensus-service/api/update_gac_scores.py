@@ -170,19 +170,20 @@ def main(poll_id=None, dry_run=False):
                 gac_scores = process_votes(participants, statements, votes)
                 logger.info(f"Calculated GAC scores for poll ID: {poll_id}")
 
-                if not dry_run:
-                    update_statements(cursor, conn, statements, gac_scores, votes)
-                    logger.info(f"Updated GAC scores for poll ID: {poll_id}")
-                else:
+                if dry_run:
                     # Log what would have been updated in dry run mode
                     for statement in statements:
                         statement_id = statement['uid']
                         if statement_id in gac_scores:
-                            gac_score = gac_scores[statement_id]
-                            is_constitutionable = is_constitutionable(gac_score)
+                            gac_score_data = gac_scores[statement_id]
+                            score = gac_score_data['score']
+                            is_const = is_constitutionable(gac_score_data)
                             logger.info(f"[DRY RUN] Would update statement {statement_id}:")
-                            logger.info(f"  - GAC Score: {gac_score}")
-                            logger.info(f"  - Is Constitutionable: {is_constitutionable}")
+                            logger.info(f"  - GAC Score: {score}")
+                            logger.info(f"  - Is Constitutionable: {is_const}")
+                else:
+                    update_statements(cursor, conn, statements, gac_scores, votes)
+                    logger.info(f"Updated GAC scores for poll ID: {poll_id}")
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")
@@ -607,15 +608,15 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
         statement_id = statement['uid']
         if statement_id in statements_with_votes:
             if statement_id in gac_scores:
-                gac_score = gac_scores[statement_id]
-                is_constitutionable = is_constitutionable(gac_score)
+                gac_score_data = gac_scores[statement_id]
+                is_const = is_constitutionable(gac_score_data)
                 cursor.execute("""
                     UPDATE "Statement"
                     SET "gacScore" = %s,
                         "lastCalculatedAt" = NOW(),
                         "isConstitutionable" = %s
                     WHERE uid = %s;
-                """, (gac_score, is_constitutionable, statement_id))
+                """, (gac_score_data['score'], is_const, statement_id))
         else:
             # For statements without votes, ensure gacScore and lastCalculatedAt remain null
             cursor.execute("""
