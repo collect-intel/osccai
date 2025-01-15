@@ -119,6 +119,7 @@ const ConstitutionalAIChat = forwardRef<
               "claude:fast",
               "openai:fast",
             ],
+            max_tokens: 3000,
             messages: convertedMessages,
             schema: {
               thinking: String,
