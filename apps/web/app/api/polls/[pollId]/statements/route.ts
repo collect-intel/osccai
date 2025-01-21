@@ -1,8 +1,8 @@
+// apps/web/app/api/polls/[pollId]/statements/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { verifyApiKeyRequest } from "@/lib/api-auth";
+import { submitStatement } from "@/lib/actions";
 import { prisma } from "@/lib/db";
-import { getPollData } from "@/lib/data";
-import { getOrCreateParticipant, fetchUserVotes } from "@/lib/actions";
 
 export async function POST(
   req: NextRequest,
@@ -43,20 +43,43 @@ export async function POST(
       );
     }
 
+    const body = await req.json();
+    const { content, anonymousId } = body;
+
+    // Validate required fields
+    if (!content) {
+      return NextResponse.json(
+        { error: "Content is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!anonymousId) {
+      return NextResponse.json(
+        { error: "AnonymousId is required" },
+        { status: 400 }
+      );
+    }
+
+    const result = await submitStatement(params.pollId, content, anonymousId);
+    
+    if (!result) {
+      return NextResponse.json(
+        { error: "Failed to submit statement" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
-      uid: poll.uid,
-      title: poll.title,
-      description: poll.description,
-      published: poll.published,
-      communityModel: {
-        uid: poll.communityModel.uid,
-        name: poll.communityModel.name
-      }
+      uid: result.uid,
+      text: result.text,
+      status: result.status,
+      createdAt: result.createdAt
     });
   } catch (error) {
-    console.error("Error fetching poll:", error);
+    console.error("Error in statement submission:", error);
     return NextResponse.json(
-      { error: "Failed to fetch poll" },
+      { error: "Failed to submit statement" },
       { status: 500 }
     );
   }

@@ -85,6 +85,14 @@ export async function POST(req: NextRequest) {
       maxTokens: max_tokens,
     });
 
+    // Extract final_response from the XML structure
+    let finalResponse = response.final_response;
+    if (!finalResponse && response.content) {
+      // If final_response is not directly available, try to parse it from content
+      const match = response.content.match(/<final_response>([\s\S]*?)<\/final_response>/);
+      finalResponse = match ? match[1].trim() : response.content;
+    }
+
     // Format response in OpenAI-compatible way
     return new Response(
       JSON.stringify({
@@ -97,7 +105,7 @@ export async function POST(req: NextRequest) {
             index: 0,
             message: {
               role: "assistant",
-              content: response.final_response,
+              content: finalResponse,
             },
             finish_reason: "stop",
           },
