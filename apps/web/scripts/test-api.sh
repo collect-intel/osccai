@@ -1,5 +1,5 @@
 #!/bin/bash
-source test-api.env
+source "$(dirname "$0")/test-api.env"
 
 # Configuration
 BASE_URL_PROD="https://cm.cip.org"
