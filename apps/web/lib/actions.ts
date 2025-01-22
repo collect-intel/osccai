@@ -132,10 +132,13 @@ export async function submitStatement(
   const participant = await getOrCreateParticipant(null, anonymousId);
   const participantId = participant?.uid;
   if (!participantId) throw new Error("Participant not found");
-  await prisma.statement.create({
+
+  const statement = await prisma.statement.create({
     data: { pollId, text, participantId },
   });
+
   revalidatePath(`/polls/${pollId}`);
+  return statement;
 }
 
 export async function flagStatement(statementId: string, anonymousId?: string) {

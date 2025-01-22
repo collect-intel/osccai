@@ -9,7 +9,11 @@ import React, {
 } from "react";
 import AIChat, { AIChatHandle } from "./AIChat";
 import { MessageWithFields } from "../../types";
-import { ClientProvider, xmllm, configure as xmllmConfigure } from "xmllm/client";
+import {
+  ClientProvider,
+  xmllm,
+  configure as xmllmConfigure,
+} from "xmllm/client";
 import { FaInfoCircle } from "react-icons/fa";
 import AIResponseModal from "./AIResponseModal";
 import LoadingMessage from "./LoadingMessage";
@@ -23,13 +27,12 @@ declare const process: {
 };
 
 const proxyUrl =
-process.env.NEXT_PUBLIC_PROXY_API_URL ||
-"https://proxyai.cip.org/api/stream";
+  process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
 
 const clientProvider = new ClientProvider(proxyUrl);
 
 xmllmConfigure({
-  clientProvider
+  clientProvider,
 });
 
 interface ChatState {
@@ -104,7 +107,6 @@ const ConstitutionalAIChat = forwardRef<
     }, [chatId, initialMessage, modelId, ephemeral]);
 
     const genStream = async (messages: MessageWithFields[]) => {
-
       const convertedMessages = messages.map((message) => ({
         role: message.role,
         content: message.final_response || message.content,
