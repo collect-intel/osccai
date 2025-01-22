@@ -1302,3 +1302,11 @@ export async function checkPollCompletion(
     currentSubmissions: submissionCount,
   };
 }
+
+export async function createAndActivateConstitution(
+  modelId: string,
+): Promise<Constitution> {
+  const constitution = await createConstitution(modelId);
+  await setActiveConstitution(modelId, constitution.uid);
+  return constitution;
+}
