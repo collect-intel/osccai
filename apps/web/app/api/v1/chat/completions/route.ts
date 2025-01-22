@@ -89,7 +89,9 @@ export async function POST(req: NextRequest) {
     let finalResponse = response.final_response;
     if (!finalResponse && response.content) {
       // If final_response is not directly available, try to parse it from content
-      const match = response.content.match(/<final_response>([\s\S]*?)<\/final_response>/);
+      const match = response.content.match(
+        /<final_response>([\s\S]*?)<\/final_response>/,
+      );
       finalResponse = match ? match[1].trim() : response.content;
     }
 

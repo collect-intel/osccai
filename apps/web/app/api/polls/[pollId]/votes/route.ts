@@ -8,13 +8,13 @@ import { VoteValue } from "@prisma/client";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { pollId: string } }
+  { params }: { params: { pollId: string } },
 ) {
   try {
     // First, get the poll and its associated community model
     const poll = await prisma.poll.findUnique({
       where: { uid: params.pollId },
-      include: { communityModel: true }
+      include: { communityModel: true },
     });
 
     if (!poll) {
@@ -26,13 +26,13 @@ export async function POST(
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json(
         { error: "Invalid authentication" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const apiKey = authHeader.slice(7);
     const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
-    
+
     if (!isValid) {
       return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
     }
@@ -41,7 +41,7 @@ export async function POST(
     if (modelId !== poll.communityModel.uid) {
       return NextResponse.json(
         { error: "API key is not authorized for this community model" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -52,21 +52,21 @@ export async function POST(
     if (!statementId) {
       return NextResponse.json(
         { error: "StatementId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!vote) {
       return NextResponse.json(
         { error: "Vote value is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!anonymousId) {
       return NextResponse.json(
         { error: "AnonymousId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -74,19 +74,19 @@ export async function POST(
     if (!Object.values(VoteValue).includes(vote)) {
       return NextResponse.json(
         { error: "Invalid vote value" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Verify statement exists
     const statement = await prisma.statement.findUnique({
-      where: { uid: statementId }
+      where: { uid: statementId },
     });
 
     if (!statement) {
       return NextResponse.json(
         { error: "Statement not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -94,38 +94,40 @@ export async function POST(
     if (!participant) {
       return NextResponse.json(
         { error: "Failed to create participant" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-    
+
     const result = await submitVote(statementId, vote, undefined, anonymousId);
-    
+
     if (!result) {
       return NextResponse.json(
         { error: "Failed to submit vote" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Find the vote we just created/updated
-    const latestVote = result.votes.find(v => v.participantId === participant.uid);
+    const latestVote = result.votes.find(
+      (v) => v.participantId === participant.uid,
+    );
     if (!latestVote) {
       return NextResponse.json(
         { error: "Failed to find submitted vote" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json({
       uid: latestVote.uid,
       voteValue: latestVote.voteValue,
-      createdAt: latestVote.createdAt
+      createdAt: latestVote.createdAt,
     });
   } catch (error) {
     console.error("Error in vote submission:", error);
     return NextResponse.json(
       { error: "Failed to submit vote" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

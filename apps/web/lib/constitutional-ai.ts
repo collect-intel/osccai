@@ -1,14 +1,17 @@
-import { ClientProvider, xmllm, configure as xmllmConfigure } from "xmllm/client";
+import {
+  ClientProvider,
+  xmllm,
+  configure as xmllmConfigure,
+} from "xmllm/client";
 import { MessageWithFields } from "./types";
 
 const proxyUrl =
-  process.env.NEXT_PUBLIC_PROXY_API_URL ||
-  "https://proxyai.cip.org/api/stream";
+  process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
 const clientProvider = new ClientProvider(proxyUrl);
 
 // Configure xmllm with the client provider
 xmllmConfigure({
-  clientProvider
+  clientProvider,
 });
 
 export function genSystemPrompt(constitutionText: string): string {
