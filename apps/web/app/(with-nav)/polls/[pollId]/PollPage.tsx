@@ -61,7 +61,7 @@ const PollPage: React.FC<PollPageProps> = ({ poll, isLoggedIn, userVotes }) => {
           setAnonymousUserVotes(votes as unknown as Record<string, VoteValue>);
         }
       } catch (error) {
-        console.error('Error fetching poll data:', error);
+        console.error("Error fetching poll data:", error);
       } finally {
         setIsLoading(false);
       }

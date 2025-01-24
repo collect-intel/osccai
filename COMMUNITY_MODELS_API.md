@@ -5,6 +5,7 @@ This document describes the API endpoints available for external developers to i
 ## Authentication
 
 API requests require authentication using a Bearer token in the Authorization header:
+
 ```
 Authorization: Bearer YOUR_API_KEY
 ```
@@ -14,11 +15,13 @@ Each API key is scoped to a specific Community Model and can only be used to sub
 ## Currently Available Endpoints
 
 ### Submit Statement
+
 `POST /api/polls/{pollId}/statements`
 
 Submit a new statement to a poll. The API key must be associated with the Community Model that owns the poll.
 
 **Request:**
+
 ```json
 {
   "content": "Statement text",
@@ -27,6 +30,7 @@ Submit a new statement to a poll. The API key must be associated with the Commun
 ```
 
 **Response:**
+
 ```json
 {
   "uid": "statement-id",
@@ -37,11 +41,13 @@ Submit a new statement to a poll. The API key must be associated with the Commun
 ```
 
 ### Submit Vote
+
 `POST /api/polls/{pollId}/votes`
 
 Submit a vote on a statement. The API key must be associated with the Community Model that owns the poll.
 
 **Request:**
+
 ```json
 {
   "statementId": "statement-id",
@@ -51,6 +57,7 @@ Submit a vote on a statement. The API key must be associated with the Community 
 ```
 
 **Response:**
+
 ```json
 {
   "uid": "vote-id",
@@ -60,22 +67,23 @@ Submit a vote on a statement. The API key must be associated with the Community 
 ```
 
 ### Chat Completions
+
 `POST /api/v1/chat/completions`
 
 OpenAI-compatible chat completion endpoint that uses your community model's active constitution.
 
 **Request:**
+
 ```json
 {
-  "messages": [
-    {"role": "user", "content": "Your message here"}
-  ],
+  "messages": [{ "role": "user", "content": "Your message here" }],
   "temperature": 0.7,
   "max_tokens": 500
 }
 ```
 
 **Response:**
+
 ```json
 {
   "id": "chatcmpl-...",
@@ -100,12 +108,13 @@ OpenAI-compatible chat completion endpoint that uses your community model's acti
 The following endpoints are planned but not yet implemented:
 
 ### Create Community Model
+
 `POST /api/models`
 
 Creating new Community Models is currently only available through the web interface.
 
 ### Create Poll
+
 `POST /api/models/{modelId}/polls`
 
 Creating new Polls is currently only available through the web interface.
-

@@ -75,10 +75,12 @@ export async function getPollData(
     maxSubmissionsPerParticipant: maxSubmissionsPerParticipant ?? undefined,
     minRequiredSubmissions: minRequiredSubmissions ?? undefined,
     completionMessage: completionMessage ?? undefined,
-    statements: poll.statements.map((statement: Statement & { votes: Vote[]; flags: any[] }) => ({
-      ...statement,
-      isConstitutionable: isStatementConstitutionable(statement),
-    })),
+    statements: poll.statements.map(
+      (statement: Statement & { votes: Vote[]; flags: any[] }) => ({
+        ...statement,
+        isConstitutionable: isStatementConstitutionable(statement),
+      }),
+    ),
     communityModel: {
       bio: poll.communityModel.bio ?? "",
       goal: poll.communityModel.goal ?? "",

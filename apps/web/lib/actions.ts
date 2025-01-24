@@ -130,7 +130,7 @@ export async function submitStatement(
   anonymousId?: string,
 ) {
   const participant = await getOrCreateParticipant(null, anonymousId);
-  
+
   if (!participant) throw new Error("Participant not found");
 
   const participantId = participant.uid;
@@ -160,7 +160,7 @@ export async function submitStatement(
 
     if (voteCount < poll.minVotesBeforeSubmission) {
       throw new Error(
-        `You must vote on at least ${poll.minVotesBeforeSubmission} statements before submitting your own`
+        `You must vote on at least ${poll.minVotesBeforeSubmission} statements before submitting your own`,
       );
     }
   }
@@ -1285,11 +1285,12 @@ export async function checkPollCompletion(
     },
   });
 
-  const hasReachedVoteLimit = poll.maxVotesPerParticipant 
+  const hasReachedVoteLimit = poll.maxVotesPerParticipant
     ? voteCount >= poll.maxVotesPerParticipant
     : voteCount >= poll.statements.length;
 
-  const hasMetSubmissionRequirement = !poll.minRequiredSubmissions || 
+  const hasMetSubmissionRequirement =
+    !poll.minRequiredSubmissions ||
     submissionCount >= poll.minRequiredSubmissions;
 
   const isComplete = hasReachedVoteLimit && hasMetSubmissionRequirement;

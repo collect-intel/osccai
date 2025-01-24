@@ -24,14 +24,14 @@ export default function PollProgress({
 }: PollProgressProps) {
   const effectiveMaxVotes = maxVotes || totalStatements;
   const voteProgress = Math.min((votedCount / effectiveMaxVotes) * 100, 100);
-  
-  const submissionProgress = minRequiredSubmissions 
+
+  const submissionProgress = minRequiredSubmissions
     ? Math.min((submissionCount / minRequiredSubmissions) * 100, 100)
     : 100;
 
   // Add debug logging
   React.useEffect(() => {
-    console.log('=== Poll Progress State ===', {
+    console.log("=== Poll Progress State ===", {
       votedCount,
       maxVotes: effectiveMaxVotes,
       voteProgress,
@@ -40,7 +40,15 @@ export default function PollProgress({
       submissionProgress,
       isComplete,
     });
-  }, [votedCount, effectiveMaxVotes, voteProgress, submissionCount, minRequiredSubmissions, submissionProgress, isComplete]);
+  }, [
+    votedCount,
+    effectiveMaxVotes,
+    voteProgress,
+    submissionCount,
+    minRequiredSubmissions,
+    submissionProgress,
+    isComplete,
+  ]);
 
   return (
     <div className="bg-white rounded-lg shadow p-4 mb-6">
@@ -89,7 +97,9 @@ export default function PollProgress({
         {maxSubmissions !== undefined && (
           <div className="flex justify-between items-center text-sm text-gray-600">
             <span>Submission limit:</span>
-            <span>{submissionCount} / {maxSubmissions} statements</span>
+            <span>
+              {submissionCount} / {maxSubmissions} statements
+            </span>
           </div>
         )}
 
@@ -108,4 +118,4 @@ export default function PollProgress({
       </div>
     </div>
   );
-} 
+}

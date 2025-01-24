@@ -4,7 +4,12 @@ import { useAuth, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Statement } from "@prisma/client";
 import type { VoteValue } from "@prisma/client";
 import { getAnonymousId } from "@/lib/client_utils/getAnonymousId";
-import { flagStatement, submitStatement, submitVote, checkPollCompletion } from "@/lib/actions";
+import {
+  flagStatement,
+  submitStatement,
+  submitVote,
+  checkPollCompletion,
+} from "@/lib/actions";
 import StatementIcon from "../icons/StatementIcon";
 import FlagIcon from "../icons/FlagIcon";
 import Button from "../Button";
@@ -45,7 +50,9 @@ export default function Voting({
 }: VotingProps) {
   const { isSignedIn } = useAuth();
   const [votes, setVotes] = useState<Record<string, VoteValue>>(initialVotes);
-  const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(null);
+  const [currentStatementIx, setCurrentStatementIx] = useState<number | null>(
+    null,
+  );
   const [statementText, setStatementText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submissionCount, setSubmissionCount] = useState(0);
@@ -83,7 +90,7 @@ export default function Voting({
 
   // Add debug logging for votes and state
   useEffect(() => {
-    console.log('=== Votes and State ===', {
+    console.log("=== Votes and State ===", {
       initialVotes,
       currentVotes: votes,
       votedCount,
@@ -96,14 +103,14 @@ export default function Voting({
   // Optimize statement sorting to only handle needed statements
   const getNextUnvotedStatement = () => {
     if (!canVote) return null;
-    
+
     // If we've reached vote limit, return null
     if (maxVotesPerParticipant && votedCount >= maxVotesPerParticipant) {
       return null;
     }
 
     // Get only unvoted statements
-    const unvotedStatements = statements.filter(s => !votes[s.uid]);
+    const unvotedStatements = statements.filter((s) => !votes[s.uid]);
 
     // If no unvoted statements, return null
     if (unvotedStatements.length === 0) {
@@ -114,18 +121,18 @@ export default function Voting({
     const sortedUnvoted = unvotedStatements.sort((a, b) => {
       const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
       const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
-      
+
       // First sort by total votes (ascending)
       if (totalVotesA !== totalVotesB) {
         return totalVotesA - totalVotesB;
       }
-      
+
       // If total votes are equal, sort by creation date (ascending)
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
     // Return the first statement's index in the original array
-    return statements.findIndex(s => s.uid === sortedUnvoted[0].uid);
+    return statements.findIndex((s) => s.uid === sortedUnvoted[0].uid);
   };
 
   // Update the effect to use the optimized function
@@ -134,19 +141,25 @@ export default function Voting({
     setCurrentStatementIx(nextStatementIndex);
 
     // Add debug logging
-    console.log('=== Next Statement Selection ===', {
+    console.log("=== Next Statement Selection ===", {
       votedCount,
       maxVotesPerParticipant,
-      remainingVotes: maxVotesPerParticipant ? maxVotesPerParticipant - votedCount : 'unlimited',
+      remainingVotes: maxVotesPerParticipant
+        ? maxVotesPerParticipant - votedCount
+        : "unlimited",
       nextStatementIndex,
-      nextStatement: nextStatementIndex !== null ? {
-        id: statements[nextStatementIndex]?.uid,
-        totalVotes: statements[nextStatementIndex] ? 
-          statements[nextStatementIndex].agreeCount + 
-          statements[nextStatementIndex].disagreeCount + 
-          statements[nextStatementIndex].passCount : null,
-        createdAt: statements[nextStatementIndex]?.createdAt
-      } : null
+      nextStatement:
+        nextStatementIndex !== null
+          ? {
+              id: statements[nextStatementIndex]?.uid,
+              totalVotes: statements[nextStatementIndex]
+                ? statements[nextStatementIndex].agreeCount +
+                  statements[nextStatementIndex].disagreeCount +
+                  statements[nextStatementIndex].passCount
+                : null,
+              createdAt: statements[nextStatementIndex]?.createdAt,
+            }
+          : null,
     });
   }, [canVote, statements, votes, maxVotesPerParticipant, votedCount]);
 
@@ -156,34 +169,35 @@ export default function Voting({
       // Calculate total votes for each statement
       const totalVotesA = a.agreeCount + a.disagreeCount + a.passCount;
       const totalVotesB = b.agreeCount + b.disagreeCount + b.passCount;
-      
+
       // First sort by total votes (ascending)
       if (totalVotesA !== totalVotesB) {
         return totalVotesA - totalVotesB;
       }
-      
+
       // If total votes are equal, sort by creation date (ascending)
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
-    console.log('=== Sorted Statements ===', {
-      statements: sortedStatements.map(s => ({
+    console.log("=== Sorted Statements ===", {
+      statements: sortedStatements.map((s) => ({
         id: s.uid,
         totalVotes: s.agreeCount + s.disagreeCount + s.passCount,
         createdAt: s.createdAt,
-      }))
+      })),
     });
   }, [statements]);
 
   // Calculate whether user can submit statements
-  const canSubmitStatement = 
+  const canSubmitStatement =
     allowParticipantStatements &&
     canVote &&
     (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission) &&
-    (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant);
+    (!maxSubmissionsPerParticipant ||
+      submissionCount < maxSubmissionsPerParticipant);
 
   // Add detailed debug logging for props and state
   useEffect(() => {
-    console.log('=== Voting Component Props ===', {
+    console.log("=== Voting Component Props ===", {
       pollId,
       requireAuth,
       allowParticipantStatements,
@@ -210,7 +224,7 @@ export default function Voting({
 
   // Add detailed debug logging for state changes
   useEffect(() => {
-    console.log('=== Voting Component State ===', {
+    console.log("=== Voting Component State ===", {
       votedCount,
       submissionCount,
       canVote,
@@ -218,15 +232,22 @@ export default function Voting({
       currentStatementIx,
       totalVotes: Object.keys(votes).length,
     });
-  }, [votedCount, submissionCount, canVote, isComplete, currentStatementIx, votes]);
+  }, [
+    votedCount,
+    submissionCount,
+    canVote,
+    isComplete,
+    currentStatementIx,
+    votes,
+  ]);
 
   const handleVote = async (vote: VoteValue) => {
     if (!canVote || currentStatementIx === null) return;
-    
+
     try {
       const statementId = statements[currentStatementIx].uid;
       const previousVote = votes[statementId];
-      
+
       await submitVote(statementId, vote, previousVote, getAnonymousId());
       setVotes({ ...votes, [statementId]: vote });
 
@@ -234,17 +255,20 @@ export default function Voting({
         (statement, index) =>
           index > currentStatementIx &&
           !votes[statement.uid] &&
-          statement.uid !== statementId
+          statement.uid !== statementId,
       );
 
       setCurrentStatementIx(
-        nextUnvotedIndex >= 0 && 
-        (!maxVotesPerParticipant || Object.keys(votes).length < maxVotesPerParticipant)
-          ? nextUnvotedIndex 
-          : null
+        nextUnvotedIndex >= 0 &&
+          (!maxVotesPerParticipant ||
+            Object.keys(votes).length < maxVotesPerParticipant)
+          ? nextUnvotedIndex
+          : null,
       );
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Error submitting vote");
+      showToast(
+        error instanceof Error ? error.message : "Error submitting vote",
+      );
     }
   };
 
@@ -257,10 +281,15 @@ export default function Voting({
       await fetchPollStatus();
       showToast("Statement submitted successfully");
     } catch (error) {
-      if (error instanceof Error && error.message === "Maximum submissions limit reached") {
+      if (
+        error instanceof Error &&
+        error.message === "Maximum submissions limit reached"
+      ) {
         showToast("You have reached the maximum number of allowed submissions");
       } else {
-        showToast(error instanceof Error ? error.message : "Error submitting statement");
+        showToast(
+          error instanceof Error ? error.message : "Error submitting statement",
+        );
       }
     }
   };
@@ -271,56 +300,76 @@ export default function Voting({
 
   // Add useEffect for debugging
   useEffect(() => {
-    console.log('=== Voting Component State ===');
-    console.log('Advanced Options:', {
+    console.log("=== Voting Component State ===");
+    console.log("Advanced Options:", {
       minVotesBeforeSubmission,
       maxVotesPerParticipant,
       maxSubmissionsPerParticipant,
-      allowParticipantStatements
+      allowParticipantStatements,
     });
-    console.log('Current State:', {
+    console.log("Current State:", {
       votedCount,
       submissionCount,
       canVote,
-      hasVotedOnAll
+      hasVotedOnAll,
     });
-    console.log('Votes Object:', votes);
-    console.log('Total Statements:', statements.length);
-  }, [minVotesBeforeSubmission, maxVotesPerParticipant, maxSubmissionsPerParticipant, 
-      allowParticipantStatements, votedCount, submissionCount, canVote, hasVotedOnAll, 
-      votes, statements.length]);
+    console.log("Votes Object:", votes);
+    console.log("Total Statements:", statements.length);
+  }, [
+    minVotesBeforeSubmission,
+    maxVotesPerParticipant,
+    maxSubmissionsPerParticipant,
+    allowParticipantStatements,
+    votedCount,
+    submissionCount,
+    canVote,
+    hasVotedOnAll,
+    votes,
+    statements.length,
+  ]);
 
   // Add immediate logging after calculating canSubmitStatement
   useEffect(() => {
-    console.log('=== Submit Statement Conditions ===');
-    console.log('canSubmitStatement:', canSubmitStatement);
-    console.log('Condition breakdown:', {
+    console.log("=== Submit Statement Conditions ===");
+    console.log("canSubmitStatement:", canSubmitStatement);
+    console.log("Condition breakdown:", {
       allowParticipantStatements,
       canVote,
-      minVotesCheck: (!minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission),
-      maxSubmissionsCheck: (!maxSubmissionsPerParticipant || submissionCount < maxSubmissionsPerParticipant)
+      minVotesCheck:
+        !minVotesBeforeSubmission || votedCount >= minVotesBeforeSubmission,
+      maxSubmissionsCheck:
+        !maxSubmissionsPerParticipant ||
+        submissionCount < maxSubmissionsPerParticipant,
     });
-  }, [canSubmitStatement, allowParticipantStatements, canVote, 
-      minVotesBeforeSubmission, votedCount, maxSubmissionsPerParticipant, submissionCount]);
+  }, [
+    canSubmitStatement,
+    allowParticipantStatements,
+    canVote,
+    minVotesBeforeSubmission,
+    votedCount,
+    maxSubmissionsPerParticipant,
+    submissionCount,
+  ]);
 
   const getSubmissionButtonTooltip = () => {
-    const tooltip = (!allowParticipantStatements) 
+    const tooltip = !allowParticipantStatements
       ? "Statement submissions are not allowed in this poll"
-      : (!canVote) 
-      ? "You must sign in to submit statements"
-      : (minVotesBeforeSubmission && votedCount < minVotesBeforeSubmission)
-      ? `You must vote on at least ${minVotesBeforeSubmission} statements before submitting your own`
-      : (maxSubmissionsPerParticipant && submissionCount >= maxSubmissionsPerParticipant)
-      ? `You have reached the maximum limit of ${maxSubmissionsPerParticipant} submissions`
-      : "Contribute a statement";
+      : !canVote
+        ? "You must sign in to submit statements"
+        : minVotesBeforeSubmission && votedCount < minVotesBeforeSubmission
+          ? `You must vote on at least ${minVotesBeforeSubmission} statements before submitting your own`
+          : maxSubmissionsPerParticipant &&
+              submissionCount >= maxSubmissionsPerParticipant
+            ? `You have reached the maximum limit of ${maxSubmissionsPerParticipant} submissions`
+            : "Contribute a statement";
 
     // Log the tooltip calculation
-    console.log('=== Tooltip Calculation ===', {
+    console.log("=== Tooltip Calculation ===", {
       resultingTooltip: tooltip,
       votedCount,
       minVotesBeforeSubmission,
       submissionCount,
-      maxSubmissionsPerParticipant
+      maxSubmissionsPerParticipant,
     });
 
     return tooltip;
@@ -367,7 +416,6 @@ export default function Voting({
         </h2>
         <p>You&apos;ve already voted on all of these statements.</p>
       </div>
-      
     ) : (
       <div key={currentStatementIx} className="animate-slide-in">
         <div className="text-lg mb-4 pr-12">

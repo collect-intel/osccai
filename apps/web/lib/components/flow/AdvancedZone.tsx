@@ -53,7 +53,7 @@ export default function AdvancedZone({
     maxVotesPerParticipant: null,
     maxSubmissionsPerParticipant: null,
     minRequiredSubmissions: null,
-    completionMessage: null
+    completionMessage: null,
   },
   onUpdatePollOptions,
 }: AdvancedZoneProps) {
@@ -75,8 +75,12 @@ export default function AdvancedZone({
   useEffect(() => {
     setMinVotes(pollOptions.minVotesBeforeSubmission?.toString() || "");
     setMaxVotes(pollOptions.maxVotesPerParticipant?.toString() || "");
-    setMaxSubmissions(pollOptions.maxSubmissionsPerParticipant?.toString() || "");
-    setMinRequiredSubmissions(pollOptions.minRequiredSubmissions?.toString() || "");
+    setMaxSubmissions(
+      pollOptions.maxSubmissionsPerParticipant?.toString() || "",
+    );
+    setMinRequiredSubmissions(
+      pollOptions.minRequiredSubmissions?.toString() || "",
+    );
     setCompletionMessage(pollOptions.completionMessage || "");
   }, [pollOptions]);
 
@@ -94,8 +98,10 @@ export default function AdvancedZone({
     prevOptionsRef.current = {
       minVotes: pollOptions.minVotesBeforeSubmission?.toString() || "",
       maxVotes: pollOptions.maxVotesPerParticipant?.toString() || "",
-      maxSubmissions: pollOptions.maxSubmissionsPerParticipant?.toString() || "",
-      minRequiredSubmissions: pollOptions.minRequiredSubmissions?.toString() || "",
+      maxSubmissions:
+        pollOptions.maxSubmissionsPerParticipant?.toString() || "",
+      minRequiredSubmissions:
+        pollOptions.minRequiredSubmissions?.toString() || "",
       completionMessage: pollOptions.completionMessage || "",
     };
   }, [pollOptions]);
@@ -106,7 +112,7 @@ export default function AdvancedZone({
       if (onUpdatePollOptions) {
         onUpdatePollOptions(options);
       }
-    }, 500)
+    }, 500),
   ).current;
 
   useEffect(() => {
@@ -127,25 +133,39 @@ export default function AdvancedZone({
 
     // Check if any values have actually changed
     const hasChanges = Object.entries(currentOptions).some(
-      ([key, value]) => prevOptions[key as keyof typeof prevOptions] !== value
+      ([key, value]) => prevOptions[key as keyof typeof prevOptions] !== value,
     );
 
     if (hasChanges) {
       const options = {
-        minVotesBeforeSubmission: minVotes.trim() !== "" ? parseInt(minVotes) : null,
-        maxVotesPerParticipant: maxVotes.trim() !== "" ? parseInt(maxVotes) : null,
-        maxSubmissionsPerParticipant: maxSubmissions.trim() !== "" ? parseInt(maxSubmissions) : null,
-        minRequiredSubmissions: minRequiredSubmissions.trim() !== "" ? parseInt(minRequiredSubmissions) : null,
-        completionMessage: completionMessage.trim() !== "" ? completionMessage : null,
+        minVotesBeforeSubmission:
+          minVotes.trim() !== "" ? parseInt(minVotes) : null,
+        maxVotesPerParticipant:
+          maxVotes.trim() !== "" ? parseInt(maxVotes) : null,
+        maxSubmissionsPerParticipant:
+          maxSubmissions.trim() !== "" ? parseInt(maxSubmissions) : null,
+        minRequiredSubmissions:
+          minRequiredSubmissions.trim() !== ""
+            ? parseInt(minRequiredSubmissions)
+            : null,
+        completionMessage:
+          completionMessage.trim() !== "" ? completionMessage : null,
       };
 
       // Update the previous values
       prevOptionsRef.current = currentOptions;
-      
+
       // Call the debounced update
       debouncedUpdate(options);
     }
-  }, [minVotes, maxVotes, maxSubmissions, minRequiredSubmissions, completionMessage, debouncedUpdate]);
+  }, [
+    minVotes,
+    maxVotes,
+    maxSubmissions,
+    minRequiredSubmissions,
+    completionMessage,
+    debouncedUpdate,
+  ]);
 
   // Cleanup the debounced function
   useEffect(() => {
@@ -210,7 +230,8 @@ export default function AdvancedZone({
             placeholder="Leave empty for no minimum"
           />
           <p className="text-sm text-gray-500 mt-1">
-            Number of statements a participant must vote on before submitting their own
+            Number of statements a participant must vote on before submitting
+            their own
           </p>
         </div>
 
@@ -261,7 +282,8 @@ export default function AdvancedZone({
             placeholder="Leave empty for no minimum"
           />
           <p className="text-sm text-gray-500 mt-1">
-            Minimum number of statements a participant must submit to complete the poll
+            Minimum number of statements a participant must submit to complete
+            the poll
           </p>
         </div>
 
@@ -297,8 +319,8 @@ export default function AdvancedZone({
             <div className="mb-6">
               <h3 className="text-xl font-semibold mb-2">API Keys</h3>
               <p className="text-gray-600 mb-4">
-                Create and manage API keys for programmatic access to your community
-                model.
+                Create and manage API keys for programmatic access to your
+                community model.
               </p>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
@@ -319,13 +341,18 @@ export default function AdvancedZone({
                       className="bg-white p-4 rounded-md border border-gray-200 flex items-center justify-between"
                     >
                       <div>
-                        <p className="font-medium">{key.name || "Unnamed Key"}</p>
+                        <p className="font-medium">
+                          {key.name || "Unnamed Key"}
+                        </p>
                         <p className="text-sm text-gray-500">
                           Created {formatDistanceToNow(key.createdAt)} ago
                           {key.lastUsedAt && (
                             <>
                               {" "}
-                              · Last used {formatDistanceToNow(key.lastUsedAt)} ago
+                              · Last used {formatDistanceToNow(
+                                key.lastUsedAt,
+                              )}{" "}
+                              ago
                             </>
                           )}
                         </p>
