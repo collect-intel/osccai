@@ -500,7 +500,13 @@ export default function CommunityModelFlow({
                   savingStatus={savingStatus.advanced}
                   apiEnabled={modelData.apiEnabled}
                   advancedOptionsEnabled={modelData.advancedOptionsEnabled}
-                  pollOptions={modelData.polls?.[0] || {}}
+                  pollOptions={{
+                    minVotesBeforeSubmission: modelData.polls?.[0]?.minVotesBeforeSubmission ?? undefined,
+                    maxVotesPerParticipant: modelData.polls?.[0]?.maxVotesPerParticipant ?? undefined,
+                    maxSubmissionsPerParticipant: modelData.polls?.[0]?.maxSubmissionsPerParticipant ?? undefined,
+                    minRequiredSubmissions: modelData.polls?.[0]?.minRequiredSubmissions ?? undefined,
+                    completionMessage: modelData.polls?.[0]?.completionMessage ?? undefined
+                  }}
                   onUpdatePollOptions={handleUpdatePollOptions}
                 />
               </div>
