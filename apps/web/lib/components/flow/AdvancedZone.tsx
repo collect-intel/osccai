@@ -17,18 +17,18 @@ interface AdvancedZoneProps {
   apiEnabled?: boolean;
   advancedOptionsEnabled?: boolean;
   pollOptions?: {
-    minVotesBeforeSubmission?: number;
-    maxVotesPerParticipant?: number;
-    maxSubmissionsPerParticipant?: number;
-    minRequiredSubmissions?: number;
-    completionMessage?: string;
+    minVotesBeforeSubmission: number | null;
+    maxVotesPerParticipant: number | null;
+    maxSubmissionsPerParticipant: number | null;
+    minRequiredSubmissions: number | null;
+    completionMessage: string | null;
   };
   onUpdatePollOptions?: (options: {
-    minVotesBeforeSubmission?: number;
-    maxVotesPerParticipant?: number;
-    maxSubmissionsPerParticipant?: number;
-    minRequiredSubmissions?: number;
-    completionMessage?: string;
+    minVotesBeforeSubmission: number | null;
+    maxVotesPerParticipant: number | null;
+    maxSubmissionsPerParticipant: number | null;
+    minRequiredSubmissions: number | null;
+    completionMessage: string | null;
   }) => void;
 }
 
@@ -48,7 +48,13 @@ export default function AdvancedZone({
   savingStatus,
   apiEnabled = false,
   advancedOptionsEnabled = false,
-  pollOptions = {},
+  pollOptions = {
+    minVotesBeforeSubmission: null,
+    maxVotesPerParticipant: null,
+    maxSubmissionsPerParticipant: null,
+    minRequiredSubmissions: null,
+    completionMessage: null
+  },
   onUpdatePollOptions,
 }: AdvancedZoneProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

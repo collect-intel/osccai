@@ -284,11 +284,11 @@ export default function CommunityModelFlow({
   const debouncedSaveModelData = debounce(saveModelData, 500);
 
   const handleUpdatePollOptions = useCallback(async (options: {
-    minVotesBeforeSubmission?: number;
-    maxVotesPerParticipant?: number;
-    maxSubmissionsPerParticipant?: number;
-    minRequiredSubmissions?: number;
-    completionMessage?: string;
+    minVotesBeforeSubmission: number | null;
+    maxVotesPerParticipant: number | null;
+    maxSubmissionsPerParticipant: number | null;
+    minRequiredSubmissions: number | null;
+    completionMessage: string | null;
   }) => {
     if (!modelId) return;
 
@@ -500,12 +500,12 @@ export default function CommunityModelFlow({
                   savingStatus={savingStatus.advanced}
                   apiEnabled={modelData.apiEnabled}
                   advancedOptionsEnabled={modelData.advancedOptionsEnabled}
-                  pollOptions={{
-                    minVotesBeforeSubmission: modelData.polls?.[0]?.minVotesBeforeSubmission ?? undefined,
-                    maxVotesPerParticipant: modelData.polls?.[0]?.maxVotesPerParticipant ?? undefined,
-                    maxSubmissionsPerParticipant: modelData.polls?.[0]?.maxSubmissionsPerParticipant ?? undefined,
-                    minRequiredSubmissions: modelData.polls?.[0]?.minRequiredSubmissions ?? undefined,
-                    completionMessage: modelData.polls?.[0]?.completionMessage ?? undefined
+                  pollOptions={modelData.polls?.[0] || {
+                    minVotesBeforeSubmission: null,
+                    maxVotesPerParticipant: null,
+                    maxSubmissionsPerParticipant: null,
+                    minRequiredSubmissions: null,
+                    completionMessage: null
                   }}
                   onUpdatePollOptions={handleUpdatePollOptions}
                 />
