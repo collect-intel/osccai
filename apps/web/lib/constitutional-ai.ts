@@ -1,5 +1,18 @@
-import { ClientProvider, xmllm } from "xmllm/client";
+import {
+  ClientProvider,
+  xmllm,
+  configure as xmllmConfigure,
+} from "xmllm/client";
 import { MessageWithFields } from "./types";
+
+const proxyUrl =
+  process.env.NEXT_PUBLIC_PROXY_API_URL || "https://proxyai.cip.org/api/stream";
+const clientProvider = new ClientProvider(proxyUrl);
+
+// Configure xmllm with the client provider
+xmllmConfigure({
+  clientProvider,
+});
 
 export function genSystemPrompt(constitutionText: string): string {
   // Copy the system prompt generation logic from ConstitutionalAIChat.tsx
@@ -33,11 +46,6 @@ export async function processAIResponse({
   temperature?: number;
   maxTokens?: number;
 }) {
-  const proxyUrl =
-    process.env.NEXT_PUBLIC_PROXY_API_URL ||
-    "https://proxyai.cip.org/api/stream";
-  const clientProvider = new ClientProvider(proxyUrl);
-
   const stream = await xmllm(({ prompt }: { prompt: any }) => {
     return [
       prompt({

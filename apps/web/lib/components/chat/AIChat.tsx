@@ -40,30 +40,36 @@ export interface AIChatHandle {
 }
 
 const AIChat = forwardRef<AIChatHandle, AIChatProps>(
-  ({
-    messages,
-    onUserMessage,
-    interactive = true,
-    icon,
-    color,
-    renderMessage,
-    chatId,
-    onInputChange,
-    draftInput,
-    isActiveChat = true,
-    initialMessage,
-    customStyles,
-  }, ref) => {
+  (
+    {
+      messages,
+      onUserMessage,
+      interactive = true,
+      icon,
+      color,
+      renderMessage,
+      chatId,
+      onInputChange,
+      draftInput,
+      isActiveChat = true,
+      initialMessage,
+      customStyles,
+    },
+    ref,
+  ) => {
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleUserMessage = useCallback(async (content: string) => {
-      setIsLoading(true);
-      try {
-        await onUserMessage(content.trim());
-      } finally {
-        setIsLoading(false);
-      }
-    }, [onUserMessage]);
+    const handleUserMessage = useCallback(
+      async (content: string) => {
+        setIsLoading(true);
+        try {
+          await onUserMessage(content.trim());
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      [onUserMessage],
+    );
 
     return (
       <div className="h-full w-full flex flex-col">
@@ -90,7 +96,7 @@ const AIChat = forwardRef<AIChatHandle, AIChatProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 AIChat.displayName = "AIChat";

@@ -1,6 +1,9 @@
-import { FaInfoCircle } from 'react-icons/fa';
+import { FaInfoCircle } from "react-icons/fa";
 
-export default function ModelInfoBar({ model, onViewConstitution }: { 
+export default function ModelInfoBar({
+  model,
+  onViewConstitution,
+}: {
   model: any;
   onViewConstitution: () => void;
 }) {
@@ -18,7 +21,7 @@ export default function ModelInfoBar({ model, onViewConstitution }: {
             </p>
           </div>
         </div>
-        
+
         <button
           onClick={onViewConstitution}
           className="ml-4 flex-shrink-0 flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-md transition-colors"
@@ -29,4 +32,4 @@ export default function ModelInfoBar({ model, onViewConstitution }: {
       </div>
     </div>
   );
-} 
+}

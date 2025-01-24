@@ -49,7 +49,7 @@ const Modal: React.FC<ModalProps> = ({
     >
       <div
         className={`bg-white rounded-lg relative ${
-          fullHeight ? 'max-h-[90vh] h-[90vh]' : 'max-h-[90vh]'
+          fullHeight ? "max-h-[90vh] h-[90vh]" : "max-h-[90vh]"
         } w-full max-w-4xl overflow-hidden`}
         style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
       >
@@ -59,9 +59,7 @@ const Modal: React.FC<ModalProps> = ({
         >
           ✕
         </button>
-        <div className="h-full overflow-hidden p-6">
-          {children}
-        </div>
+        <div className="h-full overflow-hidden p-6">{children}</div>
       </div>
     </div>
   );

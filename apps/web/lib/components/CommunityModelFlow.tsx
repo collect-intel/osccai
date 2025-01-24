@@ -126,10 +126,14 @@ export default function CommunityModelFlow({
               bio: fetchedModelData.bio || "",
               goal: fetchedModelData.goal || "",
               logoUrl: fetchedModelData.logoUrl || "",
-              principles: fetchedModelData.principles.map((p: string | Principle) =>
-                typeof p === "string"
-                  ? { id: `principle-${Date.now()}-${Math.random()}`, text: p }
-                  : p,
+              principles: fetchedModelData.principles.map(
+                (p: string | Principle) =>
+                  typeof p === "string"
+                    ? {
+                        id: `principle-${Date.now()}-${Math.random()}`,
+                        text: p,
+                      }
+                    : p,
               ),
               requireAuth: fetchedModelData.requireAuth || false,
               allowContributions: fetchedModelData.allowContributions || false,
@@ -324,9 +328,7 @@ export default function CommunityModelFlow({
       <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
         <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center">
           <Spinner size="large" color="#4A5568" />
-          <p className="mt-4 text-gray-600">
-            Loading...
-          </p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );

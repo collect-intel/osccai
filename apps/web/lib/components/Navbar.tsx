@@ -8,8 +8,12 @@ import { FaBars, FaTimes } from "react-icons/fa";
 
 const crimson = Crimson_Text({ subsets: ["latin"], weight: "400" });
 
-function NavbarLink({ href, text, onClick }: { 
-  href: string; 
+function NavbarLink({
+  href,
+  text,
+  onClick,
+}: {
+  href: string;
   text: string;
   onClick?: () => void;
 }) {
@@ -28,7 +32,7 @@ export default function Navbar() {
       <nav className="text-sm p-4 bg-yellow">
         <div className="flex items-center justify-between 2xl:container 2xl:mx-auto">
           <div className="flex items-center gap-4 md:gap-10">
-            <button 
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden"
             >
@@ -37,11 +41,13 @@ export default function Navbar() {
 
             <Link
               href="/"
-              className={"text-xl text-black tracking-tight " + crimson.className}
+              className={
+                "text-xl text-black tracking-tight " + crimson.className
+              }
             >
               Community Models
             </Link>
-            
+
             <div className="hidden md:flex items-center gap-10">
               <NavbarLink href="/how-it-works" text="How it Works" />
               <NavbarLink href="/library" text="Explore Public Library" />
@@ -64,25 +70,25 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <div 
+      <div
         className={`md:hidden bg-yellow transition-all duration-200 overflow-hidden -mt-px ${
-          isMenuOpen ? 'max-h-48 border-light-gray' : 'max-h-0'
+          isMenuOpen ? "max-h-48 border-light-gray" : "max-h-0"
         }`}
       >
         <div className="p-4 flex flex-col gap-4">
-          <NavbarLink 
-            href="/community-models" 
-            text="My Models" 
+          <NavbarLink
+            href="/community-models"
+            text="My Models"
             onClick={() => setIsMenuOpen(false)}
           />
-          <NavbarLink 
-            href="/how-it-works" 
-            text="How it Works" 
+          <NavbarLink
+            href="/how-it-works"
+            text="How it Works"
             onClick={() => setIsMenuOpen(false)}
           />
-          <NavbarLink 
-            href="/library" 
-            text="Explore Public Library" 
+          <NavbarLink
+            href="/library"
+            text="Explore Public Library"
             onClick={() => setIsMenuOpen(false)}
           />
         </div>

@@ -19,7 +19,6 @@ export default async function PublicModelChatPage({
       console.error("No model found:", params.id, model);
       notFound();
     }
-
   } catch (error) {
     console.error("Error fetching model:", error);
     notFound();

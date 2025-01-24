@@ -3,7 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "python api/update_gac_scores.py",
-    "build": "echo 'Starting build process from package.json' && pip install -r api/requirements.txt --target ./python_packages && echo 'Requirements installed'"
+    "gac:local": "dotenv -e .env.local -- python api/update_gac_scores.py",
+    "gac:local:poll": "dotenv -e .env.local -- python api/update_gac_scores.py --poll-id",
+    "gac:local:dry": "dotenv -e .env.local -- python api/update_gac_scores.py --dry-run",
+    "gac:local:poll:dry": "dotenv -e .env.local -- python api/update_gac_scores.py --dry-run --poll-id",
+    "gac:prod:poll:dry": "dotenv -e .env -- python api/update_gac_scores.py --dry-run --poll-id",
+    "gac:prod:dry": "dotenv -e .env -- python api/update_gac_scores.py --dry-run",
+    "gac:prod:poll": "dotenv -e .env -- python api/update_gac_scores.py --poll-id",
+    "gac:prod": "dotenv -e .env -- python api/update_gac_scores.py",
+    "gac:prod:force": "dotenv -e .env -- python api/update_gac_scores.py --force",
+    "gac:prod:force:dry": "dotenv -e .env -- python api/update_gac_scores.py --force --dry-run",
+    "build": "echo 'Starting build process from package.json' && pip install -r api/requirements.txt --target ./python_packages && echo 'Requirements installed'",
+    "test": "PYTHONPATH=$PYTHONPATH:. pytest tests/ -v",
+    "test:install": "pip install -r api/requirements.txt && pnpm test"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2"
   }
 }

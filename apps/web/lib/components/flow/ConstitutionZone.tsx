@@ -289,7 +289,8 @@ export default function ConstitutionZone({
                   content: `Hi there! I'm an AI assistant guided by this constitution. Feel free to test how I respond.`,
                 }}
                 customStyles={{
-                  userMessage: "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
+                  userMessage:
+                    "bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-100",
                   aiMessage: "bg-teal rounded-lg p-4 mb-4 shadow-sm text-white",
                   infoIcon: "text-white/80 hover:text-white transition-colors",
                 }}

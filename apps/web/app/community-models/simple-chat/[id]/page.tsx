@@ -33,4 +33,4 @@ export default async function SimplePublicModelChatPage({
   }
 
   return <SimpleChatClient model={model} />;
-} 
+}

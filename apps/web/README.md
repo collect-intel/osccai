@@ -1,9 +1,11 @@
 # Community Models (OSCCAI) Web App
+
 ## Database Management
 
 ### Local Development
 
 1. **Reset and test migrations locally:**
+
    ```bash
    # Reset local database to a clean state
    pnpm run db:reset
@@ -21,17 +23,20 @@
 ### Production Database Management
 
 1. **Check current migration status:**
+
    ```bash
    pnpm run db:status:prod
    ```
 
 2. **Deploy migrations to production:**
+
    ```bash
    # This will prompt for confirmation
    pnpm run db:migrate:prod
    ```
 
 3. **Verify production changes:**
+
    ```bash
    # Check migration status
    pnpm run db:status:prod
@@ -60,11 +65,13 @@ CREATE TABLE "_prisma_migrations" (
 ```
 
 2. Mark the initial migration as applied:
+
 ```bash
 pnpm run db:init:prod
 ```
 
 3. Verify the migration status:
+
 ```bash
 pnpm run db:status:prod
 ```

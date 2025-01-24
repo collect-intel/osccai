@@ -369,10 +369,7 @@ export default function Voting({
       </div>
       
     ) : (
-      <div
-        key={currentStatementIx}
-        className="animate-slide-in"
-      >
+      <div key={currentStatementIx} className="animate-slide-in">
         <div className="text-lg mb-4 pr-12">
           {statements[currentStatementIx].text}
         </div>
@@ -390,7 +387,7 @@ export default function Voting({
   };
 
   const getRemainingVotesCount = () => {
-    return statements.filter(statement => !votes[statement.uid]).length;
+    return statements.filter((statement) => !votes[statement.uid]).length;
   };
 
   return (
@@ -424,7 +421,7 @@ export default function Voting({
           </div>
         </div>
       )}
-      
+
       <div className="flex flex-col rounded-md shadow-sm p-6 bg-light-beige relative">
         {currentStatementIx !== null && (
           <div className="absolute top-4 right-4">

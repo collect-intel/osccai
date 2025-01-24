@@ -6,10 +6,10 @@ interface PageTitleProps {
   alignment?: "left" | "center" | "right";
 }
 
-const PageTitle: React.FC<PageTitleProps> = ({ 
-  title, 
+const PageTitle: React.FC<PageTitleProps> = ({
+  title,
   size = "medium",
-  alignment = "center"
+  alignment = "center",
 }) => {
   const sizeClasses = {
     small: "text-2xl",
@@ -24,7 +24,9 @@ const PageTitle: React.FC<PageTitleProps> = ({
   };
 
   return (
-    <h1 className={`font-bold mb-8 ${sizeClasses[size]} ${alignmentClasses[alignment]}`}>
+    <h1
+      className={`font-bold mb-8 ${sizeClasses[size]} ${alignmentClasses[alignment]}`}
+    >
       {title}
     </h1>
   );

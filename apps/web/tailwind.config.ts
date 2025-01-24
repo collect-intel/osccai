@@ -66,30 +66,30 @@ const config: Config = {
       typography: {
         DEFAULT: {
           css: {
-            '--tw-prose-body': 'rgb(0, 0, 0)',
-            '--tw-prose-headings': 'rgb(0, 0, 0)',
-            '--tw-prose-links': 'rgb(0, 0, 0)',
-            '--tw-prose-bold': 'rgb(0, 0, 0)',
-          }
+            "--tw-prose-body": "rgb(0, 0, 0)",
+            "--tw-prose-headings": "rgb(0, 0, 0)",
+            "--tw-prose-links": "rgb(0, 0, 0)",
+            "--tw-prose-bold": "rgb(0, 0, 0)",
+          },
         },
         invert: {
           css: {
-            '--tw-prose-body': 'rgb(255, 255, 255)',
-            '--tw-prose-headings': 'rgb(255, 255, 255)',
-            '--tw-prose-links': 'rgb(255, 255, 255)',
-            '--tw-prose-bold': 'rgb(255, 255, 255)',
-          }
-        }
-      }
+            "--tw-prose-body": "rgb(255, 255, 255)",
+            "--tw-prose-headings": "rgb(255, 255, 255)",
+            "--tw-prose-links": "rgb(255, 255, 255)",
+            "--tw-prose-bold": "rgb(255, 255, 255)",
+          },
+        },
+      },
     },
   },
   safelist: [
     // Add dynamic classes that might be constructed with string interpolation
-    'bg-teal',
-    'hover:bg-black',
+    "bg-teal",
+    "hover:bg-black",
     {
       pattern: /bg-(gray|teal)-\d+/,
-      variants: ['hover'],
+      variants: ["hover"],
     },
   ],
   plugins: [typography, forms],

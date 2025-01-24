@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyApiKeyRequest } from "@/lib/api-auth";
+import { prisma } from "@/lib/db";
 import { getPollData } from "@/lib/data";
 import { getOrCreateParticipant, fetchUserVotes } from "@/lib/actions";
 
@@ -6,39 +8,56 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { pollId: string } },
 ) {
-  console.log("Request to /api/polls/[pollId] with pollId:", params.pollId);
+  try {
+    // First, get the poll and its associated community model
+    const poll = await prisma.poll.findUnique({
+      where: { uid: params.pollId },
+      include: { communityModel: true },
+    });
 
-  const body = await req.json();
-  const { anonymousId } = body;
+    if (!poll) {
+      return NextResponse.json({ error: "Poll not found" }, { status: 404 });
+    }
 
-  console.log("anonymousId:", anonymousId);
+    // Verify API key
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Invalid authentication" },
+        { status: 401 },
+      );
+    }
 
-  if (typeof params.pollId !== "string") {
-    return NextResponse.json({ error: "Invalid poll ID" }, { status: 400 });
-  }
+    const apiKey = authHeader.slice(7);
+    const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
 
-  const poll = await getPollData(params.pollId);
-  if (!poll) {
-    return NextResponse.json({ error: "Poll not found" }, { status: 404 });
-  }
+    if (!isValid) {
+      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    }
 
-  const participant = await getOrCreateParticipant(null, anonymousId);
-  const isLoggedIn = !!participant?.clerkUserId;
-  const userVotes = isLoggedIn
-    ? await fetchUserVotes(poll.uid, participant.uid)
-    : {};
+    // Verify that the API key belongs to this community model
+    if (modelId !== poll.communityModel.uid) {
+      return NextResponse.json(
+        { error: "API key is not authorized for this community model" },
+        { status: 403 },
+      );
+    }
 
-  return NextResponse.json({ 
-    poll: {
-      ...poll,
+    return NextResponse.json({
+      uid: poll.uid,
+      title: poll.title,
+      description: poll.description,
+      published: poll.published,
       communityModel: {
-        bio: poll.communityModel.bio,
-        goal: poll.communityModel.goal,
+        uid: poll.communityModel.uid,
         name: poll.communityModel.name,
-        uid: poll.communityModel.uid
-      }
-    }, 
-    isLoggedIn, 
-    userVotes 
-  });
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching poll:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch poll" },
+      { status: 500 },
+    );
+  }
 }
