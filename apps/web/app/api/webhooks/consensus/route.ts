@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       console.error("Webhook verification failed:", verificationResult.error);
       return NextResponse.json(
         { error: verificationResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         console.warn(`Unknown webhook event type: ${payload.event}`);
         return NextResponse.json(
           { error: "Unknown event type" },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     console.error("Error processing webhook:", error);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

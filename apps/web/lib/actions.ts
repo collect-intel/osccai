@@ -953,6 +953,7 @@ export async function updateCommunityModel(
     allowContributions?: boolean;
     constitutions?: Constitution[];
     activeConstitutionId?: string | null;
+    autoCreateConstitution?: boolean;
   },
 ): Promise<CommunityModel & { polls: Poll[] }> {
   const {
@@ -961,6 +962,7 @@ export async function updateCommunityModel(
     allowContributions,
     constitutions,
     activeConstitutionId,
+    autoCreateConstitution,
     ...modelData
   } = data;
 
@@ -972,6 +974,9 @@ export async function updateCommunityModel(
           where: { uid: modelId },
           data: {
             ...modelData,
+            ...(autoCreateConstitution !== undefined && {
+              autoCreateConstitution,
+            }),
             activeConstitutionId:
               activeConstitutionId !== undefined
                 ? activeConstitutionId

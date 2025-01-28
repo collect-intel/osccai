@@ -7,10 +7,19 @@ import type {
 } from "@prisma/client";
 
 export interface ExtendedCommunityModel extends CommunityModel {
+  uid: string;
+  name: string;
+  bio: string | null;
+  goal: string | null;
+  logoUrl: string | null;
+  published: boolean;
+  apiEnabled: boolean;
+  advancedOptionsEnabled: boolean;
+  autoCreateConstitution: boolean;
   owner: {
     uid: string;
     name: string;
-    clerkUserId: string | null;
+    clerkUserId: string;
   };
 }
 

@@ -26,7 +26,7 @@ export function verifyWebhook(
   rawBody: string,
 ): WebhookVerificationResult {
   const webhookSecret = process.env.WEBHOOK_SECRET;
-  
+
   if (!webhookSecret) {
     console.error("WEBHOOK_SECRET environment variable not set");
     return { isValid: false, error: "Webhook secret not configured" };
@@ -44,7 +44,7 @@ export function verifyWebhook(
   // Use timing-safe comparison
   const signatureBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expectedSignature);
-  
+
   if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {
     return { isValid: false, error: "Invalid signature" };
   }
@@ -58,7 +58,12 @@ export function verifyWebhook(
   }
 
   // Validate required fields
-  if (!payload.event || !payload.modelId || !payload.pollId || !payload.timestamp) {
+  if (
+    !payload.event ||
+    !payload.modelId ||
+    !payload.pollId ||
+    !payload.timestamp
+  ) {
     return { isValid: false, error: "Missing required fields" };
   }
 
@@ -70,4 +75,4 @@ export function verifyWebhook(
   }
 
   return { isValid: true, payload };
-} 
+}

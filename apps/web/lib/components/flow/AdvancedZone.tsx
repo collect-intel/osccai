@@ -16,6 +16,8 @@ interface AdvancedZoneProps {
   savingStatus: "idle" | "saving" | "saved";
   apiEnabled?: boolean;
   advancedOptionsEnabled?: boolean;
+  autoCreateConstitution?: boolean;
+  onUpdateAutoCreateConstitution?: (enabled: boolean) => void;
   pollOptions?: {
     minVotesBeforeSubmission: number | null;
     maxVotesPerParticipant: number | null;
@@ -48,6 +50,8 @@ export default function AdvancedZone({
   savingStatus,
   apiEnabled = false,
   advancedOptionsEnabled = false,
+  autoCreateConstitution = false,
+  onUpdateAutoCreateConstitution,
   pollOptions = {
     minVotesBeforeSubmission: null,
     maxVotesPerParticipant: null,
@@ -311,7 +315,52 @@ export default function AdvancedZone({
       savingStatus={savingStatus}
     >
       <div className="bg-gray-50 p-6 rounded-lg">
-        {advancedOptionsEnabled && renderPollOptionsSection()}
+        {advancedOptionsEnabled && (
+          <>
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FaCog className="w-5 h-5 text-gray-600" />
+                <h3 className="text-xl font-semibold">Constitution Settings</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-grow">
+                    <label
+                      htmlFor="auto-create-constitution"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Auto-Create Constitution
+                    </label>
+                    <p className="text-sm text-gray-500">
+                      Automatically create and activate new constitutions when
+                      community consensus changes
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={autoCreateConstitution}
+                    className="relative inline-block w-12 h-6 ml-4 cursor-pointer"
+                    onClick={() => {
+                      console.log("Toggle clicked:", !autoCreateConstitution);
+                      onUpdateAutoCreateConstitution?.(!autoCreateConstitution);
+                    }}
+                  >
+                    <div
+                      className={`absolute inset-0 rounded-full transition-colors ${autoCreateConstitution ? "bg-teal" : "bg-gray-300"}`}
+                    >
+                      <span
+                        className={`absolute inset-y-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${autoCreateConstitution ? "translate-x-6" : ""}`}
+                      />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <hr className="my-6 border-gray-200" />
+            {renderPollOptionsSection()}
+          </>
+        )}
 
         {apiEnabled && (
           <>

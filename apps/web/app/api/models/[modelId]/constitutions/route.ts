@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { modelId: string } }
+  { params }: { params: { modelId: string } },
 ) {
   try {
     const modelId = params.modelId;
@@ -15,7 +15,7 @@ export async function POST(
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json(
         { error: "Invalid authentication" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(
     if (keyModelId !== modelId) {
       return NextResponse.json(
         { error: "API key is not authorized for this community model" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function POST(
     console.error("Error creating constitution:", error);
     return NextResponse.json(
       { error: error.message || "Failed to create constitution" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

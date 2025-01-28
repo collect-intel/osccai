@@ -31,6 +31,7 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   published?: boolean;
   apiEnabled?: boolean;
   advancedOptionsEnabled?: boolean;
+  autoCreateConstitution?: boolean;
   apiKeys?: ApiKey[];
   owner?: {
     uid: string;
@@ -145,6 +146,8 @@ export default function CommunityModelFlow({
               apiEnabled: fetchedModelData.apiEnabled || false,
               advancedOptionsEnabled:
                 fetchedModelData.advancedOptionsEnabled || false,
+              autoCreateConstitution:
+                fetchedModelData.autoCreateConstitution || false,
               apiKeys: fetchedModelData.apiKeys || [],
               owner: fetchedModelData.owner,
             });
@@ -506,6 +509,20 @@ export default function CommunityModelFlow({
                   savingStatus={savingStatus.advanced}
                   apiEnabled={modelData.apiEnabled}
                   advancedOptionsEnabled={modelData.advancedOptionsEnabled}
+                  autoCreateConstitution={modelData.autoCreateConstitution}
+                  onUpdateAutoCreateConstitution={(enabled) => {
+                    setModelData((prevData) => {
+                      if (!prevData) return null;
+                      return {
+                        ...prevData,
+                        autoCreateConstitution: enabled,
+                      } as ExtendedAboutZoneData;
+                    });
+                    debouncedSaveModelData(
+                      { autoCreateConstitution: enabled },
+                      "advanced",
+                    );
+                  }}
                   pollOptions={
                     modelData.polls?.[0] || {
                       minVotesBeforeSubmission: null,
