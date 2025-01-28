@@ -6,6 +6,12 @@ import type {
   Poll,
 } from "@prisma/client";
 
+export interface Principle {
+  id: string;
+  text: string;
+  gacScore: number | null;
+}
+
 export interface ExtendedCommunityModel extends CommunityModel {
   uid: string;
   name: string;
@@ -21,6 +27,7 @@ export interface ExtendedCommunityModel extends CommunityModel {
     name: string;
     clerkUserId: string;
   };
+  principles: Principle[];
 }
 
 export interface ExtendedStatement extends Statement {

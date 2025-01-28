@@ -6,6 +6,7 @@ import type {
   ClerkEmailAddress,
   ExtendedStatement,
   ExtendedPoll,
+  Principle,
 } from "@/lib/types";
 import type {
   Poll,
@@ -948,7 +949,7 @@ export async function updateConstitution(
 export async function updateCommunityModel(
   modelId: string,
   data: Partial<CommunityModel> & {
-    principles?: Array<{ id: string; text: string; gacScore?: number }>;
+    principles?: Principle[];
     requireAuth?: boolean;
     allowContributions?: boolean;
     constitutions?: Constitution[];

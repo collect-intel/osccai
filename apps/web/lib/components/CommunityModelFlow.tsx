@@ -19,10 +19,10 @@ import Toast from "./Toast";
 import { debounce } from "lodash";
 import { Constitution, Poll, Statement, ApiKey, Vote } from "@prisma/client";
 import Spinner from "./Spinner";
-import type { ExtendedPoll } from "@/lib/types";
+import type { ExtendedPoll, Principle } from "@/lib/types";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
-  principles: Array<{ id: string; text: string; gacScore?: number }>;
+  principles: Principle[];
   requireAuth: boolean;
   allowContributions: boolean;
   constitutions: Constitution[];
@@ -51,7 +51,7 @@ interface ZoneRefs {
 interface Principle {
   id: string;
   text: string;
-  gacScore?: number;
+  gacScore: number | null;
 }
 
 export default function CommunityModelFlow({
@@ -127,15 +127,11 @@ export default function CommunityModelFlow({
               bio: fetchedModelData.bio || "",
               goal: fetchedModelData.goal || "",
               logoUrl: fetchedModelData.logoUrl || "",
-              principles: fetchedModelData.principles.map(
-                (p: string | Principle) =>
-                  typeof p === "string"
-                    ? {
-                        id: `principle-${Date.now()}-${Math.random()}`,
-                        text: p,
-                      }
-                    : p,
-              ),
+              principles: fetchedModelData.principles.map((p) => ({
+                id: p.id,
+                text: p.text,
+                gacScore: p.gacScore,
+              })),
               requireAuth: fetchedModelData.requireAuth || false,
               allowContributions: fetchedModelData.allowContributions || false,
               constitutions: fetchedModelData.constitutions || [],
@@ -148,8 +144,12 @@ export default function CommunityModelFlow({
                 fetchedModelData.advancedOptionsEnabled || false,
               autoCreateConstitution:
                 fetchedModelData.autoCreateConstitution || false,
-              apiKeys: fetchedModelData.apiKeys || [],
-              owner: fetchedModelData.owner,
+              apiKeys: [],
+              owner: {
+                uid: fetchedModelData.owner.clerkUserId || "",
+                name: fetchedModelData.owner.name,
+                clerkUserId: fetchedModelData.owner.clerkUserId || "",
+              },
             });
             setActiveZones([
               "about",

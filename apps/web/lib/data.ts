@@ -11,7 +11,7 @@ import {
 } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
-import type { ExtendedPoll } from "@/lib/types";
+import type { ExtendedPoll, Principle } from "@/lib/types";
 
 export async function getUserCommunityModels() {
   const { userId: clerkUserId } = auth();
@@ -111,11 +111,7 @@ export async function getCommunityModel(modelId: string): Promise<{
     email: string;
     imageUrl: string | null;
   };
-  principles: Array<{
-    id: string;
-    text: string;
-    gacScore: number | null;
-  }>;
+  principles: Principle[];
   polls: Poll[];
   constitutions: Constitution[];
   activeConstitutionId: string | null;
