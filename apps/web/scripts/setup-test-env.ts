@@ -56,4 +56,4 @@ POLL_ID_PROD=cm66znpyq0000128sdy83do71
 
 main()
   .catch(console.error)
-  .finally(() => prisma.$disconnect()); 
+  .finally(() => prisma.$disconnect());

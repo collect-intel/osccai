@@ -16,7 +16,7 @@
    npx prisma generate              # Regenerate Prisma client
    npx prisma db push --force-reset # Force sync DB with schema
    cd ../..
-   
+
    # Restart the dev server
    pnpm web dev:local
 
@@ -33,12 +33,13 @@
 ### Production Database Management
 
 1. **Before deploying migrations:**
+
    ```bash
    # Always test migrations locally first
    pnpm run db:reset
-   
+
    # Backup production database (via Supabase dashboard)
-   
+
    # Check current migration status
    pnpm run db:status:prod
    ```
