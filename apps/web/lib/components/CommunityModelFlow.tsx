@@ -48,12 +48,6 @@ interface ZoneRefs {
   [key: string]: React.RefObject<HTMLDivElement>;
 }
 
-interface Principle {
-  id: string;
-  text: string;
-  gacScore: number | null;
-}
-
 export default function CommunityModelFlow({
   initialModelId,
 }: CommunityModelFlowProps) {
@@ -176,18 +170,23 @@ export default function CommunityModelFlow({
     fetchModelData();
   }, [modelId, router, handleHashChange]);
 
-  const handleSaveAbout = async (data: AboutZoneData) => {
+  const handleAboutSubmit = async (data: Partial<ExtendedAboutZoneData>) => {
+    setSavingStatus((prev) => ({ ...prev, about: "saving" }));
     setIsSaving(true);
     try {
       if (!modelId) {
         const newModelId = await createCommunityModel({
-          name: data.name,
-          bio: data.bio,
-          goal: data.goal,
-          logoUrl: data.logoUrl,
+          name: data.name || "",
+          bio: data.bio || "",
+          goal: data.goal || "",
+          principles: data.principles?.map((p) => ({
+            id: p.id,
+            text: p.text,
+            gacScore: p.gacScore ?? null
+          })),
         });
         setModelId(newModelId);
-        router.push(`/community-models/flow/${newModelId}`);
+        router.push(`/community-models/${newModelId}`);
       } else {
         await updateCommunityModel(modelId, data);
       }
@@ -357,7 +356,7 @@ export default function CommunityModelFlow({
         <div ref={zoneRefs.about} id="about">
           <AboutZone
             isActive={activeZones.includes("about")}
-            onSave={handleSaveAbout}
+            onSave={handleAboutSubmit}
             initialData={modelData || undefined}
             isExistingModel={isExistingModel}
             modelId={modelId || undefined}
