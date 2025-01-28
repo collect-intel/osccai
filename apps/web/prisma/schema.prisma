@@ -48,6 +48,7 @@ model CommunityModel {
   apiEnabled    Boolean    @default(false)  // Feature flag for API access
   apiKeys       ApiKey[]   // Relation to API keys
   autoCreateConstitution Boolean        @default(false)
+  advancedOptionsEnabled Boolean        @default(false)
   @@index([ownerId])
 }
 
