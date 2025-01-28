@@ -19,39 +19,61 @@ export async function POST(
       return NextResponse.json({ error: "Poll not found" }, { status: 404 });
     }
 
-    // Verify API key
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Invalid authentication" },
-        { status: 401 },
-      );
+    const body = await req.json();
+    const { anonymousId } = body;
+
+    // If this looks like an API request (no anonymousId)
+    if (!anonymousId) {
+      // Require API key
+      if (!authHeader?.startsWith("Bearer ")) {
+        return NextResponse.json(
+          { error: "Invalid authentication" },
+          { status: 401 },
+        );
+      }
+
+      const apiKey = authHeader.slice(7);
+      const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
+
+      if (!isValid) {
+        return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+      }
+
+      // Verify that the API key belongs to this community model
+      if (modelId !== poll.communityModel.uid) {
+        return NextResponse.json(
+          { error: "API key is not authorized for this community model" },
+          { status: 403 },
+        );
+      }
+
+      // Return API response format
+      return NextResponse.json({
+        uid: poll.uid,
+        title: poll.title,
+        description: poll.description,
+        published: poll.published,
+        communityModel: {
+          uid: poll.communityModel.uid,
+          name: poll.communityModel.name,
+        },
+      });
     }
 
-    const apiKey = authHeader.slice(7);
-    const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
+    // Otherwise, this is a web UI request
+    const participant = await getOrCreateParticipant(null, anonymousId);
+    const userVotes = participant
+      ? await fetchUserVotes(params.pollId, anonymousId)
+      : {};
 
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
-    }
+    const pollData = await getPollData(params.pollId);
 
-    // Verify that the API key belongs to this community model
-    if (modelId !== poll.communityModel.uid) {
-      return NextResponse.json(
-        { error: "API key is not authorized for this community model" },
-        { status: 403 },
-      );
-    }
-
+    // Return web UI response format
     return NextResponse.json({
-      uid: poll.uid,
-      title: poll.title,
-      description: poll.description,
-      published: poll.published,
-      communityModel: {
-        uid: poll.communityModel.uid,
-        name: poll.communityModel.name,
-      },
+      poll: pollData,
+      userVotes,
+      isLoggedIn: false, // TODO: Implement proper auth check
     });
   } catch (error) {
     console.error("Error fetching poll:", error);

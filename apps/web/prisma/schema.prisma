@@ -8,158 +8,169 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Represents owners of community models who can create and manage constitutions
 model CommunityModelOwner {
-  uid             String          @id @default(cuid())
+  uid             String           @id @default(cuid())
   name            String
-
-  // N.B. Avoiding the @unique constraint on email allows for potential email
-  // changes on Clerk and accommodates scenarios where a user may have multiple
-  // email addresses. We should not ever consider this the user's canonical
-  // email ddress, but just _an_ email they use when signing up
   email           String
-  
-  // Optional link to a participant profile if the owner also participates
-  participantId   String?         @unique
-  participant     Participant?    @relation(fields: [participantId], references: [uid])
-  clerkUserId     String?         @unique
-
-  // List of community models created by the owner
+  participantId   String?          @unique
+  clerkUserId     String?          @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  apiKeys         ApiKey[]
   communityModels CommunityModel[]
-
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  apiKeys        ApiKey[]
+  participant     Participant?     @relation(fields: [participantId], references: [uid])
 }
 
-// Represents a community model which is a container for constitutions and polls
 model CommunityModel {
-  uid                     String                  @id @default(cuid())
-  name                    String
-  ownerId                 String
-  owner                   CommunityModelOwner     @relation(fields: [ownerId], references: [uid])
+  uid                    String              @id @default(cuid())
+  name                   String
+  ownerId                String
+  goal                   String?
+  bio                    String?
+  logoUrl                String?
+  activeConstitutionId   String?             @unique
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  deleted                Boolean             @default(false)
+  published              Boolean             @default(false)
+  apiEnabled             Boolean             @default(false)
+  advancedOptionsEnabled Boolean             @default(false)
+  apiKeys                ApiKey[]
+  activeConstitution     Constitution?       @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
+  owner                  CommunityModelOwner @relation(fields: [ownerId], references: [uid])
+  constitutions          Constitution[]      @relation("Constitutions")
+  polls                  Poll[]
 
-  goal                    String?
-  bio                     String?
-  logoUrl                 String?
-
-  // Reference to the active constitution for this community model
-  activeConstitutionId    String?                 @unique
-  activeConstitution      Constitution?           @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
-
-  // All constitutions associated with this community model
-  constitutions           Constitution[]          @relation("Constitutions")
-  // Polls created within this community model
-  polls                   Poll[]
-
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-
-  deleted                  Boolean                 @default(false)
-  published               Boolean                 @default(false)
-  apiEnabled    Boolean    @default(false)  // Feature flag for API access
-  apiKeys       ApiKey[]   // Relation to API keys
   @@index([ownerId])
 }
 
-// Represents a constitution derived from poll results within a community model
 model Constitution {
-  uid           String                @id @default(cuid())
-  version       Int
-  // Current status of the constitution (e.g., DRAFT, ACTIVE)
-  status        ConstitutionStatus    @default(DRAFT)
-  content       String
-  modelId       String
-  model         CommunityModel        @relation("Constitutions", fields: [modelId], references: [uid], onDelete: Cascade)
-  // Relation to the community model where this constitution is active
-  isActiveIn    CommunityModel?       @relation("ActiveConstitution")
+  uid        String             @id @default(cuid())
+  version    Int
+  status     ConstitutionStatus @default(DRAFT)
+  content    String
+  modelId    String
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  deleted    Boolean            @default(false)
+  isActiveIn CommunityModel?    @relation("ActiveConstitution")
+  model      CommunityModel     @relation("Constitutions", fields: [modelId], references: [uid], onDelete: Cascade)
 
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-
-  deleted        Boolean               @default(false)
   @@index([modelId])
 }
 
-// Possible statuses for a constitution
+model Poll {
+  uid                          String         @id @default(cuid())
+  communityModelId             String
+  title                        String
+  description                  String?
+  published                    Boolean
+  requireAuth                  Boolean        @default(true)
+  allowParticipantStatements   Boolean        @default(true)
+  createdAt                    DateTime       @default(now())
+  updatedAt                    DateTime       @updatedAt
+  deleted                      Boolean        @default(false)
+  completionMessage            String?
+  maxSubmissionsPerParticipant Int?
+  maxVotesPerParticipant       Int?
+  minRequiredSubmissions       Int?
+  minVotesBeforeSubmission     Int?
+  communityModel               CommunityModel @relation(fields: [communityModelId], references: [uid], onDelete: Cascade)
+  statements                   Statement[]
+
+  @@index([communityModelId])
+}
+
+model Participant {
+  uid                 String               @id @default(cuid())
+  anonymousId         String?              @unique
+  clerkUserId         String?              @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  communityModelOwner CommunityModelOwner?
+  flags               Flag[]
+  statements          Statement[]
+  votes               Vote[]
+}
+
+model Statement {
+  uid                String          @id @default(cuid())
+  participantId      String
+  text               String
+  pollId             String
+  status             StatementStatus @default(PENDING)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  deleted            Boolean         @default(false)
+  agreeCount         Int             @default(0)
+  disagreeCount      Int             @default(0)
+  passCount          Int             @default(0)
+  gacScore           Float?
+  priorityScore      Float?
+  lastCalculatedAt   DateTime?
+  isConstitutionable Boolean         @default(false)
+  flags              Flag[]
+  participant        Participant     @relation(fields: [participantId], references: [uid], onDelete: Cascade)
+  poll               Poll            @relation(fields: [pollId], references: [uid], onDelete: Cascade)
+  votes              Vote[]
+
+  @@index([pollId])
+  @@index([status])
+}
+
+model Vote {
+  uid           String      @id @default(cuid())
+  participantId String
+  statementId   String
+  voteValue     VoteValue
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  participant   Participant @relation(fields: [participantId], references: [uid], onDelete: Cascade)
+  statement     Statement   @relation(fields: [statementId], references: [uid], onDelete: Cascade)
+
+  @@index([participantId])
+  @@index([statementId])
+}
+
+model Flag {
+  uid           String      @id @default(cuid())
+  participantId String
+  statementId   String
+  reason        String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  participant   Participant @relation(fields: [participantId], references: [uid], onDelete: Cascade)
+  statement     Statement   @relation(fields: [statementId], references: [uid], onDelete: Cascade)
+
+  @@index([participantId])
+  @@index([statementId])
+}
+
+model ApiKey {
+  uid        String              @id @default(cuid())
+  key        String              @unique
+  name       String?
+  ownerId    String
+  modelId    String
+  lastUsedAt DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  expiresAt  DateTime?
+  status     ApiKeyStatus        @default(ACTIVE)
+  scopes     String[]
+  model      CommunityModel      @relation(fields: [modelId], references: [uid], onDelete: Cascade)
+  owner      CommunityModelOwner @relation(fields: [ownerId], references: [uid], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([modelId])
+}
+
 enum ConstitutionStatus {
   DRAFT
   ACTIVE
   ARCHIVED
 }
 
-// Represents a poll used to gather input from participants
-model Poll {
-  uid                        String          @id @default(cuid())
-  communityModelId           String
-  communityModel             CommunityModel  @relation(fields: [communityModelId], references: [uid], onDelete: Cascade)
-  title                      String
-  description                String?
-  published                  Boolean
-  // Determines if authentication is required to participate
-  requireAuth                Boolean         @default(true)
-  // Allows participants to submit their own statements
-  allowParticipantStatements Boolean         @default(true)
-  statements                 Statement[]
-
-  createdAt                  DateTime        @default(now())
-  updatedAt                  DateTime        @updatedAt
-  deleted                    Boolean         @default(false)
-
-  @@index([communityModelId])
-}
-
-// Represents a participant who can be authenticated via Clerk or anonymous
-model Participant {
-  uid                    String                 @id @default(cuid())
-  // Identifier for anonymous participants (e.g., browser fingerprint)
-  anonymousId            String?                @unique
-  // Clerk User ID for authenticated participants
-  clerkUserId            String?                @unique
-  // Optional relation if the participant is also a community model owner
-  communityModelOwner    CommunityModelOwner?
-
-  statements             Statement[]
-  votes                  Vote[]
-  flags                  Flag[]
-
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-}
-
-
-// Represents a statement submitted in a poll
-model Statement {
-  uid            String             @id @default(cuid())
-  participantId  String
-  participant    Participant        @relation(fields: [participantId], references: [uid], onDelete: Cascade)
-  // The text content of the statement
-  text           String
-  pollId         String
-  poll           Poll               @relation(fields: [pollId], references: [uid], onDelete: Cascade)
-  // Current status in the moderation process
-  status         StatementStatus    @default(PENDING)
-  votes          Vote[]
-  flags          Flag[]
-
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  deleted        Boolean            @default(false)
-
-  agreeCount Int @default(0)
-  disagreeCount Int @default(0)
-  passCount Int @default(0)
-  gacScore Float?
-  priorityScore Float?
-  lastCalculatedAt DateTime?
-  isConstitutionable Boolean @default(false)
-
-  @@index([pollId])
-  @@index([status])
-}
-
-// Possible statuses for a statement
 enum StatementStatus {
   PENDING
   APPROVED
@@ -167,65 +178,10 @@ enum StatementStatus {
   DELETED
 }
 
-// Represents a vote cast by a participant on a statement
-model Vote {
-  uid            String       @id @default(cuid())
-  participantId  String
-  participant    Participant  @relation(fields: [participantId], references: [uid], onDelete: Cascade)
-  statementId    String
-  statement      Statement    @relation(fields: [statementId], references: [uid], onDelete: Cascade)
-  // Value of the vote (Agree, Disagree, Pass)
-  voteValue      VoteValue
-
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([participantId])
-  @@index([statementId])
-}
-
-// Possible vote values
 enum VoteValue {
   AGREE
   DISAGREE
   PASS
-}
-
-// Represents a flag raised by a participant on a statement
-model Flag {
-  uid            String       @id @default(cuid())
-  participantId  String
-  participant    Participant  @relation(fields: [participantId], references: [uid], onDelete: Cascade)
-  statementId    String
-  statement      Statement    @relation(fields: [statementId], references: [uid], onDelete: Cascade)
-  // Reason provided for flagging the statement
-  reason         String
-
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([participantId])
-  @@index([statementId])
-}
-
-// For storing API keys
-model ApiKey {
-  uid           String   @id @default(cuid())
-  key           String   @unique // Hashed API key
-  name          String?  // Optional name/description
-  ownerId       String
-  owner         CommunityModelOwner @relation(fields: [ownerId], references: [uid], onDelete: Cascade)
-  modelId       String
-  model         CommunityModel      @relation(fields: [modelId], references: [uid], onDelete: Cascade)
-  lastUsedAt    DateTime?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  expiresAt     DateTime?    // New: When the key expires
-  status        ApiKeyStatus @default(ACTIVE) // Replace enabled boolean
-  scopes        String[]     // New: Array of permitted actions
-  
-  @@index([ownerId])
-  @@index([modelId])
 }
 
 enum ApiKeyStatus {

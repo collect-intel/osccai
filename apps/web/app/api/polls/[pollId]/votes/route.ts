@@ -21,30 +21,7 @@ export async function POST(
       return NextResponse.json({ error: "Poll not found" }, { status: 404 });
     }
 
-    // Verify API key
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Invalid authentication" },
-        { status: 401 },
-      );
-    }
-
-    const apiKey = authHeader.slice(7);
-    const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
-
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
-    }
-
-    // Verify that the API key belongs to this community model
-    if (modelId !== poll.communityModel.uid) {
-      return NextResponse.json(
-        { error: "API key is not authorized for this community model" },
-        { status: 403 },
-      );
-    }
-
     const body = await req.json();
     const { statementId, vote, anonymousId } = body;
 
@@ -76,6 +53,31 @@ export async function POST(
         { error: "Invalid vote value" },
         { status: 400 },
       );
+    }
+
+    // If this looks like an API request (has Authorization header)
+    if (authHeader) {
+      if (!authHeader.startsWith("Bearer ")) {
+        return NextResponse.json(
+          { error: "Invalid authentication" },
+          { status: 401 },
+        );
+      }
+
+      const apiKey = authHeader.slice(7);
+      const { modelId, isValid } = await verifyApiKeyRequest(apiKey);
+
+      if (!isValid) {
+        return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+      }
+
+      // Verify that the API key belongs to this community model
+      if (modelId !== poll.communityModel.uid) {
+        return NextResponse.json(
+          { error: "API key is not authorized for this community model" },
+          { status: 403 },
+        );
+      }
     }
 
     // Verify statement exists

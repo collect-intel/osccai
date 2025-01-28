@@ -22,6 +22,11 @@ export interface ExtendedStatement extends Statement {
 export interface ExtendedPoll extends Omit<Poll, "statements"> {
   statements: ExtendedStatement[];
   communityModel: ExtendedCommunityModel;
+  minVotesBeforeSubmission: number | null;
+  maxVotesPerParticipant: number | null;
+  maxSubmissionsPerParticipant: number | null;
+  minRequiredSubmissions: number | null;
+  completionMessage: string | null;
 }
 
 import React from "react";

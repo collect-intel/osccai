@@ -7,8 +7,18 @@
 1. **Reset and test migrations locally:**
 
    ```bash
-   # Reset local database to a clean state
+   # Reset local database to a clean state and reapply migrations
    pnpm run db:reset
+
+   # If you encounter issues with missing columns or schema mismatches:
+   cd apps/web
+   npx prisma migrate reset --force  # Reset DB and reapply migrations
+   npx prisma generate              # Regenerate Prisma client
+   npx prisma db push --force-reset # Force sync DB with schema
+   cd ../..
+
+   # Restart the dev server
+   pnpm web dev:local
 
    # Inspect database changes
    pnpm run prisma:studio:local
@@ -22,9 +32,15 @@
 
 ### Production Database Management
 
-1. **Check current migration status:**
+1. **Before deploying migrations:**
 
    ```bash
+   # Always test migrations locally first
+   pnpm run db:reset
+
+   # Backup production database (via Supabase dashboard)
+
+   # Check current migration status
    pnpm run db:status:prod
    ```
 
@@ -44,6 +60,18 @@
    # Optionally inspect database
    pnpm run prisma:studio:prod
    ```
+
+### Important Notes
+
+- Always test migrations locally before applying to production
+- Production migrations require confirmation to prevent accidental execution
+- After production migrations, redeploy your Vercel application to ensure the Prisma client is updated
+- The `db:migrate:prod` command includes safety prompts for production database changes
+- Use `prisma:studio:prod` with caution as it provides direct access to production data
+- Never use `--force-reset` or destructive commands on production
+- Always ensure migrations are additive and preserve existing data
+- Take a backup of the production database before applying migrations
+- Test migrations locally with production-like data when possible
 
 ### Initial Production Database Setup
 
@@ -75,11 +103,3 @@ pnpm run db:init:prod
 ```bash
 pnpm run db:status:prod
 ```
-
-### Important Notes
-
-- Always test migrations locally before applying to production
-- Production migrations require confirmation to prevent accidental execution
-- After production migrations, redeploy your Vercel application to ensure the Prisma client is updated
-- The `db:migrate:prod` command includes safety prompts for production database changes
-- Use `prisma:studio:prod` with caution as it provides direct access to production data
