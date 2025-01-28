@@ -107,6 +107,7 @@ export async function getCommunityModel(modelId: string): Promise<
       ownerId: string;
       owner: { uid: string; name: string; clerkUserId: string };
       apiKeys: ApiKey[];
+      advancedOptionsEnabled: boolean;
     })
   | null
 > {
@@ -154,5 +155,6 @@ export async function getCommunityModel(modelId: string): Promise<
       clerkUserId: model.owner.clerkUserId || "",
     },
     apiKeys: model.apiKeys || [],
+    advancedOptionsEnabled: model.advancedOptionsEnabled || false,
   };
 }
