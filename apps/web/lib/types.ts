@@ -9,7 +9,7 @@ import type {
 export interface Principle {
   id: string;
   text: string;
-  gacScore?: number | null;
+  gacScore?: number;
 }
 
 export interface ExtendedCommunityModel extends CommunityModel {
