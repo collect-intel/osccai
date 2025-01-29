@@ -634,7 +634,7 @@ async function createInitialPoll(
 
 export async function createCommunityModel(
   data: Partial<CommunityModel> & {
-    principles?: Array<{ id: string; text: string; gacScore?: number }>;
+    principles?: Principle[];
   },
 ) {
   const { userId: clerkUserId } = auth();
@@ -668,6 +668,7 @@ export async function createCommunityModel(
                   create: data.principles.map((principle) => ({
                     text: principle.text,
                     participantId: owner.participantId!,
+                    gacScore: principle.gacScore,
                   })),
                 }
               : undefined,

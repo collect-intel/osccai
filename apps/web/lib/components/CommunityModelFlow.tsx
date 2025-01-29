@@ -182,7 +182,7 @@ export default function CommunityModelFlow({
           principles: data.principles?.map((p) => ({
             id: p.id,
             text: p.text,
-            gacScore: p.gacScore
+            gacScore: p.gacScore ?? null
           })),
         });
         setModelId(newModelId);
