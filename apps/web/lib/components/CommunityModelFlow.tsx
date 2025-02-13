@@ -210,16 +210,20 @@ export default function CommunityModelFlow({
     if (modelId) {
       try {
         setSavingStatus((prev) => ({ ...prev, principles: "saving" }));
+        const updatedPrinciples = data.principles ? data.principles.map(p => ({ id: p.id, text: p.text, gacScore: p.gacScore ?? 0 })) : undefined;
         const updatedModel = await updateCommunityModel(modelId, {
-          principles: data.principles,
+          principles: updatedPrinciples,
           requireAuth: data.requireAuth,
           allowContributions: data.allowContributions,
         });
+
         setModelData((prevData) => {
           if (!prevData) return null;
+          const { principles, ...otherData } = data;
           const newData = {
             ...prevData,
-            ...data,
+            ...otherData,
+            principles: updatedPrinciples || prevData.principles,
             polls: [...updatedModel.polls],
           } as ExtendedAboutZoneData;
           console.log("Updated model data:", newData);
@@ -391,7 +395,15 @@ export default function CommunityModelFlow({
                   allowContributions: modelData.allowContributions || false,
                 }}
                 updateModelData={(data) => {
-                  handleUpdatePrinciples(data);
+                  const transformedData = {
+                    ...data,
+                    principles: data.principles ? ((data.principles as Partial<Principle>[]).map(p => ({
+                      id: p.id!,
+                      text: p.text!,
+                      gacScore: p.gacScore ?? 0
+                    })) as Principle[]) : undefined
+                  };
+                  handleUpdatePrinciples(transformedData);
                 }}
                 isExistingModel={isExistingModel}
                 onToggle={() => toggleZone("principles")}
