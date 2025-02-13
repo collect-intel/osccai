@@ -19,7 +19,7 @@ export default function NewCommunityModelForm() {
           goal,
           logoUrl: "",
         });
-        router.push(`/community-models/${modelId}`);
+        router.push(`/community-models/flow/${modelId}`);
       }}
       className="flex flex-col"
     >
