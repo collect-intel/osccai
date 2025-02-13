@@ -140,7 +140,7 @@ export default function CommunityModelFlow({
                 fetchedModelData.autoCreateConstitution || false,
               apiKeys: [],
               owner: {
-                uid: fetchedModelData.owner.clerkUserId || "",
+                uid: fetchedModelData.owner.uid || "",
                 name: fetchedModelData.owner.name,
                 clerkUserId: fetchedModelData.owner.clerkUserId || "",
               },

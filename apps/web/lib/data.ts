@@ -106,6 +106,7 @@ export async function getCommunityModel(modelId: string): Promise<{
   advancedOptionsEnabled: boolean;
   autoCreateConstitution: boolean;
   owner: {
+    uid: string;
     clerkUserId: string | null;
     name: string;
     email: string;
@@ -158,6 +159,7 @@ export async function getCommunityModel(modelId: string): Promise<{
     advancedOptionsEnabled: model.advancedOptionsEnabled,
     autoCreateConstitution: model.autoCreateConstitution,
     owner: {
+      uid: model.owner.uid,
       clerkUserId: model.owner.clerkUserId,
       name: model.owner.name,
       email: model.owner.email,
