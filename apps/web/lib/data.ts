@@ -144,7 +144,7 @@ export async function getCommunityModel(modelId: string): Promise<{
     firstPoll?.statements.map((s) => ({
       id: s.uid,
       text: s.text,
-      gacScore: s.gacScore ?? null
+      gacScore: s.gacScore ?? null,
     })) || [];
 
   return {

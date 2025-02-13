@@ -182,7 +182,7 @@ export default function CommunityModelFlow({
           principles: data.principles?.map((p) => ({
             id: p.id,
             text: p.text,
-            gacScore: p.gacScore ?? null
+            gacScore: p.gacScore ?? null,
           })),
         });
         setModelId(newModelId);
@@ -210,7 +210,13 @@ export default function CommunityModelFlow({
     if (modelId) {
       try {
         setSavingStatus((prev) => ({ ...prev, principles: "saving" }));
-        const updatedPrinciples = data.principles ? data.principles.map(p => ({ id: p.id, text: p.text, gacScore: p.gacScore ?? 0 })) : undefined;
+        const updatedPrinciples = data.principles
+          ? data.principles.map((p) => ({
+              id: p.id,
+              text: p.text,
+              gacScore: p.gacScore ?? 0,
+            }))
+          : undefined;
         const updatedModel = await updateCommunityModel(modelId, {
           principles: updatedPrinciples,
           requireAuth: data.requireAuth,
@@ -397,11 +403,13 @@ export default function CommunityModelFlow({
                 updateModelData={(data) => {
                   const transformedData = {
                     ...data,
-                    principles: data.principles ? ((data.principles as Partial<Principle>[]).map(p => ({
-                      id: p.id!,
-                      text: p.text!,
-                      gacScore: p.gacScore ?? 0
-                    })) as Principle[]) : undefined
+                    principles: data.principles
+                      ? ((data.principles as Partial<Principle>[]).map((p) => ({
+                          id: p.id!,
+                          text: p.text!,
+                          gacScore: p.gacScore ?? 0,
+                        })) as Principle[])
+                      : undefined,
                   };
                   handleUpdatePrinciples(transformedData);
                 }}
