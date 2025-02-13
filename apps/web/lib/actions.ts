@@ -6,6 +6,7 @@ import type {
   ClerkEmailAddress,
   ExtendedStatement,
   ExtendedPoll,
+  Principle,
 } from "@/lib/types";
 import type {
   Poll,
@@ -633,7 +634,7 @@ async function createInitialPoll(
 
 export async function createCommunityModel(
   data: Partial<CommunityModel> & {
-    principles?: Array<{ id: string; text: string; gacScore?: number }>;
+    principles?: Principle[];
   },
 ) {
   const { userId: clerkUserId } = auth();
@@ -667,6 +668,7 @@ export async function createCommunityModel(
                   create: data.principles.map((principle) => ({
                     text: principle.text,
                     participantId: owner.participantId!,
+                    gacScore: principle.gacScore,
                   })),
                 }
               : undefined,
@@ -948,11 +950,12 @@ export async function updateConstitution(
 export async function updateCommunityModel(
   modelId: string,
   data: Partial<CommunityModel> & {
-    principles?: Array<{ id: string; text: string; gacScore?: number }>;
+    principles?: Principle[];
     requireAuth?: boolean;
     allowContributions?: boolean;
     constitutions?: Constitution[];
     activeConstitutionId?: string | null;
+    autoCreateConstitution?: boolean;
   },
 ): Promise<CommunityModel & { polls: Poll[] }> {
   const {
@@ -961,6 +964,7 @@ export async function updateCommunityModel(
     allowContributions,
     constitutions,
     activeConstitutionId,
+    autoCreateConstitution,
     ...modelData
   } = data;
 
@@ -972,6 +976,9 @@ export async function updateCommunityModel(
           where: { uid: modelId },
           data: {
             ...modelData,
+            ...(autoCreateConstitution !== undefined && {
+              autoCreateConstitution,
+            }),
             activeConstitutionId:
               activeConstitutionId !== undefined
                 ? activeConstitutionId
@@ -1301,4 +1308,12 @@ export async function checkPollCompletion(
     requiredSubmissions: poll.minRequiredSubmissions ?? undefined,
     currentSubmissions: submissionCount,
   };
+}
+
+export async function createAndActivateConstitution(
+  modelId: string,
+): Promise<Constitution> {
+  const constitution = await createConstitution(modelId);
+  await setActiveConstitution(modelId, constitution.uid);
+  return constitution;
 }

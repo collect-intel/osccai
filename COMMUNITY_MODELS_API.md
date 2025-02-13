@@ -66,6 +66,24 @@ Submit a vote on a statement. The API key must be associated with the Community 
 }
 ```
 
+### Create Constitution
+
+`POST /api/models/{modelId}/constitutions`
+
+Create a new constitution from the current set of constitutionable statements and set it as the active constitution. The API key must be associated with the Community Model.
+
+**Response:**
+
+```json
+{
+  "uid": "constitution-id",
+  "version": 1,
+  "status": "ACTIVE",
+  "content": "Constitution content...",
+  "createdAt": "2024-01-15T00:00:00Z"
+}
+```
+
 ### Chat Completions
 
 `POST /api/v1/chat/completions`

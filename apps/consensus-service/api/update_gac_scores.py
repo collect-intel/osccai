@@ -10,6 +10,9 @@ from urllib.parse import urlparse
 import numpy as np
 import pandas as pd
 import math
+import aiohttp
+import asyncio
+from webhook_utils import send_webhook
 
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
@@ -129,6 +132,51 @@ def verify_poll_exists(cursor, poll_id):
     
     return True
 
+def get_community_model_id(cursor, poll_id):
+    """Get the community model ID and auto-create setting for a given poll."""
+    cursor.execute("""
+        SELECT "communityModelId", "autoCreateConstitution"
+        FROM "Poll"
+        JOIN "CommunityModel" ON "Poll"."communityModelId" = "CommunityModel".uid
+        WHERE "Poll".uid = %s;
+    """, (poll_id,))
+    result = cursor.fetchone()
+    if not result:
+        return None, False
+    return result[0], result[1]
+
+def get_constitutionable_statements(cursor, poll_id):
+    """Get the set of constitutionable statement IDs for a poll."""
+    cursor.execute("""
+        SELECT uid FROM "Statement"
+        WHERE "pollId" = %s AND "isConstitutionable" = TRUE;
+    """, (poll_id,))
+    return {row[0] for row in cursor.fetchall()}
+
+async def check_and_create_constitution(cursor, poll_id, pre_update_statements):
+    """Check if constitution needs to be created and create if necessary."""
+    model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
+    
+    if not model_id or not auto_create_enabled:
+        return
+        
+    # Get post-update constitutionable statements
+    post_update_statements = get_constitutionable_statements(cursor, poll_id)
+    
+    # If there's a difference in the sets
+    if pre_update_statements != post_update_statements:
+        logger.info(f"Constitutionable statements changed for poll {poll_id}")
+        logger.info(f"Pre-update: {pre_update_statements}")
+        logger.info(f"Post-update: {post_update_statements}")
+        
+        # Send webhook to trigger constitution creation
+        success = await send_webhook(model_id, poll_id)
+        
+        if success:
+            logger.info(f"Successfully triggered constitution creation for model {model_id}")
+        else:
+            logger.error(f"Failed to trigger constitution creation for model {model_id}")
+
 def main(poll_id=None, dry_run=False, force=False):
     """
     Main function to update GAC scores.
@@ -162,6 +210,10 @@ def main(poll_id=None, dry_run=False, force=False):
             try:
                 poll_id = poll['uid']
                 logger.info(f"Processing poll ID: {poll_id}")
+                
+                # Get pre-update constitutionable statements
+                pre_update_statements = get_constitutionable_statements(cursor, poll_id)
+                
                 statements, votes, participants = fetch_poll_data(cursor, poll_id)
                 logger.info(f"Fetched data for poll ID: {poll_id}")
 
@@ -186,6 +238,9 @@ def main(poll_id=None, dry_run=False, force=False):
                 else:
                     update_statements(cursor, conn, statements, gac_scores, votes)
                     logger.info(f"Updated GAC scores for poll ID: {poll_id}")
+                    
+                    # Check if we need to create a new constitution
+                    asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements))
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")

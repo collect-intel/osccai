@@ -22,25 +22,33 @@ model CommunityModelOwner {
 }
 
 model CommunityModel {
-  uid                    String              @id @default(cuid())
-  name                   String
-  ownerId                String
-  goal                   String?
-  bio                    String?
-  logoUrl                String?
-  activeConstitutionId   String?             @unique
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
-  deleted                Boolean             @default(false)
-  published              Boolean             @default(false)
-  apiEnabled             Boolean             @default(false)
-  advancedOptionsEnabled Boolean             @default(false)
-  apiKeys                ApiKey[]
-  activeConstitution     Constitution?       @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
-  owner                  CommunityModelOwner @relation(fields: [ownerId], references: [uid])
-  constitutions          Constitution[]      @relation("Constitutions")
-  polls                  Poll[]
+  uid                     String                  @id @default(cuid())
+  name                    String
+  ownerId                 String
+  owner                   CommunityModelOwner     @relation(fields: [ownerId], references: [uid])
 
+  goal                    String?
+  bio                     String?
+  logoUrl                 String?
+
+  // Reference to the active constitution for this community model
+  activeConstitutionId    String?                 @unique
+  activeConstitution      Constitution?           @relation("ActiveConstitution", fields: [activeConstitutionId], references: [uid])
+
+  // All constitutions associated with this community model
+  constitutions           Constitution[]          @relation("Constitutions")
+  // Polls created within this community model
+  polls                   Poll[]
+
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  deleted                  Boolean                 @default(false)
+  published               Boolean                 @default(false)
+  apiEnabled    Boolean    @default(false)  // Feature flag for API access
+  apiKeys       ApiKey[]   // Relation to API keys
+  autoCreateConstitution Boolean        @default(false)
+  advancedOptionsEnabled Boolean        @default(false)
   @@index([ownerId])
 }
 

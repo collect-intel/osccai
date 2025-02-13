@@ -11,7 +11,7 @@ import {
 } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
-import type { ExtendedPoll } from "@/lib/types";
+import type { ExtendedPoll, Principle } from "@/lib/types";
 
 export async function getUserCommunityModels() {
   const { userId: clerkUserId } = auth();
@@ -95,21 +95,29 @@ export async function getPollData(
   } as ExtendedPoll;
 }
 
-export async function getCommunityModel(modelId: string): Promise<
-  | (CommunityModel & {
-      principles: Array<{ id: string; text: string; gacScore?: number }>;
-      requireAuth: boolean;
-      allowContributions: boolean;
-      constitutions: Constitution[];
-      activeConstitution: Constitution | null;
-      polls: Poll[];
-      published: boolean;
-      ownerId: string;
-      owner: { uid: string; name: string; clerkUserId: string };
-      apiKeys: ApiKey[];
-    })
-  | null
-> {
+export async function getCommunityModel(modelId: string): Promise<{
+  uid: string;
+  name: string;
+  bio: string | null;
+  goal: string | null;
+  logoUrl: string | null;
+  published: boolean;
+  apiEnabled: boolean;
+  advancedOptionsEnabled: boolean;
+  autoCreateConstitution: boolean;
+  owner: {
+    clerkUserId: string | null;
+    name: string;
+    email: string;
+    imageUrl: string | null;
+  };
+  principles: Principle[];
+  polls: Poll[];
+  constitutions: Constitution[];
+  activeConstitutionId: string | null;
+  requireAuth: boolean;
+  allowContributions: boolean;
+}> {
   const model = await prisma.communityModel.findUnique({
     where: { uid: modelId },
     include: {
@@ -124,35 +132,42 @@ export async function getCommunityModel(modelId: string): Promise<
         },
       },
       constitutions: true,
-      activeConstitution: true,
-      apiKeys: true,
     },
   });
 
   if (!model) {
-    return null;
+    throw new Error(`Community model with ID ${modelId} not found`);
   }
 
   const firstPoll = model.polls[0];
+  const principles =
+    firstPoll?.statements.map((s) => ({
+      id: s.uid,
+      text: s.text,
+      gacScore: s.gacScore ?? null,
+    })) || [];
 
   return {
-    ...model,
-    principles:
-      firstPoll?.statements.map((s: Statement & { votes: Vote[] }) => ({
-        id: s.uid,
-        text: s.text,
-        gacScore: s.gacScore || undefined,
-      })) || [],
+    uid: model.uid,
+    name: model.name,
+    bio: model.bio,
+    goal: model.goal,
+    logoUrl: model.logoUrl,
+    published: model.published,
+    apiEnabled: model.apiEnabled,
+    advancedOptionsEnabled: model.advancedOptionsEnabled,
+    autoCreateConstitution: model.autoCreateConstitution,
+    owner: {
+      clerkUserId: model.owner.clerkUserId,
+      name: model.owner.name,
+      email: model.owner.email,
+      imageUrl: null, // Note: Add this field to CommunityModelOwner if needed
+    },
+    principles,
+    polls: model.polls,
+    constitutions: model.constitutions,
+    activeConstitutionId: model.activeConstitutionId,
     requireAuth: firstPoll?.requireAuth || false,
     allowContributions: firstPoll?.allowParticipantStatements || false,
-    constitutions: model.constitutions,
-    published: model.published || false,
-    ownerId: model.ownerId,
-    owner: {
-      uid: model.owner.uid,
-      name: model.owner.name || "",
-      clerkUserId: model.owner.clerkUserId || "",
-    },
-    apiKeys: model.apiKeys || [],
   };
 }

@@ -19,10 +19,10 @@ import Toast from "./Toast";
 import { debounce } from "lodash";
 import { Constitution, Poll, Statement, ApiKey, Vote } from "@prisma/client";
 import Spinner from "./Spinner";
-import type { ExtendedPoll } from "@/lib/types";
+import type { ExtendedPoll, Principle } from "@/lib/types";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
-  principles: Array<{ id: string; text: string; gacScore?: number }>;
+  principles: Principle[];
   requireAuth: boolean;
   allowContributions: boolean;
   constitutions: Constitution[];
@@ -31,6 +31,7 @@ interface ExtendedAboutZoneData extends AboutZoneData {
   published?: boolean;
   apiEnabled?: boolean;
   advancedOptionsEnabled?: boolean;
+  autoCreateConstitution?: boolean;
   apiKeys?: ApiKey[];
   owner?: {
     uid: string;
@@ -45,12 +46,6 @@ interface CommunityModelFlowProps {
 
 interface ZoneRefs {
   [key: string]: React.RefObject<HTMLDivElement>;
-}
-
-interface Principle {
-  id: string;
-  text: string;
-  gacScore?: number;
 }
 
 export default function CommunityModelFlow({
@@ -126,15 +121,11 @@ export default function CommunityModelFlow({
               bio: fetchedModelData.bio || "",
               goal: fetchedModelData.goal || "",
               logoUrl: fetchedModelData.logoUrl || "",
-              principles: fetchedModelData.principles.map(
-                (p: string | Principle) =>
-                  typeof p === "string"
-                    ? {
-                        id: `principle-${Date.now()}-${Math.random()}`,
-                        text: p,
-                      }
-                    : p,
-              ),
+              principles: fetchedModelData.principles.map((p) => ({
+                id: p.id,
+                text: p.text,
+                gacScore: p.gacScore,
+              })),
               requireAuth: fetchedModelData.requireAuth || false,
               allowContributions: fetchedModelData.allowContributions || false,
               constitutions: fetchedModelData.constitutions || [],
@@ -145,8 +136,14 @@ export default function CommunityModelFlow({
               apiEnabled: fetchedModelData.apiEnabled || false,
               advancedOptionsEnabled:
                 fetchedModelData.advancedOptionsEnabled || false,
-              apiKeys: fetchedModelData.apiKeys || [],
-              owner: fetchedModelData.owner,
+              autoCreateConstitution:
+                fetchedModelData.autoCreateConstitution || false,
+              apiKeys: [],
+              owner: {
+                uid: fetchedModelData.owner.clerkUserId || "",
+                name: fetchedModelData.owner.name,
+                clerkUserId: fetchedModelData.owner.clerkUserId || "",
+              },
             });
             setActiveZones([
               "about",
@@ -173,18 +170,23 @@ export default function CommunityModelFlow({
     fetchModelData();
   }, [modelId, router, handleHashChange]);
 
-  const handleSaveAbout = async (data: AboutZoneData) => {
+  const handleAboutSubmit = async (data: Partial<ExtendedAboutZoneData>) => {
+    setSavingStatus((prev) => ({ ...prev, about: "saving" }));
     setIsSaving(true);
     try {
       if (!modelId) {
         const newModelId = await createCommunityModel({
-          name: data.name,
-          bio: data.bio,
-          goal: data.goal,
-          logoUrl: data.logoUrl,
+          name: data.name || "",
+          bio: data.bio || "",
+          goal: data.goal || "",
+          principles: data.principles?.map((p) => ({
+            id: p.id,
+            text: p.text,
+            gacScore: p.gacScore ?? null,
+          })),
         });
         setModelId(newModelId);
-        router.push(`/community-models/flow/${newModelId}`);
+        router.push(`/community-models/${newModelId}`);
       } else {
         await updateCommunityModel(modelId, data);
       }
@@ -208,16 +210,26 @@ export default function CommunityModelFlow({
     if (modelId) {
       try {
         setSavingStatus((prev) => ({ ...prev, principles: "saving" }));
+        const updatedPrinciples = data.principles
+          ? data.principles.map((p) => ({
+              id: p.id,
+              text: p.text,
+              gacScore: p.gacScore ?? 0,
+            }))
+          : undefined;
         const updatedModel = await updateCommunityModel(modelId, {
-          principles: data.principles,
+          principles: updatedPrinciples,
           requireAuth: data.requireAuth,
           allowContributions: data.allowContributions,
         });
+
         setModelData((prevData) => {
           if (!prevData) return null;
+          const { principles, ...otherData } = data;
           const newData = {
             ...prevData,
-            ...data,
+            ...otherData,
+            principles: updatedPrinciples || prevData.principles,
             polls: [...updatedModel.polls],
           } as ExtendedAboutZoneData;
           console.log("Updated model data:", newData);
@@ -354,7 +366,7 @@ export default function CommunityModelFlow({
         <div ref={zoneRefs.about} id="about">
           <AboutZone
             isActive={activeZones.includes("about")}
-            onSave={handleSaveAbout}
+            onSave={handleAboutSubmit}
             initialData={modelData || undefined}
             isExistingModel={isExistingModel}
             modelId={modelId || undefined}
@@ -389,7 +401,17 @@ export default function CommunityModelFlow({
                   allowContributions: modelData.allowContributions || false,
                 }}
                 updateModelData={(data) => {
-                  handleUpdatePrinciples(data);
+                  const transformedData = {
+                    ...data,
+                    principles: data.principles
+                      ? ((data.principles as Partial<Principle>[]).map((p) => ({
+                          id: p.id!,
+                          text: p.text!,
+                          gacScore: p.gacScore ?? 0,
+                        })) as Principle[])
+                      : undefined,
+                  };
+                  handleUpdatePrinciples(transformedData);
                 }}
                 isExistingModel={isExistingModel}
                 onToggle={() => toggleZone("principles")}
@@ -506,6 +528,20 @@ export default function CommunityModelFlow({
                   savingStatus={savingStatus.advanced}
                   apiEnabled={modelData.apiEnabled}
                   advancedOptionsEnabled={modelData.advancedOptionsEnabled}
+                  autoCreateConstitution={modelData.autoCreateConstitution}
+                  onUpdateAutoCreateConstitution={(enabled) => {
+                    setModelData((prevData) => {
+                      if (!prevData) return null;
+                      return {
+                        ...prevData,
+                        autoCreateConstitution: enabled,
+                      } as ExtendedAboutZoneData;
+                    });
+                    debouncedSaveModelData(
+                      { autoCreateConstitution: enabled },
+                      "advanced",
+                    );
+                  }}
                   pollOptions={
                     modelData.polls?.[0] || {
                       minVotesBeforeSubmission: null,
