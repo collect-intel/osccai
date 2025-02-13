@@ -186,7 +186,7 @@ export default function CommunityModelFlow({
           })),
         });
         setModelId(newModelId);
-        router.push(`/community-models/${newModelId}`);
+        router.push(`/community-models/flow/${newModelId}`);
       } else {
         await updateCommunityModel(modelId, data);
       }
