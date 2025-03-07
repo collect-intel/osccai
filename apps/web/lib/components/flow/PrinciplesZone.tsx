@@ -153,7 +153,17 @@ export default function PrinciplesZone({
     } else {
       setAllowContributions(value);
     }
-    debouncedUpdateModelData({ [field]: value });
+    
+    // Include the current principles along with the toggle change
+    // to prevent the backend from deleting all principles
+    debouncedUpdateModelData({ 
+      [field]: value,
+      principles: principles.filter(p => !p.isLoading).map(p => ({
+        id: p.id,
+        text: p.text,
+        gacScore: 0 // Default score if not available
+      }))
+    });
   };
 
   const handleGeneratePrinciples = async () => {

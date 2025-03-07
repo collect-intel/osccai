@@ -1222,6 +1222,13 @@ export async function updateCommunityModel(
               (s) => !allPrincipleIds.includes(s.uid),
             );
 
+            // Log how many statements are being deleted and why
+            if (statementsToDelete.length > 0) {
+              console.log(`Deleting ${statementsToDelete.length} statements because they're not in the updated principles list.`);
+              console.log(`Updated principles: ${allPrincipleIds.length} statements`);
+              console.log(`Total poll statements: ${poll.statements.length} statements`);
+            }
+
             // Delete principles that are no longer in the list
             for (const statement of statementsToDelete) {
               await tx.vote.deleteMany({

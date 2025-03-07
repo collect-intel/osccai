@@ -432,12 +432,27 @@ export default function CommunityModelFlow({
 
     try {
       setSavingStatus((prev) => ({ ...prev, [zone]: "saving" }));
-      await updateCommunityModel(modelId, data);
+      
+      // Preserve existing principles if they're not included in the update
+      // This prevents accidental deletion of principles when updating other fields
+      let dataToUpdate = { ...data };
+      
+      // If we're not specifically updating principles and the current modelData has principles,
+      // ensure we include them in the update to prevent deletion
+      if (!data.principles && modelData?.principles && zone !== 'principles') {
+        dataToUpdate.principles = modelData.principles.map(p => ({
+          id: p.id,
+          text: p.text,
+          gacScore: p.gacScore ?? 0
+        }));
+      }
+      
+      await updateCommunityModel(modelId, dataToUpdate);
 
       // Update the model data in state
       const updatedData = {
         ...modelData,
-        ...data,
+        ...dataToUpdate,
       } as ExtendedAboutZoneData;
 
       setModelData(updatedData);
@@ -454,7 +469,7 @@ export default function CommunityModelFlow({
         2000,
       );
     } catch (error) {
-      console.error("Error saving community model:", error);
+      console.error(`Error saving ${zone}:`, error);
       setSavingStatus((prev) => ({ ...prev, [zone]: "idle" }));
     }
   };
