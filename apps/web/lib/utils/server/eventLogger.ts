@@ -34,12 +34,14 @@ export async function logSystemEvent(params: SystemEventParams): Promise<void> {
     if (!params.communityModelId) {
       console.warn(
         `WARNING: Missing communityModelId for event ${params.eventType} on ${params.resourceType}:${params.resourceId}. ` +
-        `Events should be associated with a CommunityModel whenever possible.`
+          `Events should be associated with a CommunityModel whenever possible.`,
       );
-      
+
       // For certain critical event types, try to resolve the communityModelId
       if (
-        [EventType.STATEMENT_ADDED, EventType.VOTE_CAST].includes(params.eventType as EventType) &&
+        [EventType.STATEMENT_ADDED, EventType.VOTE_CAST].includes(
+          params.eventType as EventType,
+        ) &&
         params.metadata?.pollId
       ) {
         try {
@@ -49,17 +51,22 @@ export async function logSystemEvent(params: SystemEventParams): Promise<void> {
             where: { uid: pollId },
             select: { communityModelId: true },
           });
-          
+
           if (poll?.communityModelId) {
             params.communityModelId = poll.communityModelId;
-            console.log(`Resolved missing communityModelId: ${poll.communityModelId}`);
+            console.log(
+              `Resolved missing communityModelId: ${poll.communityModelId}`,
+            );
           }
         } catch (error) {
-          console.error("Failed to resolve communityModelId from pollId:", error);
+          console.error(
+            "Failed to resolve communityModelId from pollId:",
+            error,
+          );
         }
       }
     }
-    
+
     // Handle the case where SystemEvent model doesn't exist yet or there's some other Prisma issue
     // First approach: See if we can log using Prisma's standard methods
     try {
@@ -222,9 +229,9 @@ export function logModelChanges(
  * @param communityModelId Optional model ID (will be fetched if not provided)
  */
 export async function logStatementAdded(
-  statement: Statement, 
-  actor: Actor, 
-  communityModelId?: string
+  statement: Statement,
+  actor: Actor,
+  communityModelId?: string,
 ): Promise<void> {
   try {
     // Validate statement data before proceeding
@@ -252,7 +259,7 @@ export async function logStatementAdded(
           where: { uid: statement.pollId },
           select: { communityModelId: true },
         });
-        
+
         if (poll?.communityModelId) {
           modelId = poll.communityModelId;
         }
@@ -284,10 +291,10 @@ export async function logStatementAdded(
  * @param communityModelId Optional model ID (will be fetched if not provided)
  */
 export async function logVoteCast(
-  vote: Vote, 
-  pollId: string, 
+  vote: Vote,
+  pollId: string,
   actor: Actor,
-  communityModelId?: string
+  communityModelId?: string,
 ): Promise<void> {
   try {
     // Validate vote data
@@ -311,7 +318,7 @@ export async function logVoteCast(
           where: { uid: pollId },
           select: { communityModelId: true },
         });
-        
+
         if (poll?.communityModelId) {
           modelId = poll.communityModelId;
         }
@@ -555,7 +562,7 @@ export function createActorFromParticipant(
 /**
  * Helper function to create SystemEventParams with proper communityModelId validation
  * This ensures consistent event parameter creation across the codebase
- * 
+ *
  * @param params Base parameters for the event
  * @returns Complete SystemEventParams with validated communityModelId
  */
@@ -578,10 +585,10 @@ export async function createEventParams({
       metadata,
     };
   }
-  
+
   // Otherwise try to derive it from metadata or related entities
   let derivedModelId: string | undefined = undefined;
-  
+
   try {
     // Try to derive from pollId in metadata
     if (metadata?.pollId) {
@@ -593,7 +600,7 @@ export async function createEventParams({
         derivedModelId = poll.communityModelId;
       }
     }
-    
+
     // If not found and this is a statement resource, try to get from statement
     if (!derivedModelId && resourceType === ResourceType.STATEMENT) {
       const statement = await prisma.statement.findUnique({
@@ -604,12 +611,16 @@ export async function createEventParams({
         derivedModelId = statement.poll.communityModelId;
       }
     }
-    
+
     // If not found and this is a vote resource, try to get from vote
     if (!derivedModelId && resourceType === ResourceType.VOTE) {
       const vote = await prisma.vote.findUnique({
         where: { uid: resourceId },
-        select: { statement: { select: { poll: { select: { communityModelId: true } } } } },
+        select: {
+          statement: {
+            select: { poll: { select: { communityModelId: true } } },
+          },
+        },
       });
       if (vote?.statement?.poll?.communityModelId) {
         derivedModelId = vote.statement.poll.communityModelId;
@@ -618,7 +629,7 @@ export async function createEventParams({
   } catch (error) {
     console.error("Error deriving communityModelId:", error);
   }
-  
+
   return {
     eventType,
     resourceType,

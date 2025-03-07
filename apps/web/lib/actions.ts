@@ -495,23 +495,26 @@ export async function submitVote(
         // Get the communityModelId from the statement's poll
         const statementWithPoll = await tx.statement.findUnique({
           where: { uid: statementId },
-          select: { 
-            poll: { 
-              select: { communityModelId: true } 
-            } 
+          select: {
+            poll: {
+              select: { communityModelId: true },
+            },
           },
         });
-        
+
         // Pass communityModelId if available
         await logVoteCast(
-          vote, 
-          pollId, 
-          actor, 
-          statementWithPoll?.poll?.communityModelId
+          vote,
+          pollId,
+          actor,
+          statementWithPoll?.poll?.communityModelId,
         );
       } catch (error) {
         // Fall back to logging without communityModelId
-        console.error("Error getting communityModelId for vote logging:", error);
+        console.error(
+          "Error getting communityModelId for vote logging:",
+          error,
+        );
         await logVoteCast(vote, pollId, actor);
       }
     }
@@ -645,7 +648,7 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
   if (!owner) {
     console.log("Owner not found, creating new owner");
     const user = (await currentUser()) as ClerkUser | null;
-    
+
     if (!user) {
       throw new Error("User not logged in");
     }

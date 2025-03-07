@@ -1,6 +1,7 @@
 # OSCCAI Development Guide
 
 ## Commands
+
 - Web dev: `pnpm web dev:local`
 - Web build: `pnpm web build`
 - Web lint: `pnpm web lint`
@@ -10,10 +11,12 @@
 - CS run GAC: `pnpm consensus-service gac:local`
 
 ## Project Structure
+
 - `apps/web`: Next.js frontend (App Router)
 - `apps/consensus-service`: Python consensus service
 
 ## Code Style
+
 - TypeScript: Strict mode with proper types for all variables/functions
 - React: Functional components with hooks
 - CSS: Tailwind for styling
