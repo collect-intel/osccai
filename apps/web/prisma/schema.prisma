@@ -198,3 +198,24 @@ enum ApiKeyStatus {
   REVOKED
   EXPIRED
 }
+
+// Represents a system event for audit logging purposes
+// Tracks changes and actions across the platform
+model SystemEvent {
+  uid             String    @id @default(cuid())
+  eventType       String    // Enum value representing the event type
+  resourceType    String    // Type of resource affected (e.g., "CommunityModel")
+  resourceId      String    // ID of the affected resource
+  communityModelId String?  // Direct reference to the associated CommunityModel
+  actorId         String    // UID of the user who performed the action
+  actorName       String?   // Name of the user for readability
+  isAdminAction   Boolean   @default(false)
+  metadata        Json?     // Flexible JSON payload for event-specific data
+  createdAt       DateTime  @default(now())
+
+  @@index([resourceType, resourceId])
+  @@index([communityModelId]) // Add index for efficient querying
+  @@index([actorId])
+  @@index([eventType])
+  @@index([createdAt])
+}

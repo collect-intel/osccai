@@ -201,9 +201,9 @@ export interface ApiKeyMetadata {
 }
 ```
 
-### 3. Simple Event Logger
+### 3. Event Logger Implementation
 
-Create a file `lib/utils/eventLogger.ts` with direct logging:
+Create a file `lib/utils/server/eventLogger.ts` with core logging functionality:
 
 ```typescript
 import {
@@ -476,7 +476,7 @@ export function logApiKeyCreated(apiKey: ApiKey, actor: Actor): void {
  */
 ```
 
-### 4. Integration with Existing Functions
+### 4. Integration with Existing Actions
 
 Here's an example of how to integrate the logger with the CommunityModel update function:
 
@@ -889,43 +889,44 @@ The system is designed to be easily maintainable and expandable as the applicati
 ## Implementation Checklist
 
 ### 1. Database Schema Changes
-- [ ] Add `SystemEvent` model to the Prisma schema in `apps/web/prisma/schema.prisma`
-- [ ] Run Prisma migration to update the database
+- [x] Add `SystemEvent` model to the Prisma schema in `apps/web/prisma/schema.prisma`
+- [x] Run Prisma migration to update the database
 
 ### 2. Type Definitions
-- [ ] Create `lib/types/events.ts` file with all event-related type definitions
-- [ ] Define `EventType` enum with all event types
-- [ ] Define `ResourceType` enum
-- [ ] Define interfaces for `Actor`, `SystemEventParams`, and event-specific metadata types
+- [x] Create `lib/types/events.ts` file with all event-related type definitions
+- [x] Define `EventType` enum with all event types
+- [x] Define `ResourceType` enum
+- [x] Define interfaces for `Actor`, `SystemEventParams`, and event-specific metadata types
 
 ### 3. Event Logger Implementation
-- [ ] Create `lib/utils/server/eventLogger.ts` with core logging functionality
-- [ ] Implement `logSystemEvent` function for direct database logging
-- [ ] Implement helper functions for each event type (model changes, statement added, etc.)
-- [ ] Add utility functions for creating actors from different user types
+- [x] Create `lib/utils/server/eventLogger.ts` with core logging functionality
+- [x] Implement `logSystemEvent` function for direct database logging
+- [x] Implement helper functions for each event type (model changes, statement added, etc.)
+- [x] Add utility functions for creating actors from different user types
 
 ### 4. Integration with Existing Actions
-- [ ] Modify `updateCommunityModel` in `lib/actions.ts` to log model changes
-- [ ] Modify `createPoll` in `lib/actions.ts` to log poll creation
-- [ ] Modify `editPoll` in `lib/actions.ts` to log poll updates
-- [ ] Modify `submitStatement` in `lib/actions.ts` to log statement addition
-- [ ] Modify `submitVote` in `lib/actions.ts` to log vote casting
-- [ ] Modify functions that update GAC scores to log score updates
-- [ ] Modify constitution-related functions to log constitution events
-- [ ] Modify API key-related functions to log key creation/revocation
+- [x] Modify `updateCommunityModel` in `lib/actions.ts` to log model changes
+- [x] Modify `createPoll` in `lib/actions.ts` to log poll creation
+- [x] Modify `editPoll` in `lib/actions.ts` to log poll updates
+- [x] Modify `submitStatement` in `lib/actions.ts` to log statement addition
+- [x] Modify `submitVote` in `lib/actions.ts` to log vote casting
+- [x] Modify functions that update GAC scores to log score updates
+- [x] Modify constitution-related functions to log constitution events
+- [x] Modify API key-related functions to log key creation/revocation
+- [x] Ensure that adding Statements from the `CommunityModelFlow` directly (rather than through the poll) are logged
 
 ### 5. API Route for Event Retrieval
-- [ ] Create `app/api/events/route.ts` for fetching system events
-- [ ] Implement filtering based on query parameters
-- [ ] Add proper authorization checks
+- [x] Create `app/api/events/route.ts` for fetching system events
+- [x] Implement filtering based on query parameters
+- [x] Add proper authorization checks
 
 ### 6. Admin UI Components
-- [ ] Create `lib/components/EventLogViewer.tsx` component
-- [ ] Implement event formatting for different event types
-- [ ] Add pagination support
+- [x] Create `lib/components/EventLogViewer.tsx` component
+- [x] Implement event formatting for different event types
+- [x] Add pagination support
 
 ### 7. Admin Dashboard Integration
-- [ ] Modify `apps/web/app/admin/models/[id]/page.tsx` to add the event log section
-- [ ] Add filtering options for the admin to view specific event types
+- [x] Modify `apps/web/app/admin/models/[id]/page.tsx` to add the event log section
+- [x] Add filtering options for the admin to view specific event types
 
 

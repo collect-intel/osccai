@@ -5,6 +5,8 @@ import {
 } from "@/lib/utils/admin";
 import Link from "next/link";
 import { AdminModeIndicator } from "@/lib/components/AdminComponents";
+import EventLogViewer from "@/lib/components/EventLogViewer";
+import { ResourceType } from "@/lib/types/events";
 
 export default async function AdminModelViewPage({
   params,
@@ -143,6 +145,17 @@ export default async function AdminModelViewPage({
                 </table>
               </div>
             )}
+          </div>
+
+          <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Activity Log</h2>
+            <div className="mt-2">
+              <EventLogViewer
+                resourceType={ResourceType.COMMUNITY_MODEL}
+                resourceId={model.uid}
+                limit={15}
+              />
+            </div>
           </div>
         </div>
 
