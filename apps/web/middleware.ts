@@ -18,6 +18,7 @@ const isPublicRoute = createRouteMatcher([
   "/_next/:path*",
   "/custom",
   "/custom/:path*",
+  "/admin/:path*",
 ]);
 
 export default clerkMiddleware((auth, req) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AboutZone from "./flow/AboutZone";
 import PrinciplesZone from "./flow/PrinciplesZone";
 import PollZone from "./flow/PollZone";
@@ -10,6 +10,7 @@ import AdvancedZone from "./flow/AdvancedZone";
 import {
   createCommunityModel,
   updateCommunityModel,
+  createPoll,
   updatePoll,
   fetchPollData,
 } from "@/lib/actions";
@@ -20,8 +21,10 @@ import { debounce } from "lodash";
 import { Constitution, Poll, Statement, ApiKey, Vote } from "@prisma/client";
 import Spinner from "./Spinner";
 import type { ExtendedPoll, Principle } from "@/lib/types";
+import { AdminModeIndicator, ImpersonationBanner } from "./AdminComponents";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
+  uid?: string;
   principles: Principle[];
   requireAuth: boolean;
   allowContributions: boolean;
@@ -52,6 +55,8 @@ export default function CommunityModelFlow({
   initialModelId,
 }: CommunityModelFlowProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isAdminMode = searchParams.get("admin") === "true";
   const [activeZones, setActiveZones] = useState<string[]>(["about"]);
   const [modelId, setModelId] = useState<string | null>(initialModelId || null);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +87,55 @@ export default function CommunityModelFlow({
     advanced: useRef<HTMLDivElement>(null),
   };
 
+  // Load model data from localStorage on initial render
+  useEffect(() => {
+    // Only attempt to load from localStorage if we're not already loading from the server
+    if (initialModelId && !isLoading) {
+      const cachedData = localStorage.getItem(`model_data_${initialModelId}`);
+      if (cachedData) {
+        try {
+          const parsedData = JSON.parse(cachedData);
+          console.log(
+            "Loaded model data from localStorage on initial render:",
+            parsedData,
+          );
+
+          // Only set the data if it matches the current modelId and we don't already have data
+          if (
+            parsedData.uid === initialModelId &&
+            (!modelData || modelData.uid !== initialModelId)
+          ) {
+            setModelData(parsedData);
+            // Set active zones based on cached data
+            setActiveZones([
+              "about",
+              "principles",
+              "poll",
+              "communityModel",
+              "advanced",
+            ]);
+          }
+        } catch (error) {
+          console.error("Error parsing cached model data:", error);
+        }
+      }
+    }
+
+    // Cleanup function to remove localStorage data when component unmounts
+    return () => {
+      if (initialModelId) {
+        // We keep the data for a short time to handle page transitions
+        // but set a timeout to clean it up after a few minutes
+        setTimeout(
+          () => {
+            localStorage.removeItem(`model_data_${initialModelId}`);
+          },
+          5 * 60 * 1000,
+        ); // 5 minutes
+      }
+    };
+  }, [initialModelId, isLoading, modelData]);
+
   const handleHashChange = useCallback(() => {
     const hash = window.location.hash.slice(1);
     if (hash && zoneRefs[hash]?.current) {
@@ -110,13 +164,49 @@ export default function CommunityModelFlow({
 
   useEffect(() => {
     async function fetchModelData() {
+      // Skip fetching if we already have model data for this modelId
       if (modelId) {
         setIsLoading(true);
         try {
+          console.log("Fetching model data for ID:", modelId);
+
+          // First check localStorage for cached data
+          const cachedData = localStorage.getItem(`model_data_${modelId}`);
+          let parsedCachedData = null;
+
+          if (cachedData) {
+            try {
+              parsedCachedData = JSON.parse(cachedData);
+              console.log("Found cached model data:", parsedCachedData);
+
+              // If we have valid cached data and it matches the current modelId, use it
+              if (parsedCachedData && parsedCachedData.uid === modelId) {
+                setModelData(parsedCachedData);
+                setActiveZones([
+                  "about",
+                  "principles",
+                  "poll",
+                  "communityModel",
+                  "advanced",
+                ]);
+                handleHashChange();
+                setIsLoading(false);
+                setIsPageLoading(false);
+                return; // Exit early if we have valid cached data
+              }
+            } catch (error) {
+              console.error("Error parsing cached model data:", error);
+            }
+          }
+
+          // If we don't have valid cached data, fetch from server
           const fetchedModelData = await getCommunityModel(modelId);
-          console.log("Loaded model data:", fetchedModelData);
+          console.log("Loaded model data from server:", fetchedModelData);
+
           if (fetchedModelData) {
-            setModelData({
+            // Preserve any existing data that might not be in the fetched data
+            const newData = {
+              uid: fetchedModelData.uid,
               name: fetchedModelData.name || "Default Name",
               bio: fetchedModelData.bio || "",
               goal: fetchedModelData.goal || "",
@@ -139,12 +229,19 @@ export default function CommunityModelFlow({
               autoCreateConstitution:
                 fetchedModelData.autoCreateConstitution || false,
               apiKeys: [],
-              owner: {
-                uid: fetchedModelData.owner.uid || "",
-                name: fetchedModelData.owner.name,
-                clerkUserId: fetchedModelData.owner.clerkUserId || "",
-              },
-            });
+              owner: fetchedModelData.owner,
+            };
+
+            console.log("Updated model data:", newData);
+            setModelData(newData as ExtendedAboutZoneData);
+
+            // Cache the model data in localStorage
+            localStorage.setItem(
+              `model_data_${modelId}`,
+              JSON.stringify(newData),
+            );
+
+            // After setting the model data, check for hash and set active zones
             setActiveZones([
               "about",
               "principles",
@@ -163,7 +260,10 @@ export default function CommunityModelFlow({
           console.error("Error fetching model data:", error);
         } finally {
           setIsLoading(false);
+          setIsPageLoading(false);
         }
+      } else {
+        setIsPageLoading(false);
       }
     }
 
@@ -185,16 +285,70 @@ export default function CommunityModelFlow({
             gacScore: p.gacScore ?? null,
           })),
         });
+
+        // Create complete model data
+        const updatedData = {
+          uid: newModelId,
+          name: data.name || "",
+          bio: data.bio || "",
+          goal: data.goal || "",
+          logoUrl: data.logoUrl || "",
+          principles: data.principles || [],
+          requireAuth: false,
+          allowContributions: false,
+          constitutions: [],
+          activeConstitutionId: undefined,
+          polls: [],
+          published: false,
+          apiEnabled: false,
+          advancedOptionsEnabled: false,
+          autoCreateConstitution: false,
+          apiKeys: [],
+        } as ExtendedAboutZoneData;
+
+        // Update state before navigation
+        setModelData(updatedData);
         setModelId(newModelId);
-        router.push(`/community-models/flow/${newModelId}`);
+
+        // Cache the model data in localStorage before navigation
+        localStorage.setItem(
+          `model_data_${newModelId}`,
+          JSON.stringify(updatedData),
+        );
+
+        // Use router.replace instead of push to avoid full page reload
+        // This helps maintain state during navigation
+        router.replace(`/community-models/flow/${newModelId}`);
+
+        // Set active zones after navigation
+        setActiveZones((prev) => [...prev, "principles"]);
       } else {
         await updateCommunityModel(modelId, data);
+
+        // Update the model data in state
+        const updatedData = {
+          ...modelData,
+          ...data,
+          uid: modelId, // Ensure the uid is preserved
+        } as ExtendedAboutZoneData;
+
+        setModelData(updatedData);
+
+        // Update the cached data
+        localStorage.setItem(
+          `model_data_${modelId}`,
+          JSON.stringify(updatedData),
+        );
       }
-      setModelData(
-        (prevData) => ({ ...prevData, ...data }) as ExtendedAboutZoneData,
+
+      setSavingStatus((prev) => ({ ...prev, about: "saved" }));
+      setTimeout(
+        () => setSavingStatus((prev) => ({ ...prev, about: "idle" })),
+        2000,
       );
+
       setShowToast(true);
-      if (!isExistingModel) {
+      if (!isExistingModel && modelId) {
         setActiveZones((prev) => [...prev, "principles"]);
       }
     } catch (error) {
@@ -216,29 +370,25 @@ export default function CommunityModelFlow({
               text: p.text,
               gacScore: p.gacScore ?? 0,
             }))
-          : undefined;
-        const updatedModel = await updateCommunityModel(modelId, {
+          : [];
+
+        await updateCommunityModel(modelId, {
           principles: updatedPrinciples,
-          requireAuth: data.requireAuth,
-          allowContributions: data.allowContributions,
         });
 
-        setModelData((prevData) => {
-          if (!prevData) return null;
-          const { principles, ...otherData } = data;
-          const newData = {
-            ...prevData,
-            ...otherData,
-            principles: updatedPrinciples || prevData.principles,
-            polls: [...updatedModel.polls],
-          } as ExtendedAboutZoneData;
-          console.log("Updated model data:", newData);
-          return newData;
-        });
+        // Update the model data in state
+        const updatedData = {
+          ...modelData,
+          principles: updatedPrinciples,
+        } as ExtendedAboutZoneData;
 
-        if (updatedModel.polls[0]) {
-          await updatePoll(modelId, updatedModel.polls[0]);
-        }
+        setModelData(updatedData);
+
+        // Update the cached data in localStorage
+        localStorage.setItem(
+          `model_data_${modelId}`,
+          JSON.stringify(updatedData),
+        );
 
         setSavingStatus((prev) => ({ ...prev, principles: "saved" }));
         setTimeout(
@@ -249,8 +399,6 @@ export default function CommunityModelFlow({
         console.error("Error updating principles:", error);
         setSavingStatus((prev) => ({ ...prev, principles: "idle" }));
       }
-    } else {
-      console.error("Cannot update principles: modelId is null");
     }
   };
 
@@ -281,12 +429,25 @@ export default function CommunityModelFlow({
     zone: string,
   ) => {
     if (!modelId) return;
-    setSavingStatus((prev) => ({ ...prev, [zone]: "saving" }));
+
     try {
+      setSavingStatus((prev) => ({ ...prev, [zone]: "saving" }));
       await updateCommunityModel(modelId, data);
-      setModelData(
-        (prevData) => ({ ...prevData, ...data }) as ExtendedAboutZoneData,
+
+      // Update the model data in state
+      const updatedData = {
+        ...modelData,
+        ...data,
+      } as ExtendedAboutZoneData;
+
+      setModelData(updatedData);
+
+      // Update the cached data in localStorage
+      localStorage.setItem(
+        `model_data_${modelId}`,
+        JSON.stringify(updatedData),
       );
+
       setSavingStatus((prev) => ({ ...prev, [zone]: "saved" }));
       setTimeout(
         () => setSavingStatus((prev) => ({ ...prev, [zone]: "idle" })),
@@ -318,13 +479,19 @@ export default function CommunityModelFlow({
           ...options,
         });
 
-        setModelData((prevData) => {
-          if (!prevData) return null;
-          return {
-            ...prevData,
-            polls: [updatedPoll, ...(prevData.polls?.slice(1) || [])],
-          };
-        });
+        // Update the model data in state
+        const updatedData = {
+          ...modelData,
+          polls: [updatedPoll, ...(modelData?.polls?.slice(1) || [])],
+        } as ExtendedAboutZoneData;
+
+        setModelData(updatedData);
+
+        // Update the cached data in localStorage
+        localStorage.setItem(
+          `model_data_${modelId}`,
+          JSON.stringify(updatedData),
+        );
 
         setSavingStatus((prev) => ({ ...prev, advanced: "saved" }));
         setTimeout(
@@ -333,7 +500,6 @@ export default function CommunityModelFlow({
         );
       } catch (error) {
         console.error("Error updating poll options:", error);
-        setSavingStatus((prev) => ({ ...prev, advanced: "idle" }));
       }
     },
     [modelId, modelData],
@@ -351,10 +517,32 @@ export default function CommunityModelFlow({
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      {isAdminMode && (
+        <>
+          <AdminModeIndicator />
+          {modelData?.owner && (
+            <ImpersonationBanner
+              user={
+                {
+                  uid: modelData.owner.uid,
+                  name: modelData.owner.name,
+                  email: "user@example.com", // Placeholder since email is required but not in our data
+                  clerkUserId: modelData.owner.clerkUserId || "",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  participantId: null,
+                } as any
+              } // Type assertion to avoid type errors
+              onExit={() => router.push("/admin")}
+            />
+          )}
+        </>
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">
-          {modelData?.name.trim() ? (
+          {modelData?.name && modelData.name.trim() ? (
             modelData.name
           ) : (
             <span className="font-bold text-2xl">New Community Model</span>
@@ -522,7 +710,7 @@ export default function CommunityModelFlow({
                 <AdvancedZone
                   isActive={activeZones.includes("advanced")}
                   modelId={modelId || initialModelId!}
-                  ownerId={modelData.owner?.uid || ""}
+                  ownerId={modelData?.owner?.uid || ""}
                   apiKeys={modelData.apiKeys || []}
                   onToggle={() => toggleZone("advanced")}
                   savingStatus={savingStatus.advanced}
