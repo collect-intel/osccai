@@ -30,6 +30,36 @@ import {
  */
 export async function logSystemEvent(params: SystemEventParams): Promise<void> {
   try {
+    // Check if communityModelId is missing and issue a warning
+    if (!params.communityModelId) {
+      console.warn(
+        `WARNING: Missing communityModelId for event ${params.eventType} on ${params.resourceType}:${params.resourceId}. ` +
+        `Events should be associated with a CommunityModel whenever possible.`
+      );
+      
+      // For certain critical event types, try to resolve the communityModelId
+      if (
+        [EventType.STATEMENT_ADDED, EventType.VOTE_CAST].includes(params.eventType as EventType) &&
+        params.metadata?.pollId
+      ) {
+        try {
+          // Attempt to resolve the communityModelId from the pollId in metadata
+          const pollId = params.metadata.pollId;
+          const poll = await prisma.poll.findUnique({
+            where: { uid: pollId },
+            select: { communityModelId: true },
+          });
+          
+          if (poll?.communityModelId) {
+            params.communityModelId = poll.communityModelId;
+            console.log(`Resolved missing communityModelId: ${poll.communityModelId}`);
+          }
+        } catch (error) {
+          console.error("Failed to resolve communityModelId from pollId:", error);
+        }
+      }
+    }
+    
     // Handle the case where SystemEvent model doesn't exist yet or there's some other Prisma issue
     // First approach: See if we can log using Prisma's standard methods
     try {
@@ -57,6 +87,7 @@ export async function logSystemEvent(params: SystemEventParams): Promise<void> {
         resource: `${params.resourceType}:${params.resourceId}`,
         actor: `${params.actor.name || params.actor.id}${params.actor.isAdmin ? " (Admin)" : ""}`,
         metadata: params.metadata,
+        communityModelId: params.communityModelId,
         time: new Date().toISOString(),
       });
     }
@@ -138,7 +169,7 @@ export function logModelChanges(
       "bio",
       "logoUrl",
       "requireAuth",
-      "allowContributions",
+      "allowParticipantStatements",
       "published",
       "apiEnabled",
       "autoCreateConstitution",
@@ -188,8 +219,13 @@ export function logModelChanges(
  *
  * @param statement The newly created statement
  * @param actor The user who added the statement
+ * @param communityModelId Optional model ID (will be fetched if not provided)
  */
-export function logStatementAdded(statement: Statement, actor: Actor): void {
+export async function logStatementAdded(
+  statement: Statement, 
+  actor: Actor, 
+  communityModelId?: string
+): Promise<void> {
   try {
     // Validate statement data before proceeding
     if (!statement || !statement.uid || !statement.pollId) {
@@ -207,36 +243,32 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
       text: safeText,
     };
 
-    // Get the communityModelId from the associated poll
-    const getCommunityModelId = async () => {
+    // If communityModelId is not provided, fetch it directly
+    let modelId = communityModelId;
+    if (!modelId) {
       try {
-        // First check if it's already included in the statement
-        if ("communityModelId" in statement) {
-          return (statement as any).communityModelId;
-        }
-
-        // Otherwise fetch from the poll
+        // Try to get the communityModelId from the poll
         const poll = await prisma.poll.findUnique({
           where: { uid: statement.pollId },
           select: { communityModelId: true },
         });
-        return poll?.communityModelId;
+        
+        if (poll?.communityModelId) {
+          modelId = poll.communityModelId;
+        }
       } catch (error) {
-        console.error("Error getting communityModelId for statement:", error);
-        return null;
+        console.error("Failed to fetch communityModelId for logging:", error);
       }
-    };
+    }
 
-    // Execute the log asynchronously but don't await it
-    getCommunityModelId().then((communityModelId) => {
-      logSystemEvent({
-        eventType: EventType.STATEMENT_ADDED,
-        resourceType: ResourceType.STATEMENT,
-        resourceId: statement.uid,
-        communityModelId,
-        actor,
-        metadata,
-      });
+    // Log the event with the communityModelId if we have it
+    await logSystemEvent({
+      eventType: EventType.STATEMENT_ADDED,
+      resourceType: ResourceType.STATEMENT,
+      resourceId: statement.uid,
+      communityModelId: modelId,
+      actor,
+      metadata,
     });
   } catch (error) {
     console.error("Failed to log statement added:", error);
@@ -249,45 +281,53 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
  * @param vote The vote that was cast
  * @param pollId The ID of the poll containing the statement
  * @param actor The user who cast the vote
+ * @param communityModelId Optional model ID (will be fetched if not provided)
  */
-export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
+export async function logVoteCast(
+  vote: Vote, 
+  pollId: string, 
+  actor: Actor,
+  communityModelId?: string
+): Promise<void> {
   try {
+    // Validate vote data
+    if (!vote || !vote.uid || !vote.statementId) {
+      console.warn("Invalid vote data for logging:", vote);
+      return;
+    }
+
     const metadata: VoteCastMetadata = {
       statementId: vote.statementId,
       pollId: pollId,
       voteValue: vote.voteValue,
     };
 
-    // Get the communityModelId from the associated poll
-    const getCommunityModelId = async () => {
+    // If communityModelId is not provided, fetch it directly
+    let modelId = communityModelId;
+    if (!modelId) {
       try {
-        // Check if it's already included in the vote object
-        if ("communityModelId" in vote) {
-          return (vote as any).communityModelId;
-        }
-
-        // Otherwise fetch from the poll
+        // Try to get the communityModelId from the poll
         const poll = await prisma.poll.findUnique({
           where: { uid: pollId },
           select: { communityModelId: true },
         });
-        return poll?.communityModelId;
+        
+        if (poll?.communityModelId) {
+          modelId = poll.communityModelId;
+        }
       } catch (error) {
-        console.error("Error getting communityModelId for vote:", error);
-        return null;
+        console.error("Failed to fetch communityModelId for logging:", error);
       }
-    };
+    }
 
-    // Execute the log asynchronously but don't await it
-    getCommunityModelId().then((communityModelId) => {
-      logSystemEvent({
-        eventType: EventType.VOTE_CAST,
-        resourceType: ResourceType.VOTE,
-        resourceId: vote.uid,
-        communityModelId,
-        actor,
-        metadata,
-      });
+    // Log the event with the communityModelId if we have it
+    await logSystemEvent({
+      eventType: EventType.VOTE_CAST,
+      resourceType: ResourceType.VOTE,
+      resourceId: vote.uid,
+      communityModelId: modelId,
+      actor,
+      metadata,
     });
   } catch (error) {
     console.error("Failed to log vote cast:", error);
@@ -308,42 +348,25 @@ export function logGacScoreUpdated(
   newScore: number,
 ): void {
   try {
+    // Validate statement data
+    if (!statement || !statement.uid || !statement.pollId) {
+      console.warn("Invalid statement data for logging GAC score:", statement);
+      return;
+    }
+
     const metadata: GacScoreUpdatedMetadata = {
       pollId: statement.pollId,
       oldScore,
       newScore,
     };
 
-    // Get the communityModelId from the associated poll
-    const getCommunityModelId = async () => {
-      try {
-        // Check if it's already included in the statement object
-        if ("communityModelId" in statement) {
-          return (statement as any).communityModelId;
-        }
-
-        // Otherwise fetch from the poll
-        const poll = await prisma.poll.findUnique({
-          where: { uid: statement.pollId },
-          select: { communityModelId: true },
-        });
-        return poll?.communityModelId;
-      } catch (error) {
-        console.error("Error getting communityModelId for statement:", error);
-        return null;
-      }
-    };
-
-    // Execute the log asynchronously but don't await it
-    getCommunityModelId().then((communityModelId) => {
-      logSystemEvent({
-        eventType: EventType.GAC_SCORE_UPDATED,
-        resourceType: ResourceType.STATEMENT,
-        resourceId: statement.uid,
-        communityModelId,
-        actor: SYSTEM_ACTOR,
-        metadata,
-      });
+    // Make a synchronous call to logSystemEvent
+    logSystemEvent({
+      eventType: EventType.GAC_SCORE_UPDATED,
+      resourceType: ResourceType.STATEMENT,
+      resourceId: statement.uid,
+      actor: SYSTEM_ACTOR,
+      metadata,
     });
   } catch (error) {
     console.error("Failed to log GAC score update:", error);
@@ -526,5 +549,82 @@ export function createActorFromParticipant(
   return {
     id: participant.uid,
     isAdmin,
+  };
+}
+
+/**
+ * Helper function to create SystemEventParams with proper communityModelId validation
+ * This ensures consistent event parameter creation across the codebase
+ * 
+ * @param params Base parameters for the event
+ * @returns Complete SystemEventParams with validated communityModelId
+ */
+export async function createEventParams({
+  eventType,
+  resourceType,
+  resourceId,
+  communityModelId,
+  actor,
+  metadata,
+}: SystemEventParams): Promise<SystemEventParams> {
+  // If communityModelId is already provided, use it
+  if (communityModelId) {
+    return {
+      eventType,
+      resourceType,
+      resourceId,
+      communityModelId,
+      actor,
+      metadata,
+    };
+  }
+  
+  // Otherwise try to derive it from metadata or related entities
+  let derivedModelId: string | undefined = undefined;
+  
+  try {
+    // Try to derive from pollId in metadata
+    if (metadata?.pollId) {
+      const poll = await prisma.poll.findUnique({
+        where: { uid: metadata.pollId },
+        select: { communityModelId: true },
+      });
+      if (poll?.communityModelId) {
+        derivedModelId = poll.communityModelId;
+      }
+    }
+    
+    // If not found and this is a statement resource, try to get from statement
+    if (!derivedModelId && resourceType === ResourceType.STATEMENT) {
+      const statement = await prisma.statement.findUnique({
+        where: { uid: resourceId },
+        select: { poll: { select: { communityModelId: true } } },
+      });
+      if (statement?.poll?.communityModelId) {
+        derivedModelId = statement.poll.communityModelId;
+      }
+    }
+    
+    // If not found and this is a vote resource, try to get from vote
+    if (!derivedModelId && resourceType === ResourceType.VOTE) {
+      const vote = await prisma.vote.findUnique({
+        where: { uid: resourceId },
+        select: { statement: { select: { poll: { select: { communityModelId: true } } } } },
+      });
+      if (vote?.statement?.poll?.communityModelId) {
+        derivedModelId = vote.statement.poll.communityModelId;
+      }
+    }
+  } catch (error) {
+    console.error("Error deriving communityModelId:", error);
+  }
+  
+  return {
+    eventType,
+    resourceType,
+    resourceId,
+    communityModelId: derivedModelId,
+    actor,
+    metadata,
   };
 }

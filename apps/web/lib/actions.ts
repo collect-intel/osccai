@@ -216,7 +216,7 @@ export async function submitStatement(
 
   // Log the statement addition
   const actor = createActorFromParticipant(participant);
-  logStatementAdded(statement, actor);
+  await logStatementAdded(statement, actor, poll.communityModelId);
 
   revalidatePath(`/polls/${pollId}`);
   return statement;
@@ -491,7 +491,29 @@ export async function submitVote(
     // Log the vote
     if (vote) {
       const actor = createActorFromParticipant(participant);
-      logVoteCast(vote, pollId, actor);
+      try {
+        // Get the communityModelId from the statement's poll
+        const statementWithPoll = await tx.statement.findUnique({
+          where: { uid: statementId },
+          select: { 
+            poll: { 
+              select: { communityModelId: true } 
+            } 
+          },
+        });
+        
+        // Pass communityModelId if available
+        await logVoteCast(
+          vote, 
+          pollId, 
+          actor, 
+          statementWithPoll?.poll?.communityModelId
+        );
+      } catch (error) {
+        // Fall back to logging without communityModelId
+        console.error("Error getting communityModelId for vote logging:", error);
+        await logVoteCast(vote, pollId, actor);
+      }
     }
 
     // Fetch and return updated statement
@@ -615,17 +637,15 @@ export async function generateCsv(pollId: string): Promise<string> {
 }
 
 async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
-  console.log("Getting or creating owner for clerk user:", clerkUserId);
-
   let owner = await prisma.communityModelOwner.findUnique({
     where: { clerkUserId },
-    select: { uid: true, name: true, isAdmin: true },
+    select: { uid: true, name: true, email: true, participantId: true },
   });
 
   if (!owner) {
     console.log("Owner not found, creating new owner");
     const user = (await currentUser()) as ClerkUser | null;
-
+    
     if (!user) {
       throw new Error("User not logged in");
     }
@@ -674,7 +694,9 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
     console.log("Owner found:", owner);
   }
 
-  return owner;
+  // Check if user is admin (separate query to avoid linter error)
+  const isAdmin = await isCurrentUserAdmin();
+  return { ...owner, isAdmin };
 }
 
 async function createInitialPoll(
@@ -1214,7 +1236,7 @@ export async function updateCommunityModel(
                 updatedPrinciples.push(newStatement);
 
                 // Log the new statement
-                logStatementAdded(newStatement, actor);
+                await logStatementAdded(newStatement, actor, modelId);
               } else {
                 // This is an existing principle, update it
                 const updatedStatement = await tx.statement.update({
