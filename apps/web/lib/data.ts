@@ -185,11 +185,12 @@ export async function getCommunityModel(modelId: string): Promise<{
   }
 
   const firstPoll = model.polls[0];
-  const principles = firstPoll?.statements?.map((s) => ({
-    id: s.uid,
-    text: s.text,
-    gacScore: s.gacScore ?? null,
-  })) || [];
+  const principles =
+    firstPoll?.statements?.map((s) => ({
+      id: s.uid,
+      text: s.text,
+      gacScore: s.gacScore ?? null,
+    })) || [];
 
   return {
     uid: model.uid,

@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { isCurrentUserAdmin, getCommunityModelAsAdmin } from "@/lib/utils/admin";
+import {
+  isCurrentUserAdmin,
+  getCommunityModelAsAdmin,
+} from "@/lib/utils/admin";
 import Link from "next/link";
 import { AdminModeIndicator } from "@/lib/components/AdminComponents";
 
@@ -10,21 +13,19 @@ export default async function AdminModelViewPage({
 }) {
   // Check if user is admin
   const isAdmin = await isCurrentUserAdmin();
-  
+
   if (!isAdmin) {
     redirect("/");
   }
-  
+
   // Get the community model
   const model = await getCommunityModelAsAdmin(params.id);
-  
+
   if (!model) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
         <AdminModeIndicator />
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">
-          Model Not Found
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-6">Model Not Found</h1>
         <p>The requested model could not be found.</p>
         <Link href="/admin" className="text-blue-600 hover:text-blue-800">
           Back to Admin Dashboard
@@ -32,23 +33,21 @@ export default async function AdminModelViewPage({
       </div>
     );
   }
-  
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <AdminModeIndicator />
-      
+
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          {model.name}
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold">{model.name}</h1>
         <div className="flex gap-2">
-          <Link 
+          <Link
             href="/admin"
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded"
           >
             Back to Dashboard
           </Link>
-          <Link 
+          <Link
             href={`/community-models/flow/${model.uid}?admin=true`}
             className="bg-teal hover:bg-teal-dark text-white py-2 px-4 rounded"
           >
@@ -56,7 +55,7 @@ export default async function AdminModelViewPage({
           </Link>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
@@ -78,14 +77,18 @@ export default async function AdminModelViewPage({
                 <h3 className="text-sm font-medium text-gray-500">Status</h3>
                 <p>
                   {model.published ? (
-                    <span className="text-green-600 font-medium">Published</span>
+                    <span className="text-green-600 font-medium">
+                      Published
+                    </span>
                   ) : (
                     <span className="text-yellow-600 font-medium">Draft</span>
                   )}
                 </p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">API Enabled</h3>
+                <h3 className="text-sm font-medium text-gray-500">
+                  API Enabled
+                </h3>
                 <p>{model.apiEnabled ? "Yes" : "No"}</p>
               </div>
               <div>
@@ -93,12 +96,14 @@ export default async function AdminModelViewPage({
                 <p>{new Date(model.createdAt).toLocaleString()}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Last Updated
+                </h3>
                 <p>{new Date(model.updatedAt).toLocaleString()}</p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Polls</h2>
             {model.polls.length === 0 ? (
@@ -118,10 +123,14 @@ export default async function AdminModelViewPage({
                     {model.polls.map((poll) => (
                       <tr key={poll.uid} className="border-b">
                         <td className="py-2 px-4">{poll.title}</td>
-                        <td className="py-2 px-4">{poll.published ? "Yes" : "No"}</td>
-                        <td className="py-2 px-4">{new Date(poll.createdAt).toLocaleDateString()}</td>
                         <td className="py-2 px-4">
-                          <Link 
+                          {poll.published ? "Yes" : "No"}
+                        </td>
+                        <td className="py-2 px-4">
+                          {new Date(poll.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-2 px-4">
+                          <Link
                             href={`/polls/${poll.uid}`}
                             className="text-blue-600 hover:text-blue-800"
                           >
@@ -136,7 +145,7 @@ export default async function AdminModelViewPage({
             )}
           </div>
         </div>
-        
+
         <div>
           <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Owner Information</h2>
@@ -154,12 +163,14 @@ export default async function AdminModelViewPage({
                 <p className="font-mono text-xs">{model.owner.uid}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Clerk User ID</h3>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Clerk User ID
+                </h3>
                 <p className="font-mono text-xs">{model.owner.clerkUserId}</p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">API Keys</h2>
             {model.apiKeys.length === 0 ? (
@@ -169,8 +180,12 @@ export default async function AdminModelViewPage({
                 {model.apiKeys.map((key) => (
                   <div key={key.uid} className="p-3 border rounded">
                     <div className="flex justify-between">
-                      <span className="font-medium">{key.name || "Unnamed Key"}</span>
-                      <span className={`text-xs ${key.status === "ACTIVE" ? "text-green-600" : "text-red-600"}`}>
+                      <span className="font-medium">
+                        {key.name || "Unnamed Key"}
+                      </span>
+                      <span
+                        className={`text-xs ${key.status === "ACTIVE" ? "text-green-600" : "text-red-600"}`}
+                      >
                         {key.status}
                       </span>
                     </div>
@@ -179,7 +194,8 @@ export default async function AdminModelViewPage({
                     </div>
                     {key.lastUsedAt && (
                       <div className="text-xs text-gray-500">
-                        Last used: {new Date(key.lastUsedAt).toLocaleDateString()}
+                        Last used:{" "}
+                        {new Date(key.lastUsedAt).toLocaleDateString()}
                       </div>
                     )}
                   </div>
@@ -191,4 +207,4 @@ export default async function AdminModelViewPage({
       </div>
     </div>
   );
-} 
+}

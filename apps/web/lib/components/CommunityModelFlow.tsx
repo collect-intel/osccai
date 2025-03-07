@@ -56,11 +56,13 @@ export default function CommunityModelFlow({
 }: CommunityModelFlowProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAdminMode = searchParams.get('admin') === 'true';
+  const isAdminMode = searchParams.get("admin") === "true";
   const [activeZones, setActiveZones] = useState<string[]>(["about"]);
   const [modelId, setModelId] = useState<string | null>(initialModelId || null);
   const [isSaving, setIsSaving] = useState(false);
-  const [modelData, setModelData] = useState<ExtendedAboutZoneData | null>(null);
+  const [modelData, setModelData] = useState<ExtendedAboutZoneData | null>(
+    null,
+  );
   const [showToast, setShowToast] = useState(false);
   const [savingStatus, setSavingStatus] = useState<
     Record<string, "idle" | "saving" | "saved">
@@ -93,10 +95,16 @@ export default function CommunityModelFlow({
       if (cachedData) {
         try {
           const parsedData = JSON.parse(cachedData);
-          console.log("Loaded model data from localStorage on initial render:", parsedData);
-          
+          console.log(
+            "Loaded model data from localStorage on initial render:",
+            parsedData,
+          );
+
           // Only set the data if it matches the current modelId and we don't already have data
-          if (parsedData.uid === initialModelId && (!modelData || modelData.uid !== initialModelId)) {
+          if (
+            parsedData.uid === initialModelId &&
+            (!modelData || modelData.uid !== initialModelId)
+          ) {
             setModelData(parsedData);
             // Set active zones based on cached data
             setActiveZones([
@@ -112,15 +120,18 @@ export default function CommunityModelFlow({
         }
       }
     }
-    
+
     // Cleanup function to remove localStorage data when component unmounts
     return () => {
       if (initialModelId) {
         // We keep the data for a short time to handle page transitions
         // but set a timeout to clean it up after a few minutes
-        setTimeout(() => {
-          localStorage.removeItem(`model_data_${initialModelId}`);
-        }, 5 * 60 * 1000); // 5 minutes
+        setTimeout(
+          () => {
+            localStorage.removeItem(`model_data_${initialModelId}`);
+          },
+          5 * 60 * 1000,
+        ); // 5 minutes
       }
     };
   }, [initialModelId, isLoading, modelData]);
@@ -158,16 +169,16 @@ export default function CommunityModelFlow({
         setIsLoading(true);
         try {
           console.log("Fetching model data for ID:", modelId);
-          
+
           // First check localStorage for cached data
           const cachedData = localStorage.getItem(`model_data_${modelId}`);
           let parsedCachedData = null;
-          
+
           if (cachedData) {
             try {
               parsedCachedData = JSON.parse(cachedData);
               console.log("Found cached model data:", parsedCachedData);
-              
+
               // If we have valid cached data and it matches the current modelId, use it
               if (parsedCachedData && parsedCachedData.uid === modelId) {
                 setModelData(parsedCachedData);
@@ -187,11 +198,11 @@ export default function CommunityModelFlow({
               console.error("Error parsing cached model data:", error);
             }
           }
-          
+
           // If we don't have valid cached data, fetch from server
           const fetchedModelData = await getCommunityModel(modelId);
           console.log("Loaded model data from server:", fetchedModelData);
-          
+
           if (fetchedModelData) {
             // Preserve any existing data that might not be in the fetched data
             const newData = {
@@ -220,13 +231,16 @@ export default function CommunityModelFlow({
               apiKeys: [],
               owner: fetchedModelData.owner,
             };
-            
+
             console.log("Updated model data:", newData);
             setModelData(newData as ExtendedAboutZoneData);
-            
+
             // Cache the model data in localStorage
-            localStorage.setItem(`model_data_${modelId}`, JSON.stringify(newData));
-            
+            localStorage.setItem(
+              `model_data_${modelId}`,
+              JSON.stringify(newData),
+            );
+
             // After setting the model data, check for hash and set active zones
             setActiveZones([
               "about",
@@ -235,7 +249,7 @@ export default function CommunityModelFlow({
               "communityModel",
               "advanced",
             ]);
-            
+
             // After setting the model data, check for hash
             handleHashChange();
           } else {
@@ -271,7 +285,7 @@ export default function CommunityModelFlow({
             gacScore: p.gacScore ?? null,
           })),
         });
-        
+
         // Create complete model data
         const updatedData = {
           uid: newModelId,
@@ -291,39 +305,48 @@ export default function CommunityModelFlow({
           autoCreateConstitution: false,
           apiKeys: [],
         } as ExtendedAboutZoneData;
-        
+
         // Update state before navigation
         setModelData(updatedData);
         setModelId(newModelId);
-        
+
         // Cache the model data in localStorage before navigation
-        localStorage.setItem(`model_data_${newModelId}`, JSON.stringify(updatedData));
-        
+        localStorage.setItem(
+          `model_data_${newModelId}`,
+          JSON.stringify(updatedData),
+        );
+
         // Use router.replace instead of push to avoid full page reload
         // This helps maintain state during navigation
         router.replace(`/community-models/flow/${newModelId}`);
-        
+
         // Set active zones after navigation
         setActiveZones((prev) => [...prev, "principles"]);
       } else {
         await updateCommunityModel(modelId, data);
-        
+
         // Update the model data in state
-        const updatedData = { 
-          ...modelData, 
+        const updatedData = {
+          ...modelData,
           ...data,
-          uid: modelId // Ensure the uid is preserved
+          uid: modelId, // Ensure the uid is preserved
         } as ExtendedAboutZoneData;
-        
+
         setModelData(updatedData);
-        
+
         // Update the cached data
-        localStorage.setItem(`model_data_${modelId}`, JSON.stringify(updatedData));
+        localStorage.setItem(
+          `model_data_${modelId}`,
+          JSON.stringify(updatedData),
+        );
       }
-      
+
       setSavingStatus((prev) => ({ ...prev, about: "saved" }));
-      setTimeout(() => setSavingStatus((prev) => ({ ...prev, about: "idle" })), 2000);
-      
+      setTimeout(
+        () => setSavingStatus((prev) => ({ ...prev, about: "idle" })),
+        2000,
+      );
+
       setShowToast(true);
       if (!isExistingModel && modelId) {
         setActiveZones((prev) => [...prev, "principles"]);
@@ -358,11 +381,14 @@ export default function CommunityModelFlow({
           ...modelData,
           principles: updatedPrinciples,
         } as ExtendedAboutZoneData;
-        
+
         setModelData(updatedData);
-        
+
         // Update the cached data in localStorage
-        localStorage.setItem(`model_data_${modelId}`, JSON.stringify(updatedData));
+        localStorage.setItem(
+          `model_data_${modelId}`,
+          JSON.stringify(updatedData),
+        );
 
         setSavingStatus((prev) => ({ ...prev, principles: "saved" }));
         setTimeout(
@@ -413,11 +439,14 @@ export default function CommunityModelFlow({
         ...modelData,
         ...data,
       } as ExtendedAboutZoneData;
-      
+
       setModelData(updatedData);
-      
+
       // Update the cached data in localStorage
-      localStorage.setItem(`model_data_${modelId}`, JSON.stringify(updatedData));
+      localStorage.setItem(
+        `model_data_${modelId}`,
+        JSON.stringify(updatedData),
+      );
 
       setSavingStatus((prev) => ({ ...prev, [zone]: "saved" }));
       setTimeout(
@@ -455,11 +484,14 @@ export default function CommunityModelFlow({
           ...modelData,
           polls: [updatedPoll, ...(modelData?.polls?.slice(1) || [])],
         } as ExtendedAboutZoneData;
-        
+
         setModelData(updatedData);
-        
+
         // Update the cached data in localStorage
-        localStorage.setItem(`model_data_${modelId}`, JSON.stringify(updatedData));
+        localStorage.setItem(
+          `model_data_${modelId}`,
+          JSON.stringify(updatedData),
+        );
 
         setSavingStatus((prev) => ({ ...prev, advanced: "saved" }));
         setTimeout(
@@ -490,22 +522,24 @@ export default function CommunityModelFlow({
         <>
           <AdminModeIndicator />
           {modelData?.owner && (
-            <ImpersonationBanner 
-              user={{
-                uid: modelData.owner.uid,
-                name: modelData.owner.name,
-                email: 'user@example.com', // Placeholder since email is required but not in our data
-                clerkUserId: modelData.owner.clerkUserId || '',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                participantId: null
-              } as any} // Type assertion to avoid type errors
-              onExit={() => router.push('/admin')}
+            <ImpersonationBanner
+              user={
+                {
+                  uid: modelData.owner.uid,
+                  name: modelData.owner.name,
+                  email: "user@example.com", // Placeholder since email is required but not in our data
+                  clerkUserId: modelData.owner.clerkUserId || "",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  participantId: null,
+                } as any
+              } // Type assertion to avoid type errors
+              onExit={() => router.push("/admin")}
             />
           )}
         </>
       )}
-      
+
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">
           {modelData?.name && modelData.name.trim() ? (

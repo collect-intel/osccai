@@ -18,19 +18,20 @@ export function AdminModeIndicator() {
  * User impersonation banner component
  * Displays a banner at the top of the screen when impersonating a user
  */
-export function ImpersonationBanner({ 
-  user, 
-  onExit 
-}: { 
-  user: CommunityModelOwner; 
+export function ImpersonationBanner({
+  user,
+  onExit,
+}: {
+  user: CommunityModelOwner;
   onExit: () => void;
 }) {
   return (
     <div className="bg-yellow-100 border-yellow-400 border-b px-4 py-2 flex justify-between items-center sticky top-0 z-50">
       <div>
-        <span className="font-bold">Viewing as:</span> {user.name} ({user.email})
+        <span className="font-bold">Viewing as:</span> {user.name} ({user.email}
+        )
       </div>
-      <button 
+      <button
         onClick={onExit}
         className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
       >
@@ -38,4 +39,4 @@ export function ImpersonationBanner({
       </button>
     </div>
   );
-} 
+}

@@ -9,15 +9,15 @@ import { prisma } from "@/lib/db";
  */
 export async function isCurrentUserAdmin(): Promise<boolean> {
   const { userId: clerkUserId } = auth();
-  
+
   if (!clerkUserId) {
     return false;
   }
-  
+
   const owner = await prisma.communityModelOwner.findUnique({
-    where: { clerkUserId }
+    where: { clerkUserId },
   });
-  
+
   return owner?.isAdmin || false;
 }
 
@@ -27,7 +27,7 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
  */
 export async function requireAdmin() {
   const isAdmin = await isCurrentUserAdmin();
-  
+
   if (!isAdmin) {
     throw new Error("Admin access required");
   }
@@ -39,7 +39,7 @@ export async function requireAdmin() {
  */
 export async function getAllCommunityModels() {
   await requireAdmin();
-  
+
   const models = await prisma.communityModel.findMany({
     where: { deleted: false },
     include: {
@@ -48,15 +48,15 @@ export async function getAllCommunityModels() {
           uid: true,
           name: true,
           email: true,
-          clerkUserId: true
-        }
-      }
+          clerkUserId: true,
+        },
+      },
     },
     orderBy: {
-      updatedAt: 'desc'
-    }
+      updatedAt: "desc",
+    },
   });
-  
+
   return models;
 }
 
@@ -67,7 +67,7 @@ export async function getAllCommunityModels() {
  */
 export async function getCommunityModelAsAdmin(modelId: string) {
   await requireAdmin();
-  
+
   const model = await prisma.communityModel.findUnique({
     where: { uid: modelId },
     include: {
@@ -76,15 +76,15 @@ export async function getCommunityModelAsAdmin(modelId: string) {
           uid: true,
           name: true,
           email: true,
-          clerkUserId: true
-        }
+          clerkUserId: true,
+        },
       },
       activeConstitution: true,
       constitutions: true,
       polls: true,
-      apiKeys: true
-    }
+      apiKeys: true,
+    },
   });
-  
+
   return model;
-} 
+}
