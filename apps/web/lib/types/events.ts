@@ -16,6 +16,20 @@ export enum EventType {
 }
 
 /**
+ * Defines how an event should be displayed in the UI
+ */
+export interface EventDisplayInfo {
+  /** Brief description of what changed */
+  label: string;
+  /** The key path to the most important value to display */
+  valuePath?: string;
+  /** Format to apply to the value (e.g., 'text', 'score', 'boolean') */
+  valueFormat?: 'text' | 'score' | 'boolean' | 'version' | 'compare';
+  /** Maximum length for text values before truncation */
+  maxLength?: number;
+}
+
+/**
  * Defines resource types that can be affected by events
  */
 export enum ResourceType {
@@ -60,6 +74,7 @@ export interface ModelChangeMetadata {
       new: any;
     }
   >;
+  displayInfo?: EventDisplayInfo;
 }
 
 /**
@@ -68,6 +83,7 @@ export interface ModelChangeMetadata {
 export interface StatementAddedMetadata {
   pollId: string;
   text: string;
+  displayInfo?: EventDisplayInfo;
 }
 
 /**
@@ -77,6 +93,7 @@ export interface VoteCastMetadata {
   statementId: string;
   pollId: string;
   voteValue: string;
+  displayInfo?: EventDisplayInfo;
 }
 
 /**
@@ -86,6 +103,7 @@ export interface GacScoreUpdatedMetadata {
   pollId: string;
   oldScore?: number;
   newScore: number;
+  displayInfo?: EventDisplayInfo;
 }
 
 /**
@@ -94,6 +112,7 @@ export interface GacScoreUpdatedMetadata {
 export interface PollMetadata {
   modelId: string;
   title: string;
+  displayInfo?: EventDisplayInfo;
 }
 
 /**
@@ -102,6 +121,7 @@ export interface PollMetadata {
 export interface ConstitutionMetadata {
   modelId: string;
   version: number;
+  displayInfo?: EventDisplayInfo;
 }
 
 /**
@@ -110,4 +130,64 @@ export interface ConstitutionMetadata {
 export interface ApiKeyMetadata {
   modelId: string;
   keyName?: string;
-} 
+  displayInfo?: EventDisplayInfo;
+}
+
+/**
+ * Default display configurations for different event types
+ * Used to standardize how events are presented in the UI
+ */
+export const EVENT_DISPLAY_CONFIG: Record<EventType, EventDisplayInfo> = {
+  [EventType.MODEL_SETTING_CHANGE]: {
+    label: "Setting changes",
+    valueFormat: "compare",
+  },
+  [EventType.STATEMENT_ADDED]: {
+    label: "Statement",
+    valuePath: "text",
+    valueFormat: "text",
+    maxLength: 60,
+  },
+  [EventType.VOTE_CAST]: {
+    label: "Vote",
+    valuePath: "voteValue",
+    valueFormat: "text",
+  },
+  [EventType.GAC_SCORE_UPDATED]: {
+    label: "New Score",
+    valuePath: "newScore",
+    valueFormat: "score",
+  },
+  [EventType.POLL_CREATED]: {
+    label: "New Poll",
+    valuePath: "title",
+    valueFormat: "text",
+    maxLength: 40,
+  },
+  [EventType.POLL_UPDATED]: {
+    label: "Poll Updated",
+    valuePath: "title",
+    valueFormat: "text",
+    maxLength: 40,
+  },
+  [EventType.CONSTITUTION_GENERATED]: {
+    label: "Constitution",
+    valuePath: "version",
+    valueFormat: "version",
+  },
+  [EventType.CONSTITUTION_ACTIVATED]: {
+    label: "Constitution Activated",
+    valuePath: "version",
+    valueFormat: "version",
+  },
+  [EventType.API_KEY_CREATED]: {
+    label: "API Key",
+    valuePath: "keyName",
+    valueFormat: "text",
+  },
+  [EventType.API_KEY_REVOKED]: {
+    label: "API Key Revoked",
+    valuePath: "keyName",
+    valueFormat: "text",
+  },
+}; 

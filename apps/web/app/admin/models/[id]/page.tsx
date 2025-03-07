@@ -152,7 +152,8 @@ export default async function AdminModelViewPage({
             <div className="mt-2">
               <EventLogViewer
                 communityModelId={model.uid}
-                limit={15}
+                limit={20}
+                compact={true}
               />
             </div>
           </div>

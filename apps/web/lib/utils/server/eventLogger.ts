@@ -203,13 +203,36 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
       text: safeText,
     };
 
-    logSystemEvent({
-      eventType: EventType.STATEMENT_ADDED,
-      resourceType: ResourceType.STATEMENT,
-      resourceId: statement.uid,
-      communityModelId: statement.communityModelId,
-      actor,
-      metadata,
+    // Get the communityModelId from the associated poll
+    const getCommunityModelId = async () => {
+      try {
+        // First check if it's already included in the statement
+        if ('communityModelId' in statement) {
+          return (statement as any).communityModelId;
+        }
+        
+        // Otherwise fetch from the poll
+        const poll = await prisma.poll.findUnique({
+          where: { uid: statement.pollId },
+          select: { communityModelId: true }
+        });
+        return poll?.communityModelId;
+      } catch (error) {
+        console.error("Error getting communityModelId for statement:", error);
+        return null;
+      }
+    };
+
+    // Execute the log asynchronously but don't await it
+    getCommunityModelId().then(communityModelId => {
+      logSystemEvent({
+        eventType: EventType.STATEMENT_ADDED,
+        resourceType: ResourceType.STATEMENT,
+        resourceId: statement.uid,
+        communityModelId,
+        actor,
+        metadata,
+      });
     });
   } catch (error) {
     console.error("Failed to log statement added:", error);
@@ -224,20 +247,47 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
  * @param actor The user who cast the vote
  */
 export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
-  const metadata: VoteCastMetadata = {
-    statementId: vote.statementId,
-    pollId: pollId,
-    voteValue: vote.voteValue,
-  };
+  try {
+    const metadata: VoteCastMetadata = {
+      statementId: vote.statementId,
+      pollId: pollId,
+      voteValue: vote.voteValue,
+    };
 
-  logSystemEvent({
-    eventType: EventType.VOTE_CAST,
-    resourceType: ResourceType.VOTE,
-    resourceId: vote.uid,
-    communityModelId: vote.communityModelId,
-    actor,
-    metadata,
-  });
+    // Get the communityModelId from the associated poll
+    const getCommunityModelId = async () => {
+      try {
+        // Check if it's already included in the vote object
+        if ('communityModelId' in vote) {
+          return (vote as any).communityModelId;
+        }
+        
+        // Otherwise fetch from the poll
+        const poll = await prisma.poll.findUnique({
+          where: { uid: pollId },
+          select: { communityModelId: true }
+        });
+        return poll?.communityModelId;
+      } catch (error) {
+        console.error("Error getting communityModelId for vote:", error);
+        return null;
+      }
+    };
+
+    // Execute the log asynchronously but don't await it
+    getCommunityModelId().then(communityModelId => {
+      logSystemEvent({
+        eventType: EventType.VOTE_CAST,
+        resourceType: ResourceType.VOTE,
+        resourceId: vote.uid,
+        communityModelId,
+        actor,
+        metadata,
+      });
+    });
+  } catch (error) {
+    console.error("Failed to log vote cast:", error);
+  }
 }
 
 /**
@@ -253,20 +303,47 @@ export function logGacScoreUpdated(
   oldScore: number | undefined,
   newScore: number,
 ): void {
-  const metadata: GacScoreUpdatedMetadata = {
-    pollId: statement.pollId,
-    oldScore,
-    newScore,
-  };
+  try {
+    const metadata: GacScoreUpdatedMetadata = {
+      pollId: statement.pollId,
+      oldScore,
+      newScore,
+    };
 
-  logSystemEvent({
-    eventType: EventType.GAC_SCORE_UPDATED,
-    resourceType: ResourceType.STATEMENT,
-    resourceId: statement.uid,
-    communityModelId: statement.communityModelId,
-    actor: SYSTEM_ACTOR,
-    metadata,
-  });
+    // Get the communityModelId from the associated poll
+    const getCommunityModelId = async () => {
+      try {
+        // Check if it's already included in the statement object
+        if ('communityModelId' in statement) {
+          return (statement as any).communityModelId;
+        }
+        
+        // Otherwise fetch from the poll
+        const poll = await prisma.poll.findUnique({
+          where: { uid: statement.pollId },
+          select: { communityModelId: true }
+        });
+        return poll?.communityModelId;
+      } catch (error) {
+        console.error("Error getting communityModelId for statement:", error);
+        return null;
+      }
+    };
+
+    // Execute the log asynchronously but don't await it
+    getCommunityModelId().then(communityModelId => {
+      logSystemEvent({
+        eventType: EventType.GAC_SCORE_UPDATED,
+        resourceType: ResourceType.STATEMENT,
+        resourceId: statement.uid,
+        communityModelId,
+        actor: SYSTEM_ACTOR,
+        metadata,
+      });
+    });
+  } catch (error) {
+    console.error("Failed to log GAC score update:", error);
+  }
 }
 
 /**
@@ -276,19 +353,23 @@ export function logGacScoreUpdated(
  * @param actor The user who created the poll
  */
 export function logPollCreated(poll: Poll, actor: Actor): void {
-  const metadata: PollMetadata = {
-    modelId: poll.communityModelId,
-    title: poll.title,
-  };
+  try {
+    const metadata: PollMetadata = {
+      modelId: poll.communityModelId,
+      title: poll.title,
+    };
 
-  logSystemEvent({
-    eventType: EventType.POLL_CREATED,
-    resourceType: ResourceType.POLL,
-    resourceId: poll.uid,
-    communityModelId: poll.communityModelId,
-    actor,
-    metadata,
-  });
+    logSystemEvent({
+      eventType: EventType.POLL_CREATED,
+      resourceType: ResourceType.POLL,
+      resourceId: poll.uid,
+      communityModelId: poll.communityModelId,
+      actor,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Failed to log poll created:", error);
+  }
 }
 
 /**
@@ -298,19 +379,23 @@ export function logPollCreated(poll: Poll, actor: Actor): void {
  * @param actor The user who updated the poll
  */
 export function logPollUpdated(poll: Poll, actor: Actor): void {
-  const metadata: PollMetadata = {
-    modelId: poll.communityModelId,
-    title: poll.title,
-  };
+  try {
+    const metadata: PollMetadata = {
+      modelId: poll.communityModelId,
+      title: poll.title,
+    };
 
-  logSystemEvent({
-    eventType: EventType.POLL_UPDATED,
-    resourceType: ResourceType.POLL,
-    resourceId: poll.uid,
-    communityModelId: poll.communityModelId,
-    actor,
-    metadata,
-  });
+    logSystemEvent({
+      eventType: EventType.POLL_UPDATED,
+      resourceType: ResourceType.POLL,
+      resourceId: poll.uid,
+      communityModelId: poll.communityModelId,
+      actor,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Failed to log poll updated:", error);
+  }
 }
 
 /**
@@ -323,46 +408,54 @@ export function logConstitutionGenerated(
   constitution: Constitution,
   actor: Actor,
 ): void {
-  const metadata: ConstitutionMetadata = {
-    modelId: constitution.modelId,
-    version: constitution.version,
-  };
+  try {
+    const metadata: ConstitutionMetadata = {
+      modelId: constitution.modelId,
+      version: constitution.version,
+    };
 
-  logSystemEvent({
-    eventType: EventType.CONSTITUTION_GENERATED,
-    resourceType: ResourceType.CONSTITUTION,
-    resourceId: constitution.uid,
-    communityModelId: constitution.communityModelId,
-    actor,
-    metadata,
-  });
+    logSystemEvent({
+      eventType: EventType.CONSTITUTION_GENERATED,
+      resourceType: ResourceType.CONSTITUTION,
+      resourceId: constitution.uid,
+      communityModelId: constitution.modelId,
+      actor,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Failed to log constitution generated:", error);
+  }
 }
 
 /**
  * Logs when a constitution is activated for a model
  * 
- * @param constitution The activated constitution
- * @param modelId The ID of the model it was activated for
- * @param actor The user who activated it
+ * @param constitution The constitution being activated
+ * @param modelId The ID of the model the constitution is activated for
+ * @param actor The user who activated the constitution
  */
 export function logConstitutionActivated(
   constitution: Constitution,
   modelId: string,
   actor: Actor,
 ): void {
-  const metadata: ConstitutionMetadata = {
-    modelId: modelId,
-    version: constitution.version,
-  };
+  try {
+    const metadata: ConstitutionMetadata = {
+      modelId,
+      version: constitution.version,
+    };
 
-  logSystemEvent({
-    eventType: EventType.CONSTITUTION_ACTIVATED,
-    resourceType: ResourceType.CONSTITUTION,
-    resourceId: constitution.uid,
-    communityModelId: constitution.communityModelId,
-    actor,
-    metadata,
-  });
+    logSystemEvent({
+      eventType: EventType.CONSTITUTION_ACTIVATED,
+      resourceType: ResourceType.CONSTITUTION,
+      resourceId: constitution.uid,
+      communityModelId: modelId,
+      actor,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Failed to log constitution activation:", error);
+  }
 }
 
 /**
@@ -372,41 +465,49 @@ export function logConstitutionActivated(
  * @param actor The user who created the key
  */
 export function logApiKeyCreated(apiKey: ApiKey, actor: Actor): void {
-  const metadata: ApiKeyMetadata = {
-    modelId: apiKey.modelId,
-    keyName: apiKey.name || undefined,
-  };
+  try {
+    const metadata: ApiKeyMetadata = {
+      modelId: apiKey.modelId,
+      keyName: apiKey.name || undefined,
+    };
 
-  logSystemEvent({
-    eventType: EventType.API_KEY_CREATED,
-    resourceType: ResourceType.API_KEY,
-    resourceId: apiKey.uid,
-    communityModelId: apiKey.communityModelId,
-    actor,
-    metadata,
-  });
+    logSystemEvent({
+      eventType: EventType.API_KEY_CREATED,
+      resourceType: ResourceType.API_KEY,
+      resourceId: apiKey.uid,
+      communityModelId: apiKey.modelId,
+      actor,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Failed to log API key created:", error);
+  }
 }
 
 /**
  * Logs when an API key is revoked
  * 
- * @param apiKey The revoked API key
+ * @param apiKey The API key being revoked
  * @param actor The user who revoked the key
  */
 export function logApiKeyRevoked(apiKey: ApiKey, actor: Actor): void {
-  const metadata: ApiKeyMetadata = {
-    modelId: apiKey.modelId,
-    keyName: apiKey.name || undefined,
-  };
+  try {
+    const metadata: ApiKeyMetadata = {
+      modelId: apiKey.modelId,
+      keyName: apiKey.name || undefined,
+    };
 
-  logSystemEvent({
-    eventType: EventType.API_KEY_REVOKED,
-    resourceType: ResourceType.API_KEY,
-    resourceId: apiKey.uid,
-    communityModelId: apiKey.communityModelId,
-    actor,
-    metadata,
-  });
+    logSystemEvent({
+      eventType: EventType.API_KEY_REVOKED,
+      resourceType: ResourceType.API_KEY,
+      resourceId: apiKey.uid,
+      communityModelId: apiKey.modelId,
+      actor,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Failed to log API key revoked:", error);
+  }
 }
 
 /**
