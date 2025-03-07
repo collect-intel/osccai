@@ -137,6 +137,8 @@ export function logModelChanges(
       "goal",
       "bio",
       "logoUrl",
+      "requireAuth",
+      "allowContributions",
       "published",
       "apiEnabled",
       "autoCreateConstitution",
