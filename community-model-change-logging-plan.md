@@ -2,7 +2,7 @@
 
 ## Overview
 
-This plan outlines a simplified yet robust implementation for tracking activities across the CommunityModels platform. The system focuses on providing essential audit trails while minimizing complexity for this MVP stage.
+This plan outlines a simplified yet robust implementation for tracking activities across the CommunityModels platform. The system focuses on providing essential audit trails while minimizing complexity for this MVP stage of the CommunityModels platform.
 
 ## Purpose
 
@@ -885,3 +885,47 @@ This approach implements logging while ensuring that the core functionality:
 - ✅ **Simplifies integration** with existing action functions
 
 The system is designed to be easily maintainable and expandable as the application grows beyond the MVP stage.
+
+## Implementation Checklist
+
+### 1. Database Schema Changes
+- [ ] Add `SystemEvent` model to the Prisma schema in `apps/web/prisma/schema.prisma`
+- [ ] Run Prisma migration to update the database
+
+### 2. Type Definitions
+- [ ] Create `lib/types/events.ts` file with all event-related type definitions
+- [ ] Define `EventType` enum with all event types
+- [ ] Define `ResourceType` enum
+- [ ] Define interfaces for `Actor`, `SystemEventParams`, and event-specific metadata types
+
+### 3. Event Logger Implementation
+- [ ] Create `lib/utils/server/eventLogger.ts` with core logging functionality
+- [ ] Implement `logSystemEvent` function for direct database logging
+- [ ] Implement helper functions for each event type (model changes, statement added, etc.)
+- [ ] Add utility functions for creating actors from different user types
+
+### 4. Integration with Existing Actions
+- [ ] Modify `updateCommunityModel` in `lib/actions.ts` to log model changes
+- [ ] Modify `createPoll` in `lib/actions.ts` to log poll creation
+- [ ] Modify `editPoll` in `lib/actions.ts` to log poll updates
+- [ ] Modify `submitStatement` in `lib/actions.ts` to log statement addition
+- [ ] Modify `submitVote` in `lib/actions.ts` to log vote casting
+- [ ] Modify functions that update GAC scores to log score updates
+- [ ] Modify constitution-related functions to log constitution events
+- [ ] Modify API key-related functions to log key creation/revocation
+
+### 5. API Route for Event Retrieval
+- [ ] Create `app/api/events/route.ts` for fetching system events
+- [ ] Implement filtering based on query parameters
+- [ ] Add proper authorization checks
+
+### 6. Admin UI Components
+- [ ] Create `lib/components/EventLogViewer.tsx` component
+- [ ] Implement event formatting for different event types
+- [ ] Add pagination support
+
+### 7. Admin Dashboard Integration
+- [ ] Modify `apps/web/app/admin/models/[id]/page.tsx` to add the event log section
+- [ ] Add filtering options for the admin to view specific event types
+
+
