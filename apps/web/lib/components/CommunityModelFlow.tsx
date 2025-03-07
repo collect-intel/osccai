@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AboutZone from "./flow/AboutZone";
 import PrinciplesZone from "./flow/PrinciplesZone";
 import PollZone from "./flow/PollZone";
@@ -20,8 +20,10 @@ import { debounce } from "lodash";
 import { Constitution, Poll, Statement, ApiKey, Vote } from "@prisma/client";
 import Spinner from "./Spinner";
 import type { ExtendedPoll, Principle } from "@/lib/types";
+import { AdminModeIndicator, ImpersonationBanner } from "./AdminComponents";
 
 interface ExtendedAboutZoneData extends AboutZoneData {
+  uid?: string;
   principles: Principle[];
   requireAuth: boolean;
   allowContributions: boolean;
@@ -52,6 +54,8 @@ export default function CommunityModelFlow({
   initialModelId,
 }: CommunityModelFlowProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isAdminMode = searchParams.get('admin') === 'true';
   const [activeZones, setActiveZones] = useState<string[]>(["about"]);
   const [modelId, setModelId] = useState<string | null>(initialModelId || null);
   const [isSaving, setIsSaving] = useState(false);
@@ -110,41 +114,48 @@ export default function CommunityModelFlow({
 
   useEffect(() => {
     async function fetchModelData() {
-      if (modelId) {
+      // Skip fetching if we already have model data for this modelId
+      if (modelId && (!modelData || modelData.uid !== modelId)) {
         setIsLoading(true);
         try {
+          console.log("Fetching model data for ID:", modelId);
           const fetchedModelData = await getCommunityModel(modelId);
           console.log("Loaded model data:", fetchedModelData);
           if (fetchedModelData) {
-            setModelData({
-              name: fetchedModelData.name || "Default Name",
-              bio: fetchedModelData.bio || "",
-              goal: fetchedModelData.goal || "",
-              logoUrl: fetchedModelData.logoUrl || "",
-              principles: fetchedModelData.principles.map((p) => ({
-                id: p.id,
-                text: p.text,
-                gacScore: p.gacScore,
-              })),
-              requireAuth: fetchedModelData.requireAuth || false,
-              allowContributions: fetchedModelData.allowContributions || false,
-              constitutions: fetchedModelData.constitutions || [],
-              activeConstitutionId:
-                fetchedModelData.activeConstitutionId || undefined,
-              polls: fetchedModelData.polls || [],
-              published: fetchedModelData.published || false,
-              apiEnabled: fetchedModelData.apiEnabled || false,
-              advancedOptionsEnabled:
-                fetchedModelData.advancedOptionsEnabled || false,
-              autoCreateConstitution:
-                fetchedModelData.autoCreateConstitution || false,
-              apiKeys: [],
-              owner: {
-                uid: fetchedModelData.owner.uid || "",
-                name: fetchedModelData.owner.name,
-                clerkUserId: fetchedModelData.owner.clerkUserId || "",
-              },
+            // Preserve any existing data that might not be in the fetched data
+            setModelData(prevData => {
+              const newData = {
+                uid: fetchedModelData.uid,
+                name: fetchedModelData.name || prevData?.name || "Default Name",
+                bio: fetchedModelData.bio || prevData?.bio || "",
+                goal: fetchedModelData.goal || prevData?.goal || "",
+                logoUrl: fetchedModelData.logoUrl || prevData?.logoUrl || "",
+                principles: fetchedModelData.principles.map((p) => ({
+                  id: p.id,
+                  text: p.text,
+                  gacScore: p.gacScore,
+                })),
+                requireAuth: fetchedModelData.requireAuth || prevData?.requireAuth || false,
+                allowContributions: fetchedModelData.allowContributions || prevData?.allowContributions || false,
+                constitutions: fetchedModelData.constitutions || prevData?.constitutions || [],
+                activeConstitutionId:
+                  fetchedModelData.activeConstitutionId || prevData?.activeConstitutionId || undefined,
+                polls: fetchedModelData.polls || prevData?.polls || [],
+                published: fetchedModelData.published || prevData?.published || false,
+                apiEnabled: fetchedModelData.apiEnabled || prevData?.apiEnabled || false,
+                advancedOptionsEnabled:
+                  fetchedModelData.advancedOptionsEnabled || prevData?.advancedOptionsEnabled || false,
+                autoCreateConstitution:
+                  fetchedModelData.autoCreateConstitution || prevData?.autoCreateConstitution || false,
+                // Keep existing apiKeys if they exist in prevData
+                apiKeys: prevData?.apiKeys || [],
+                owner: fetchedModelData.owner,
+              };
+              console.log("Updated model data:", newData);
+              return newData as ExtendedAboutZoneData;
             });
+            
+            // After setting the model data, check for hash and set active zones
             setActiveZones([
               "about",
               "principles",
@@ -152,7 +163,7 @@ export default function CommunityModelFlow({
               "communityModel",
               "advanced",
             ]);
-
+            
             // After setting the model data, check for hash
             handleHashChange();
           } else {
@@ -163,7 +174,10 @@ export default function CommunityModelFlow({
           console.error("Error fetching model data:", error);
         } finally {
           setIsLoading(false);
+          setIsPageLoading(false);
         }
+      } else {
+        setIsPageLoading(false);
       }
     }
 
@@ -185,14 +199,32 @@ export default function CommunityModelFlow({
             gacScore: p.gacScore ?? null,
           })),
         });
+        
+        // Update the model data before changing the URL
+        const updatedData = {
+          ...data,
+          uid: newModelId,
+          name: data.name || "",
+          bio: data.bio || "",
+          goal: data.goal || "",
+        } as ExtendedAboutZoneData;
+        
+        setModelData(updatedData);
         setModelId(newModelId);
-        router.push(`/community-models/flow/${newModelId}`);
+        
+        // Use router.replace instead of router.push to avoid a full page reload
+        router.replace(`/community-models/flow/${newModelId}`, { scroll: false });
       } else {
         await updateCommunityModel(modelId, data);
+        setModelData(
+          (prevData) => ({ 
+            ...prevData, 
+            ...data,
+            uid: modelId // Ensure the uid is preserved
+          }) as ExtendedAboutZoneData,
+        );
       }
-      setModelData(
-        (prevData) => ({ ...prevData, ...data }) as ExtendedAboutZoneData,
-      );
+      
       setShowToast(true);
       if (!isExistingModel) {
         setActiveZones((prev) => [...prev, "principles"]);
@@ -351,10 +383,30 @@ export default function CommunityModelFlow({
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      {isAdminMode && (
+        <>
+          <AdminModeIndicator />
+          {modelData?.owner && (
+            <ImpersonationBanner 
+              user={{
+                uid: modelData.owner.uid,
+                name: modelData.owner.name,
+                email: 'user@example.com', // Placeholder since email is required but not in our data
+                clerkUserId: modelData.owner.clerkUserId || '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                participantId: null
+              } as any} // Type assertion to avoid type errors
+              onExit={() => router.push('/admin')}
+            />
+          )}
+        </>
+      )}
+      
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">
-          {modelData?.name.trim() ? (
+          {modelData?.name && modelData.name.trim() ? (
             modelData.name
           ) : (
             <span className="font-bold text-2xl">New Community Model</span>
@@ -522,7 +574,7 @@ export default function CommunityModelFlow({
                 <AdvancedZone
                   isActive={activeZones.includes("advanced")}
                   modelId={modelId || initialModelId!}
-                  ownerId={modelData.owner?.uid || ""}
+                  ownerId={modelData?.owner?.uid || ""}
                   apiKeys={modelData.apiKeys || []}
                   onToggle={() => toggleZone("advanced")}
                   savingStatus={savingStatus.advanced}

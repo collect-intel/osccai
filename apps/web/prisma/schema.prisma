@@ -14,6 +14,7 @@ model CommunityModelOwner {
   email           String
   participantId   String?          @unique
   clerkUserId     String?          @unique
+  isAdmin         Boolean          @default(false)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   apiKeys         ApiKey[]

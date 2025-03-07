@@ -12,6 +12,7 @@ import {
 import { currentUser } from "@clerk/nextjs/server";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import type { ExtendedPoll, Principle } from "@/lib/types";
+import { isCurrentUserAdmin } from "@/lib/utils/admin";
 
 export async function getUserCommunityModels() {
   const { userId: clerkUserId } = auth();
@@ -109,7 +110,6 @@ export async function getCommunityModel(modelId: string): Promise<{
     uid: string;
     clerkUserId: string | null;
     name: string;
-    email: string;
     imageUrl: string | null;
   };
   principles: Principle[];
@@ -118,21 +118,65 @@ export async function getCommunityModel(modelId: string): Promise<{
   activeConstitutionId: string | null;
   requireAuth: boolean;
   allowContributions: boolean;
-}> {
+} | null> {
+  const { userId: clerkUserId } = auth();
+
+  if (!clerkUserId) {
+    return null;
+  }
+
+  const dbUser = await prisma.communityModelOwner.findUnique({
+    where: { clerkUserId },
+  });
+
+  if (!dbUser) {
+    return null;
+  }
+
+  // Check if user is admin
+  const isAdmin = await isCurrentUserAdmin();
+
+  // If user is admin, allow access to any model
+  // Otherwise, only allow access to models owned by the user
   const model = await prisma.communityModel.findUnique({
-    where: { uid: modelId },
+    where: {
+      uid: modelId,
+      ...(isAdmin ? {} : { ownerId: dbUser.uid }),
+      deleted: false,
+    },
     include: {
-      owner: true,
+      owner: {
+        select: {
+          uid: true,
+          name: true,
+          clerkUserId: true,
+        },
+      },
+      activeConstitution: true,
+      constitutions: {
+        where: {
+          deleted: false,
+        },
+        orderBy: {
+          version: "desc",
+        },
+      },
       polls: {
+        where: {
+          deleted: false,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
         include: {
           statements: {
-            include: {
-              votes: true,
+            where: {
+              deleted: false,
             },
           },
         },
       },
-      constitutions: true,
+      apiKeys: true,
     },
   });
 
@@ -141,12 +185,11 @@ export async function getCommunityModel(modelId: string): Promise<{
   }
 
   const firstPoll = model.polls[0];
-  const principles =
-    firstPoll?.statements.map((s) => ({
-      id: s.uid,
-      text: s.text,
-      gacScore: s.gacScore ?? null,
-    })) || [];
+  const principles = firstPoll?.statements?.map((s) => ({
+    id: s.uid,
+    text: s.text,
+    gacScore: s.gacScore ?? null,
+  })) || [];
 
   return {
     uid: model.uid,
@@ -162,7 +205,6 @@ export async function getCommunityModel(modelId: string): Promise<{
       uid: model.owner.uid,
       clerkUserId: model.owner.clerkUserId,
       name: model.owner.name,
-      email: model.owner.email,
       imageUrl: null, // Note: Add this field to CommunityModelOwner if needed
     },
     principles,
