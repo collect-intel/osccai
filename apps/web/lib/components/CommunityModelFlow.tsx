@@ -170,42 +170,13 @@ export default function CommunityModelFlow({
         try {
           console.log("Fetching model data for ID:", modelId);
 
-          // First check localStorage for cached data
-          const cachedData = localStorage.getItem(`model_data_${modelId}`);
-          let parsedCachedData = null;
-
-          if (cachedData) {
-            try {
-              parsedCachedData = JSON.parse(cachedData);
-              console.log("Found cached model data:", parsedCachedData);
-
-              // If we have valid cached data and it matches the current modelId, use it
-              if (parsedCachedData && parsedCachedData.uid === modelId) {
-                setModelData(parsedCachedData);
-                setActiveZones([
-                  "about",
-                  "principles",
-                  "poll",
-                  "communityModel",
-                  "advanced",
-                ]);
-                handleHashChange();
-                setIsLoading(false);
-                setIsPageLoading(false);
-                return; // Exit early if we have valid cached data
-              }
-            } catch (error) {
-              console.error("Error parsing cached model data:", error);
-            }
-          }
-
-          // If we don't have valid cached data, fetch from server
+          // Fetch fresh data from server instead of relying on potentially stale cache
           const fetchedModelData = await getCommunityModel(modelId);
           console.log("Loaded model data from server:", fetchedModelData);
 
           if (fetchedModelData) {
-            // Preserve any existing data that might not be in the fetched data
-            const newData = {
+            // Create a complete model data object from the fetched data
+            const newData: ExtendedAboutZoneData = {
               uid: fetchedModelData.uid,
               name: fetchedModelData.name || "Default Name",
               bio: fetchedModelData.bio || "",
@@ -228,20 +199,22 @@ export default function CommunityModelFlow({
                 fetchedModelData.advancedOptionsEnabled || false,
               autoCreateConstitution:
                 fetchedModelData.autoCreateConstitution || false,
-              apiKeys: [],
-              owner: fetchedModelData.owner,
+              // Handle optional/custom properties
+              apiKeys: (fetchedModelData as any).apiKeys || [],
+              owner: {
+                uid: fetchedModelData.owner.uid,
+                name: fetchedModelData.owner.name,
+                clerkUserId: fetchedModelData.owner.clerkUserId || "",
+              },
             };
 
-            console.log("Updated model data:", newData);
-            setModelData(newData as ExtendedAboutZoneData);
-
-            // Cache the model data in localStorage
+            // Update cache with this fresh data
             localStorage.setItem(
               `model_data_${modelId}`,
-              JSON.stringify(newData),
+              JSON.stringify(newData)
             );
 
-            // After setting the model data, check for hash and set active zones
+            setModelData(newData);
             setActiveZones([
               "about",
               "principles",
@@ -372,14 +345,19 @@ export default function CommunityModelFlow({
             }))
           : [];
 
+        // Include toggle settings when updating principles
         await updateCommunityModel(modelId, {
           principles: updatedPrinciples,
+          requireAuth: data.requireAuth !== undefined ? data.requireAuth : modelData?.requireAuth,
+          allowContributions: data.allowContributions !== undefined ? data.allowContributions : modelData?.allowContributions,
         });
 
         // Update the model data in state
         const updatedData = {
           ...modelData,
           principles: updatedPrinciples,
+          requireAuth: data.requireAuth !== undefined ? data.requireAuth : modelData?.requireAuth,
+          allowContributions: data.allowContributions !== undefined ? data.allowContributions : modelData?.allowContributions,
         } as ExtendedAboutZoneData;
 
         setModelData(updatedData);

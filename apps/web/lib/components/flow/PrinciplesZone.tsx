@@ -72,6 +72,12 @@ export default function PrinciplesZone({
     [updateModelData],
   );
 
+  // Update local state when props change (important for refreshes)
+  useEffect(() => {
+    setRequireAuth(modelData.requireAuth);
+    setAllowContributions(modelData.allowContributions);
+  }, [modelData.requireAuth, modelData.allowContributions]);
+
   const addPrinciple = () => {
     const newPrinciple: PrincipleData = {
       id: `new-${Date.now()}`,
@@ -154,16 +160,21 @@ export default function PrinciplesZone({
       setAllowContributions(value);
     }
     
-    // Include the current principles along with the toggle change
+    // Include the current principles along with the toggle changes
     // to prevent the backend from deleting all principles
-    debouncedUpdateModelData({ 
-      [field]: value,
+    const updatedData = { 
       principles: principles.filter(p => !p.isLoading).map(p => ({
         id: p.id,
         text: p.text,
         gacScore: 0 // Default score if not available
-      }))
-    });
+      })),
+      // Always include both toggle values to ensure both are persisted
+      requireAuth: field === "requireAuth" ? value : requireAuth,
+      allowContributions: field === "allowContributions" ? value : allowContributions,
+    };
+    
+    console.log(`Updating ${field} to ${value}`, updatedData);
+    debouncedUpdateModelData(updatedData);
   };
 
   const handleGeneratePrinciples = async () => {
