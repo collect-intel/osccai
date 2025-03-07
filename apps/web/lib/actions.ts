@@ -26,6 +26,22 @@ import { getPollData } from "./data";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import { generateApiKey } from "@/lib/utils/server/api-keys";
 import type { Prisma } from "@prisma/client";
+import {
+  createActorFromOwner,
+  logModelChanges,
+  logPollCreated,
+  createActorFromParticipant,
+  logPollUpdated,
+  logStatementAdded,
+  logVoteCast,
+  logGacScoreUpdated,
+  SYSTEM_ACTOR,
+  logConstitutionGenerated,
+  logConstitutionActivated,
+  logApiKeyCreated,
+  logApiKeyRevoked,
+} from "@/lib/utils/server/eventLogger";
+import { isCurrentUserAdmin } from "@/lib/utils/admin";
 const createId = initCuid({ length: 10 });
 
 export async function createPoll(
@@ -66,6 +82,10 @@ export async function createPoll(
     },
   });
 
+  // Log the poll creation
+  const actor = createActorFromParticipant(participant);
+  logPollCreated(newPoll, actor);
+
   return newPoll;
 }
 
@@ -78,12 +98,20 @@ export async function editPoll(
     allowParticipantStatements?: boolean;
   },
 ): Promise<Poll> {
+  const participant = await getOrCreateParticipant();
+  if (!participant) throw new Error("Participant not found");
+
   const updatedPoll = await prisma.poll.update({
     where: { uid },
     data: {
       ...data,
     },
   });
+
+  // Log the poll update
+  const actor = createActorFromParticipant(participant);
+  logPollUpdated(updatedPoll, actor);
+
   revalidatePath(`/polls/${uid}`);
   return updatedPoll;
 }
@@ -185,6 +213,10 @@ export async function submitStatement(
   const statement = await prisma.statement.create({
     data: { pollId, text, participantId },
   });
+
+  // Log the statement addition
+  const actor = createActorFromParticipant(participant);
+  await logStatementAdded(statement, actor, poll.communityModelId);
 
   revalidatePath(`/polls/${pollId}`);
   return statement;
@@ -405,15 +437,19 @@ export async function submitVote(
     }
   }
 
+  const pollId = statement.pollId;
+
   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // First, check if the statement exists
-    const statement = await tx.statement.findUnique({
+    const statementCheck = await tx.statement.findUnique({
       where: { uid: statementId },
     });
 
-    if (!statement) {
+    if (!statementCheck) {
       throw new Error("Statement not found");
     }
+
+    let vote;
 
     if (previousVote) {
       // Update the existing vote
@@ -425,12 +461,20 @@ export async function submitVote(
         data: { voteValue },
       });
 
+      // Get the updated vote for logging
+      vote = await tx.vote.findFirst({
+        where: {
+          statementId,
+          participantId,
+        },
+      });
+
       // Update vote counts
       await updateVoteCounts(statementId, previousVote, voteValue);
     } else {
       // Create a new vote
       try {
-        await retryOperation(() =>
+        vote = await retryOperation(() =>
           tx.vote.create({
             data: { statementId, voteValue, participantId },
           }),
@@ -441,6 +485,37 @@ export async function submitVote(
       } catch (error) {
         console.error("Error creating vote:", error);
         throw new Error("Failed to create vote");
+      }
+    }
+
+    // Log the vote
+    if (vote) {
+      const actor = createActorFromParticipant(participant);
+      try {
+        // Get the communityModelId from the statement's poll
+        const statementWithPoll = await tx.statement.findUnique({
+          where: { uid: statementId },
+          select: {
+            poll: {
+              select: { communityModelId: true },
+            },
+          },
+        });
+
+        // Pass communityModelId if available
+        await logVoteCast(
+          vote,
+          pollId,
+          actor,
+          statementWithPoll?.poll?.communityModelId,
+        );
+      } catch (error) {
+        // Fall back to logging without communityModelId
+        console.error(
+          "Error getting communityModelId for vote logging:",
+          error,
+        );
+        await logVoteCast(vote, pollId, actor);
       }
     }
 
@@ -470,10 +545,28 @@ async function updateVoteCounts(
     updateData.disagreeCount = { increment: 1 };
   if (newVote === VoteValue.PASS) updateData.passCount = { increment: 1 };
 
-  await prisma.statement.update({
+  // Fetch the statement to get the old GAC score
+  const statement = await prisma.statement.findUnique({
+    where: { uid: statementId },
+    select: { gacScore: true },
+  });
+
+  const oldScore = statement?.gacScore ?? undefined;
+
+  // Update the statement
+  const updatedStatement = await prisma.statement.update({
     where: { uid: statementId },
     data: updateData,
   });
+
+  // If GAC score has changed, log it
+  if (updatedStatement.gacScore !== oldScore) {
+    logGacScoreUpdated(
+      updatedStatement,
+      oldScore,
+      updatedStatement.gacScore || 0,
+    );
+  }
 }
 
 async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
@@ -484,10 +577,28 @@ async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
     updateData.disagreeCount = { increment: 1 };
   if (voteValue === VoteValue.PASS) updateData.passCount = { increment: 1 };
 
-  await prisma.statement.update({
+  // Fetch the statement to get the old GAC score
+  const statement = await prisma.statement.findUnique({
+    where: { uid: statementId },
+    select: { gacScore: true },
+  });
+
+  const oldScore = statement?.gacScore ?? undefined;
+
+  // Update the statement
+  const updatedStatement = await prisma.statement.update({
     where: { uid: statementId },
     data: updateData,
   });
+
+  // If GAC score has changed, log it
+  if (updatedStatement.gacScore !== oldScore) {
+    logGacScoreUpdated(
+      updatedStatement,
+      oldScore,
+      updatedStatement.gacScore || 0,
+    );
+  }
 }
 
 export async function generateCsv(pollId: string): Promise<string> {
@@ -529,10 +640,9 @@ export async function generateCsv(pollId: string): Promise<string> {
 }
 
 async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
-  console.log("Getting or creating owner for clerk user:", clerkUserId);
-
   let owner = await prisma.communityModelOwner.findUnique({
     where: { clerkUserId },
+    select: { uid: true, name: true, email: true, participantId: true },
   });
 
   if (!owner) {
@@ -587,7 +697,9 @@ async function getOrCreateOwnerFromClerkId(clerkUserId: string) {
     console.log("Owner found:", owner);
   }
 
-  return owner;
+  // Check if user is admin (separate query to avoid linter error)
+  const isAdmin = await isCurrentUserAdmin();
+  return { ...owner, isAdmin };
 }
 
 async function createInitialPoll(
@@ -783,6 +895,20 @@ export async function unpublishModel(formData: FormData) {
 export async function createConstitution(
   communityModelId: string,
 ): Promise<Constitution> {
+  // Get the current user
+  const { userId: clerkUserId } = auth();
+  if (!clerkUserId) {
+    throw new Error("User not authenticated");
+  }
+
+  const owner = await prisma.communityModelOwner.findUnique({
+    where: { clerkUserId },
+  });
+
+  if (!owner) {
+    throw new Error("Owner not found");
+  }
+
   const communityModel = await prisma.communityModel.findUnique({
     where: { uid: communityModelId },
     include: {
@@ -837,6 +963,15 @@ export async function createConstitution(
     },
   });
 
+  // Create actor and log the constitution generation
+  const actor = createActorFromOwner({
+    uid: owner.uid,
+    name: owner.name,
+    isAdmin: false,
+  });
+
+  logConstitutionGenerated(newConstitution, actor);
+
   revalidatePath(`/community-models/${communityModelId}`);
   return newConstitution;
 }
@@ -845,15 +980,40 @@ export async function setActiveConstitution(
   communityModelId: string,
   constitutionId: string,
 ): Promise<void> {
+  // Get the current user
+  const { userId: clerkUserId } = auth();
+  if (!clerkUserId) {
+    throw new Error("User not authenticated");
+  }
+
+  const owner = await prisma.communityModelOwner.findUnique({
+    where: { clerkUserId },
+  });
+
+  if (!owner) {
+    throw new Error("Owner not found");
+  }
+
+  // Update the community model with the active constitution
   await prisma.communityModel.update({
     where: { uid: communityModelId },
     data: { activeConstitutionId: constitutionId },
   });
 
-  await prisma.constitution.update({
+  // Update the constitution status
+  const constitution = await prisma.constitution.update({
     where: { uid: constitutionId },
     data: { status: "ACTIVE" },
   });
+
+  // Create actor and log the constitution activation
+  const actor = createActorFromOwner({
+    uid: owner.uid,
+    name: owner.name,
+    isAdmin: false,
+  });
+
+  logConstitutionActivated(constitution, communityModelId, actor);
 
   revalidatePath(`/community-models/${communityModelId}`);
   revalidatePath(`/community-models/constitution/${constitutionId}`);
@@ -969,6 +1129,45 @@ export async function updateCommunityModel(
   } = data;
 
   try {
+    // Get the current model state before update for logging
+    const currentModel = await prisma.communityModel.findUnique({
+      where: { uid: modelId },
+      include: { owner: true },
+    });
+
+    if (!currentModel) {
+      throw new Error("Model not found");
+    }
+
+    // Get the current user for logging
+    const { userId: clerkUserId } = auth();
+    if (!clerkUserId) {
+      throw new Error("User not authenticated");
+    }
+
+    const owner = await prisma.communityModelOwner.findUnique({
+      where: { clerkUserId },
+    });
+
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+
+    // Check if user is owner or admin
+    const isAdmin = await isCurrentUserAdmin();
+    const isOwner = currentModel.ownerId === owner.uid;
+
+    if (!isOwner && !isAdmin) {
+      throw new Error("Not authorized to update this model");
+    }
+
+    // Create actor for logging
+    const actor = createActorFromOwner({
+      uid: owner.uid,
+      name: owner.name,
+      isAdmin: !isOwner && isAdmin,
+    });
+
     const updatedModel = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         // Update the community model
@@ -1038,6 +1237,9 @@ export async function updateCommunityModel(
                   },
                 });
                 updatedPrinciples.push(newStatement);
+
+                // Log the new statement
+                await logStatementAdded(newStatement, actor, modelId);
               } else {
                 // This is an existing principle, update it
                 const updatedStatement = await tx.statement.update({
@@ -1058,6 +1260,19 @@ export async function updateCommunityModel(
             const statementsToDelete = poll.statements.filter(
               (s) => !allPrincipleIds.includes(s.uid),
             );
+
+            // Log how many statements are being deleted and why
+            if (statementsToDelete.length > 0) {
+              console.log(
+                `Deleting ${statementsToDelete.length} statements because they're not in the updated principles list.`,
+              );
+              console.log(
+                `Updated principles: ${allPrincipleIds.length} statements`,
+              );
+              console.log(
+                `Total poll statements: ${poll.statements.length} statements`,
+              );
+            }
 
             // Delete principles that are no longer in the list
             for (const statement of statementsToDelete) {
@@ -1089,7 +1304,7 @@ export async function updateCommunityModel(
                 },
               });
             } else {
-              await tx.constitution.create({
+              const newConstitution = await tx.constitution.create({
                 data: {
                   modelId: modelId,
                   content: constitution.content,
@@ -1097,6 +1312,9 @@ export async function updateCommunityModel(
                   version: constitution.version,
                 },
               });
+
+              // Log the constitution creation
+              logConstitutionGenerated(newConstitution, actor);
             }
           }
         }
@@ -1107,6 +1325,7 @@ export async function updateCommunityModel(
           include: {
             polls: { include: { statements: true } },
             constitutions: true,
+            owner: true,
           },
         });
       },
@@ -1115,6 +1334,9 @@ export async function updateCommunityModel(
     if (!updatedModel) {
       throw new Error("Failed to update community model");
     }
+
+    // Log the model changes
+    logModelChanges(currentModel, updatedModel, actor);
 
     return updatedModel;
   } catch (error) {
@@ -1240,6 +1462,15 @@ export async function createApiKey(
     },
   });
 
+  // Create actor and log the API key creation
+  const actor = createActorFromOwner({
+    uid: owner.uid,
+    name: owner.name,
+    isAdmin: false,
+  });
+
+  logApiKeyCreated(apiKey, actor);
+
   // Return the raw key only once - it will never be accessible again
   return {
     id: apiKey.uid,
@@ -1247,6 +1478,61 @@ export async function createApiKey(
     name: apiKey.name!,
     createdAt: apiKey.createdAt,
   };
+}
+
+/**
+ * Revokes an API key by marking it as revoked
+ * @param apiKeyId ID of the API key to revoke
+ * @returns The updated API key
+ */
+export async function revokeApiKey(apiKeyId: string) {
+  // Get the current user
+  const { userId: clerkUserId } = auth();
+  if (!clerkUserId) {
+    throw new Error("User not authenticated");
+  }
+
+  const owner = await prisma.communityModelOwner.findUnique({
+    where: { clerkUserId },
+  });
+
+  if (!owner) {
+    throw new Error("Owner not found");
+  }
+
+  // Get the API key
+  const apiKey = await prisma.apiKey.findUnique({
+    where: { uid: apiKeyId },
+  });
+
+  if (!apiKey) {
+    throw new Error("API key not found");
+  }
+
+  // Check if user is owner or admin
+  const isAdmin = await isCurrentUserAdmin();
+  const isOwner = apiKey.ownerId === owner.uid;
+
+  if (!isOwner && !isAdmin) {
+    throw new Error("Not authorized to revoke this API key");
+  }
+
+  // Revoke the API key
+  const updatedApiKey = await prisma.apiKey.update({
+    where: { uid: apiKeyId },
+    data: { status: "REVOKED" },
+  });
+
+  // Create actor and log the API key revocation
+  const actor = createActorFromOwner({
+    uid: owner.uid,
+    name: owner.name,
+    isAdmin: !isOwner && isAdmin,
+  });
+
+  logApiKeyRevoked(updatedApiKey, actor);
+
+  return updatedApiKey;
 }
 
 // New helper function to check poll completion status
