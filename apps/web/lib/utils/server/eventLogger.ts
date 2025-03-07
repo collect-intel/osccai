@@ -9,7 +9,7 @@ import {
   GacScoreUpdatedMetadata,
   PollMetadata,
   ConstitutionMetadata,
-  ApiKeyMetadata
+  ApiKeyMetadata,
 } from "../../types/events";
 import { prisma } from "../../db";
 import {
@@ -25,7 +25,7 @@ import {
 /**
  * Logs a system event to the database
  * This is the core function that handles all event logging
- * 
+ *
  * @param params Event parameters including type, resource, actor and metadata
  */
 export async function logSystemEvent(params: SystemEventParams): Promise<void> {
@@ -50,14 +50,14 @@ export async function logSystemEvent(params: SystemEventParams): Promise<void> {
       return;
     } catch (prismaError) {
       console.error("Prisma event logging error:", prismaError);
-      
+
       // Second approach: Fall back to console logging if database logging fails
       console.log("EVENT:", {
         type: params.eventType,
         resource: `${params.resourceType}:${params.resourceId}`,
-        actor: `${params.actor.name || params.actor.id}${params.actor.isAdmin ? ' (Admin)' : ''}`,
+        actor: `${params.actor.name || params.actor.id}${params.actor.isAdmin ? " (Admin)" : ""}`,
         metadata: params.metadata,
-        time: new Date().toISOString()
+        time: new Date().toISOString(),
       });
     }
   } catch (error) {
@@ -72,13 +72,13 @@ function createCuid(): string {
   // otherwise fallback to a more robust implementation
   try {
     // Use Node's crypto module for better randomness
-    const crypto = require('crypto');
-    return 'clg' + crypto.randomBytes(8).toString('hex');
+    const crypto = require("crypto");
+    return "clg" + crypto.randomBytes(8).toString("hex");
   } catch (error) {
     // Fallback if crypto is not available
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 10);
-    return 'clg' + timestamp + randomStr;
+    return "clg" + timestamp + randomStr;
   }
 }
 
@@ -111,7 +111,7 @@ export const SYSTEM_ACTOR: Actor = {
 /**
  * Logs changes made to a community model's settings
  * Compares old and new versions to identify and log specific changes
- * 
+ *
  * @param oldModel Original model state
  * @param newModel Updated model state
  * @param actor The user who made the changes
@@ -127,11 +127,11 @@ export function logModelChanges(
       console.warn("Invalid input for model change logging");
       return;
     }
-    
+
     interface ModelField {
       [key: string]: any;
     }
-    
+
     const fieldsToTrack = [
       "name",
       "goal",
@@ -183,7 +183,7 @@ export function logModelChanges(
 
 /**
  * Logs when a new statement is added
- * 
+ *
  * @param statement The newly created statement
  * @param actor The user who added the statement
  */
@@ -196,7 +196,9 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
     }
 
     // Validate and sanitize text (which could be empty or very short)
-    const safeText = statement.text ? statement.text.substring(0, 1000) : "[No text]";
+    const safeText = statement.text
+      ? statement.text.substring(0, 1000)
+      : "[No text]";
 
     const metadata: StatementAddedMetadata = {
       pollId: statement.pollId,
@@ -207,14 +209,14 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
     const getCommunityModelId = async () => {
       try {
         // First check if it's already included in the statement
-        if ('communityModelId' in statement) {
+        if ("communityModelId" in statement) {
           return (statement as any).communityModelId;
         }
-        
+
         // Otherwise fetch from the poll
         const poll = await prisma.poll.findUnique({
           where: { uid: statement.pollId },
-          select: { communityModelId: true }
+          select: { communityModelId: true },
         });
         return poll?.communityModelId;
       } catch (error) {
@@ -224,7 +226,7 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
     };
 
     // Execute the log asynchronously but don't await it
-    getCommunityModelId().then(communityModelId => {
+    getCommunityModelId().then((communityModelId) => {
       logSystemEvent({
         eventType: EventType.STATEMENT_ADDED,
         resourceType: ResourceType.STATEMENT,
@@ -241,7 +243,7 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
 
 /**
  * Logs when a vote is cast on a statement
- * 
+ *
  * @param vote The vote that was cast
  * @param pollId The ID of the poll containing the statement
  * @param actor The user who cast the vote
@@ -258,14 +260,14 @@ export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
     const getCommunityModelId = async () => {
       try {
         // Check if it's already included in the vote object
-        if ('communityModelId' in vote) {
+        if ("communityModelId" in vote) {
           return (vote as any).communityModelId;
         }
-        
+
         // Otherwise fetch from the poll
         const poll = await prisma.poll.findUnique({
           where: { uid: pollId },
-          select: { communityModelId: true }
+          select: { communityModelId: true },
         });
         return poll?.communityModelId;
       } catch (error) {
@@ -275,7 +277,7 @@ export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
     };
 
     // Execute the log asynchronously but don't await it
-    getCommunityModelId().then(communityModelId => {
+    getCommunityModelId().then((communityModelId) => {
       logSystemEvent({
         eventType: EventType.VOTE_CAST,
         resourceType: ResourceType.VOTE,
@@ -293,7 +295,7 @@ export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
 /**
  * Logs when a GAC score is updated
  * Typically called after vote calculations
- * 
+ *
  * @param statement The statement with the updated score
  * @param oldScore Previous GAC score value
  * @param newScore New GAC score value
@@ -314,14 +316,14 @@ export function logGacScoreUpdated(
     const getCommunityModelId = async () => {
       try {
         // Check if it's already included in the statement object
-        if ('communityModelId' in statement) {
+        if ("communityModelId" in statement) {
           return (statement as any).communityModelId;
         }
-        
+
         // Otherwise fetch from the poll
         const poll = await prisma.poll.findUnique({
           where: { uid: statement.pollId },
-          select: { communityModelId: true }
+          select: { communityModelId: true },
         });
         return poll?.communityModelId;
       } catch (error) {
@@ -331,7 +333,7 @@ export function logGacScoreUpdated(
     };
 
     // Execute the log asynchronously but don't await it
-    getCommunityModelId().then(communityModelId => {
+    getCommunityModelId().then((communityModelId) => {
       logSystemEvent({
         eventType: EventType.GAC_SCORE_UPDATED,
         resourceType: ResourceType.STATEMENT,
@@ -348,7 +350,7 @@ export function logGacScoreUpdated(
 
 /**
  * Logs when a new poll is created
- * 
+ *
  * @param poll The newly created poll
  * @param actor The user who created the poll
  */
@@ -374,7 +376,7 @@ export function logPollCreated(poll: Poll, actor: Actor): void {
 
 /**
  * Logs when a poll is updated
- * 
+ *
  * @param poll The updated poll
  * @param actor The user who updated the poll
  */
@@ -400,7 +402,7 @@ export function logPollUpdated(poll: Poll, actor: Actor): void {
 
 /**
  * Logs when a new constitution is generated
- * 
+ *
  * @param constitution The newly generated constitution
  * @param actor The user or system that generated it
  */
@@ -429,7 +431,7 @@ export function logConstitutionGenerated(
 
 /**
  * Logs when a constitution is activated for a model
- * 
+ *
  * @param constitution The constitution being activated
  * @param modelId The ID of the model the constitution is activated for
  * @param actor The user who activated the constitution
@@ -460,7 +462,7 @@ export function logConstitutionActivated(
 
 /**
  * Logs when an API key is created
- * 
+ *
  * @param apiKey The newly created API key
  * @param actor The user who created the key
  */
@@ -486,7 +488,7 @@ export function logApiKeyCreated(apiKey: ApiKey, actor: Actor): void {
 
 /**
  * Logs when an API key is revoked
- * 
+ *
  * @param apiKey The API key being revoked
  * @param actor The user who revoked the key
  */
@@ -517,10 +519,10 @@ export function logApiKeyRevoked(apiKey: ApiKey, actor: Actor): void {
  */
 export function createActorFromParticipant(
   participant: { uid: string; clerkUserId?: string | null },
-  isAdmin: boolean = false
+  isAdmin: boolean = false,
 ): Actor {
   return {
     id: participant.uid,
     isAdmin,
   };
-} 
+}

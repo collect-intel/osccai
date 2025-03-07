@@ -26,7 +26,21 @@ import { getPollData } from "./data";
 import { isStatementConstitutionable } from "@/lib/utils/pollUtils";
 import { generateApiKey } from "@/lib/utils/server/api-keys";
 import type { Prisma } from "@prisma/client";
-import { createActorFromOwner, logModelChanges, logPollCreated, createActorFromParticipant, logPollUpdated, logStatementAdded, logVoteCast, logGacScoreUpdated, SYSTEM_ACTOR, logConstitutionGenerated, logConstitutionActivated, logApiKeyCreated, logApiKeyRevoked } from "@/lib/utils/server/eventLogger";
+import {
+  createActorFromOwner,
+  logModelChanges,
+  logPollCreated,
+  createActorFromParticipant,
+  logPollUpdated,
+  logStatementAdded,
+  logVoteCast,
+  logGacScoreUpdated,
+  SYSTEM_ACTOR,
+  logConstitutionGenerated,
+  logConstitutionActivated,
+  logApiKeyCreated,
+  logApiKeyRevoked,
+} from "@/lib/utils/server/eventLogger";
 import { isCurrentUserAdmin } from "@/lib/utils/admin";
 const createId = initCuid({ length: 10 });
 
@@ -509,9 +523,9 @@ async function updateVoteCounts(
   // Fetch the statement to get the old GAC score
   const statement = await prisma.statement.findUnique({
     where: { uid: statementId },
-    select: { gacScore: true }
+    select: { gacScore: true },
   });
-  
+
   const oldScore = statement?.gacScore ?? undefined;
 
   // Update the statement
@@ -525,7 +539,7 @@ async function updateVoteCounts(
     logGacScoreUpdated(
       updatedStatement,
       oldScore,
-      updatedStatement.gacScore || 0
+      updatedStatement.gacScore || 0,
     );
   }
 }
@@ -541,9 +555,9 @@ async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
   // Fetch the statement to get the old GAC score
   const statement = await prisma.statement.findUnique({
     where: { uid: statementId },
-    select: { gacScore: true }
+    select: { gacScore: true },
   });
-  
+
   const oldScore = statement?.gacScore ?? undefined;
 
   // Update the statement
@@ -557,7 +571,7 @@ async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
     logGacScoreUpdated(
       updatedStatement,
       oldScore,
-      updatedStatement.gacScore || 0
+      updatedStatement.gacScore || 0,
     );
   }
 }
@@ -930,7 +944,7 @@ export async function createConstitution(
     name: owner.name,
     isAdmin: false,
   });
-  
+
   logConstitutionGenerated(newConstitution, actor);
 
   revalidatePath(`/community-models/${communityModelId}`);
@@ -973,7 +987,7 @@ export async function setActiveConstitution(
     name: owner.name,
     isAdmin: false,
   });
-  
+
   logConstitutionActivated(constitution, communityModelId, actor);
 
   revalidatePath(`/community-models/${communityModelId}`);
@@ -1198,7 +1212,7 @@ export async function updateCommunityModel(
                   },
                 });
                 updatedPrinciples.push(newStatement);
-                
+
                 // Log the new statement
                 logStatementAdded(newStatement, actor);
               } else {
@@ -1224,9 +1238,15 @@ export async function updateCommunityModel(
 
             // Log how many statements are being deleted and why
             if (statementsToDelete.length > 0) {
-              console.log(`Deleting ${statementsToDelete.length} statements because they're not in the updated principles list.`);
-              console.log(`Updated principles: ${allPrincipleIds.length} statements`);
-              console.log(`Total poll statements: ${poll.statements.length} statements`);
+              console.log(
+                `Deleting ${statementsToDelete.length} statements because they're not in the updated principles list.`,
+              );
+              console.log(
+                `Updated principles: ${allPrincipleIds.length} statements`,
+              );
+              console.log(
+                `Total poll statements: ${poll.statements.length} statements`,
+              );
             }
 
             // Delete principles that are no longer in the list
@@ -1267,7 +1287,7 @@ export async function updateCommunityModel(
                   version: constitution.version,
                 },
               });
-              
+
               // Log the constitution creation
               logConstitutionGenerated(newConstitution, actor);
             }
@@ -1423,7 +1443,7 @@ export async function createApiKey(
     name: owner.name,
     isAdmin: false,
   });
-  
+
   logApiKeyCreated(apiKey, actor);
 
   // Return the raw key only once - it will never be accessible again
@@ -1484,7 +1504,7 @@ export async function revokeApiKey(apiKeyId: string) {
     name: owner.name,
     isAdmin: !isOwner && isAdmin,
   });
-  
+
   logApiKeyRevoked(updatedApiKey, actor);
 
   return updatedApiKey;

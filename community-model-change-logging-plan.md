@@ -23,31 +23,31 @@ The system will track these core event types:
 export enum EventType {
   /** Changes to any CommunityModel settings */
   MODEL_SETTING_CHANGE = "MODEL_SETTING_CHANGE",
-  
+
   /** New statement added to a poll */
   STATEMENT_ADDED = "STATEMENT_ADDED",
-  
+
   /** Vote cast on a statement */
   VOTE_CAST = "VOTE_CAST",
-  
+
   /** GAC score updated for statement */
   GAC_SCORE_UPDATED = "GAC_SCORE_UPDATED",
-  
+
   /** New poll created */
   POLL_CREATED = "POLL_CREATED",
-  
+
   /** Poll settings updated */
-  POLL_UPDATED = "POLL_UPDATED", 
-  
+  POLL_UPDATED = "POLL_UPDATED",
+
   /** New constitution generated */
   CONSTITUTION_GENERATED = "CONSTITUTION_GENERATED",
-  
+
   /** Constitution activated for a model */
   CONSTITUTION_ACTIVATED = "CONSTITUTION_ACTIVATED",
-  
+
   /** New API key created */
   API_KEY_CREATED = "API_KEY_CREATED",
-  
+
   /** API key revoked */
   API_KEY_REVOKED = "API_KEY_REVOKED",
 }
@@ -217,7 +217,7 @@ import {
   GacScoreUpdatedMetadata,
   PollMetadata,
   ConstitutionMetadata,
-  ApiKeyMetadata
+  ApiKeyMetadata,
 } from "../types/events";
 import { prisma } from "../db";
 import {
@@ -232,7 +232,7 @@ import {
 /**
  * Logs a system event to the database
  * This is the core function that handles all event logging
- * 
+ *
  * @param params Event parameters including type, resource, actor and metadata
  */
 export async function logSystemEvent(params: SystemEventParams): Promise<void> {
@@ -283,7 +283,7 @@ export const SYSTEM_ACTOR: Actor = {
 /**
  * Logs changes made to a community model's settings
  * Compares old and new versions to identify and log specific changes
- * 
+ *
  * @param oldModel Original model state
  * @param newModel Updated model state
  * @param actor The user who made the changes
@@ -334,7 +334,7 @@ export function logModelChanges(
 
 /**
  * Logs when a new statement is added
- * 
+ *
  * @param statement The newly created statement
  * @param actor The user who added the statement
  */
@@ -355,7 +355,7 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
 
 /**
  * Logs when a vote is cast on a statement
- * 
+ *
  * @param vote The vote that was cast
  * @param pollId The ID of the poll containing the statement
  * @param actor The user who cast the vote
@@ -379,7 +379,7 @@ export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
 /**
  * Logs when a GAC score is updated
  * Typically called after vote calculations
- * 
+ *
  * @param statement The statement with the updated score
  * @param oldScore Previous GAC score value
  * @param newScore New GAC score value
@@ -406,7 +406,7 @@ export function logGacScoreUpdated(
 
 /**
  * Logs when a new poll is created
- * 
+ *
  * @param poll The newly created poll
  * @param actor The user who created the poll
  */
@@ -427,7 +427,7 @@ export function logPollCreated(poll: Poll, actor: Actor): void {
 
 /**
  * Logs when a new constitution is generated
- * 
+ *
  * @param constitution The newly generated constitution
  * @param actor The user or system that generated it
  */
@@ -451,7 +451,7 @@ export function logConstitutionGenerated(
 
 /**
  * Logs when an API key is created
- * 
+ *
  * @param apiKey The newly created API key
  * @param actor The user who created the key
  */
@@ -821,15 +821,18 @@ export async function GET(request: NextRequest) {
 ### 7. Integration Approach
 
 1. **Phase 1: Basic Setup**
+
    - Add the SystemEvent model to Prisma schema and run migration
    - Implement the events.ts type definitions
    - Create the basic eventLogger.ts utility
 
 2. **Phase 2: Core Event Integration**
+
    - Start with MODEL_SETTING_CHANGE in the updateCommunityModel function
    - Once verified, add other high-priority events (STATEMENT_ADDED, VOTE_CAST)
 
 3. **Phase 3: UI and API**
+
    - Implement the API endpoint for event retrieval
    - Add the EventLogViewer component
    - Integrate the viewer into the model details page
@@ -871,7 +874,7 @@ import { ResourceType } from "@/lib/types/events";
       limit={10}
     />
   </div>
-</div>
+</div>;
 ```
 
 ## Conclusion
@@ -889,22 +892,26 @@ The system is designed to be easily maintainable and expandable as the applicati
 ## Implementation Checklist
 
 ### 1. Database Schema Changes
+
 - [x] Add `SystemEvent` model to the Prisma schema in `apps/web/prisma/schema.prisma`
 - [x] Run Prisma migration to update the database
 
 ### 2. Type Definitions
+
 - [x] Create `lib/types/events.ts` file with all event-related type definitions
 - [x] Define `EventType` enum with all event types
 - [x] Define `ResourceType` enum
 - [x] Define interfaces for `Actor`, `SystemEventParams`, and event-specific metadata types
 
 ### 3. Event Logger Implementation
+
 - [x] Create `lib/utils/server/eventLogger.ts` with core logging functionality
 - [x] Implement `logSystemEvent` function for direct database logging
 - [x] Implement helper functions for each event type (model changes, statement added, etc.)
 - [x] Add utility functions for creating actors from different user types
 
 ### 4. Integration with Existing Actions
+
 - [x] Modify `updateCommunityModel` in `lib/actions.ts` to log model changes
 - [x] Modify `createPoll` in `lib/actions.ts` to log poll creation
 - [x] Modify `editPoll` in `lib/actions.ts` to log poll updates
@@ -916,17 +923,18 @@ The system is designed to be easily maintainable and expandable as the applicati
 - [x] Ensure that adding Statements from the `CommunityModelFlow` directly (rather than through the poll) are logged
 
 ### 5. API Route for Event Retrieval
+
 - [x] Create `app/api/events/route.ts` for fetching system events
 - [x] Implement filtering based on query parameters
 - [x] Add proper authorization checks
 
 ### 6. Admin UI Components
+
 - [x] Create `lib/components/EventLogViewer.tsx` component
 - [x] Implement event formatting for different event types
 - [x] Add pagination support
 
 ### 7. Admin Dashboard Integration
+
 - [x] Modify `apps/web/app/admin/models/[id]/page.tsx` to add the event log section
 - [x] Add filtering options for the admin to view specific event types
-
-

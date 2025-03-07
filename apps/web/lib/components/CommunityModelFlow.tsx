@@ -211,7 +211,7 @@ export default function CommunityModelFlow({
             // Update cache with this fresh data
             localStorage.setItem(
               `model_data_${modelId}`,
-              JSON.stringify(newData)
+              JSON.stringify(newData),
             );
 
             setModelData(newData);
@@ -348,16 +348,28 @@ export default function CommunityModelFlow({
         // Include toggle settings when updating principles
         await updateCommunityModel(modelId, {
           principles: updatedPrinciples,
-          requireAuth: data.requireAuth !== undefined ? data.requireAuth : modelData?.requireAuth,
-          allowContributions: data.allowContributions !== undefined ? data.allowContributions : modelData?.allowContributions,
+          requireAuth:
+            data.requireAuth !== undefined
+              ? data.requireAuth
+              : modelData?.requireAuth,
+          allowContributions:
+            data.allowContributions !== undefined
+              ? data.allowContributions
+              : modelData?.allowContributions,
         });
 
         // Update the model data in state
         const updatedData = {
           ...modelData,
           principles: updatedPrinciples,
-          requireAuth: data.requireAuth !== undefined ? data.requireAuth : modelData?.requireAuth,
-          allowContributions: data.allowContributions !== undefined ? data.allowContributions : modelData?.allowContributions,
+          requireAuth:
+            data.requireAuth !== undefined
+              ? data.requireAuth
+              : modelData?.requireAuth,
+          allowContributions:
+            data.allowContributions !== undefined
+              ? data.allowContributions
+              : modelData?.allowContributions,
         } as ExtendedAboutZoneData;
 
         setModelData(updatedData);
@@ -410,21 +422,21 @@ export default function CommunityModelFlow({
 
     try {
       setSavingStatus((prev) => ({ ...prev, [zone]: "saving" }));
-      
+
       // Preserve existing principles if they're not included in the update
       // This prevents accidental deletion of principles when updating other fields
       let dataToUpdate = { ...data };
-      
+
       // If we're not specifically updating principles and the current modelData has principles,
       // ensure we include them in the update to prevent deletion
-      if (!data.principles && modelData?.principles && zone !== 'principles') {
-        dataToUpdate.principles = modelData.principles.map(p => ({
+      if (!data.principles && modelData?.principles && zone !== "principles") {
+        dataToUpdate.principles = modelData.principles.map((p) => ({
           id: p.id,
           text: p.text,
-          gacScore: p.gacScore ?? 0
+          gacScore: p.gacScore ?? 0,
         }));
       }
-      
+
       await updateCommunityModel(modelId, dataToUpdate);
 
       // Update the model data in state

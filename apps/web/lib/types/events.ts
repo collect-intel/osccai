@@ -24,7 +24,7 @@ export interface EventDisplayInfo {
   /** The key path to the most important value to display */
   valuePath?: string;
   /** Format to apply to the value (e.g., 'text', 'score', 'boolean') */
-  valueFormat?: 'text' | 'score' | 'boolean' | 'version' | 'compare';
+  valueFormat?: "text" | "score" | "boolean" | "version" | "compare";
   /** Maximum length for text values before truncation */
   maxLength?: number;
 }
@@ -190,4 +190,4 @@ export const EVENT_DISPLAY_CONFIG: Record<EventType, EventDisplayInfo> = {
     valuePath: "keyName",
     valueFormat: "text",
   },
-}; 
+};
