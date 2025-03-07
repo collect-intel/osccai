@@ -43,6 +43,7 @@ export interface SystemEventParams {
   eventType: EventType;
   resourceType: ResourceType;
   resourceId: string;
+  communityModelId?: string;
   actor: Actor;
   metadata?: Record<string, any>;
 }

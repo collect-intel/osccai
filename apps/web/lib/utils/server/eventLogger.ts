@@ -40,6 +40,7 @@ export async function logSystemEvent(params: SystemEventParams): Promise<void> {
           eventType: params.eventType,
           resourceType: params.resourceType,
           resourceId: params.resourceId,
+          communityModelId: params.communityModelId,
           actorId: params.actor.id,
           actorName: params.actor.name,
           isAdminAction: params.actor.isAdmin,
@@ -171,6 +172,7 @@ export function logModelChanges(
       eventType: EventType.MODEL_SETTING_CHANGE,
       resourceType: ResourceType.COMMUNITY_MODEL,
       resourceId: newModel.uid,
+      communityModelId: newModel.uid,
       actor,
       metadata,
     });
@@ -205,6 +207,7 @@ export function logStatementAdded(statement: Statement, actor: Actor): void {
       eventType: EventType.STATEMENT_ADDED,
       resourceType: ResourceType.STATEMENT,
       resourceId: statement.uid,
+      communityModelId: statement.communityModelId,
       actor,
       metadata,
     });
@@ -231,6 +234,7 @@ export function logVoteCast(vote: Vote, pollId: string, actor: Actor): void {
     eventType: EventType.VOTE_CAST,
     resourceType: ResourceType.VOTE,
     resourceId: vote.uid,
+    communityModelId: vote.communityModelId,
     actor,
     metadata,
   });
@@ -259,6 +263,7 @@ export function logGacScoreUpdated(
     eventType: EventType.GAC_SCORE_UPDATED,
     resourceType: ResourceType.STATEMENT,
     resourceId: statement.uid,
+    communityModelId: statement.communityModelId,
     actor: SYSTEM_ACTOR,
     metadata,
   });
@@ -280,6 +285,7 @@ export function logPollCreated(poll: Poll, actor: Actor): void {
     eventType: EventType.POLL_CREATED,
     resourceType: ResourceType.POLL,
     resourceId: poll.uid,
+    communityModelId: poll.communityModelId,
     actor,
     metadata,
   });
@@ -301,6 +307,7 @@ export function logPollUpdated(poll: Poll, actor: Actor): void {
     eventType: EventType.POLL_UPDATED,
     resourceType: ResourceType.POLL,
     resourceId: poll.uid,
+    communityModelId: poll.communityModelId,
     actor,
     metadata,
   });
@@ -325,6 +332,7 @@ export function logConstitutionGenerated(
     eventType: EventType.CONSTITUTION_GENERATED,
     resourceType: ResourceType.CONSTITUTION,
     resourceId: constitution.uid,
+    communityModelId: constitution.communityModelId,
     actor,
     metadata,
   });
@@ -351,6 +359,7 @@ export function logConstitutionActivated(
     eventType: EventType.CONSTITUTION_ACTIVATED,
     resourceType: ResourceType.CONSTITUTION,
     resourceId: constitution.uid,
+    communityModelId: constitution.communityModelId,
     actor,
     metadata,
   });
@@ -372,6 +381,7 @@ export function logApiKeyCreated(apiKey: ApiKey, actor: Actor): void {
     eventType: EventType.API_KEY_CREATED,
     resourceType: ResourceType.API_KEY,
     resourceId: apiKey.uid,
+    communityModelId: apiKey.communityModelId,
     actor,
     metadata,
   });
@@ -393,6 +403,7 @@ export function logApiKeyRevoked(apiKey: ApiKey, actor: Actor): void {
     eventType: EventType.API_KEY_REVOKED,
     resourceType: ResourceType.API_KEY,
     resourceId: apiKey.uid,
+    communityModelId: apiKey.communityModelId,
     actor,
     metadata,
   });

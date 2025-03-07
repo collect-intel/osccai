@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
   const eventTypes = eventTypesParam
     ? (eventTypesParam.split(",") as EventType[])
     : null;
+  const communityModelId = searchParams.get("communityModelId");
 
   try {
     // Find models owned by this user if needed for filtering
@@ -75,6 +76,10 @@ export async function GET(request: NextRequest) {
     } else if (!isAdmin) {
       // If not admin and owns no models, only show their own actions
       whereClause.push(`"actorId" = '${owner.uid}'`);
+    }
+    
+    if (communityModelId) {
+      whereClause.push(`"communityModelId" = '${communityModelId}'`);
     }
     
     const whereString = whereClause.length > 0 ? 'WHERE ' + whereClause.join(' AND ') : '';

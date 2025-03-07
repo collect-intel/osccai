@@ -12,6 +12,8 @@ interface EventLogViewerProps {
   resourceType?: ResourceType;
   /** Filter events by specific resource ID */
   resourceId?: string;
+  /** Filter events by community model ID */
+  communityModelId?: string;
   /** Filter events by event types */
   eventTypes?: EventType[];
   /** Maximum number of events to display */
@@ -40,6 +42,7 @@ interface SystemEvent {
 export default function EventLogViewer({
   resourceType,
   resourceId,
+  communityModelId,
   eventTypes,
   limit = 10
 }: EventLogViewerProps) {
@@ -57,6 +60,7 @@ export default function EventLogViewer({
 
         if (resourceType) url += `&resourceType=${resourceType}`;
         if (resourceId) url += `&resourceId=${resourceId}`;
+        if (communityModelId) url += `&communityModelId=${communityModelId}`;
         if (eventTypes && eventTypes.length > 0) {
           url += `&eventTypes=${eventTypes.join(',')}`;
         }
@@ -78,7 +82,7 @@ export default function EventLogViewer({
     }
 
     fetchEvents();
-  }, [resourceType, resourceId, eventTypes, limit]);
+  }, [resourceType, resourceId, communityModelId, eventTypes, limit]);
 
   if (loading) {
     return <div className="p-4">Loading events...</div>;

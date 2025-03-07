@@ -151,8 +151,7 @@ export default async function AdminModelViewPage({
             <h2 className="text-xl font-semibold mb-4">Activity Log</h2>
             <div className="mt-2">
               <EventLogViewer
-                resourceType={ResourceType.COMMUNITY_MODEL}
-                resourceId={model.uid}
+                communityModelId={model.uid}
                 limit={15}
               />
             </div>
