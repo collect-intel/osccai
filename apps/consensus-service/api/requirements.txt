@@ -2,3 +2,4 @@ pg8000==1.29.0
 numpy==2.1.2
 pandas==2.2.3
 pytest
+aiohttp==3.9.3
