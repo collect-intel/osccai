@@ -12,7 +12,14 @@ import pandas as pd
 import math
 import aiohttp
 import asyncio
-from .webhook_utils import send_webhook
+
+# Handle imports for both direct execution and package import
+try:
+    # Try relative import first (for when used as a package)
+    from .webhook_utils import send_webhook
+except (ImportError, ValueError):
+    # Fall back to direct import (for when run as script)
+    from webhook_utils import send_webhook
 
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
