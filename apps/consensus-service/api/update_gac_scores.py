@@ -91,10 +91,12 @@ class handler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         # Check for API key if configured
+        logger.info("Handling POST request in update_gac_scores.py")
         api_key = os.environ.get('API_KEY')
         if api_key:
             request_key = self.headers.get('X-API-Key')
             if not request_key or request_key != api_key:
+                logger.warning("Unauthorized: Invalid or missing API key")
                 self.send_response(401)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -104,15 +106,20 @@ class handler(BaseHTTPRequestHandler):
                 return
 
         # Get request body
-        content_length = int(self.headers.get('Content-Length', 0))
-        post_data = self.rfile.read(content_length).decode('utf-8')
-        
         try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            logger.info(f"Content length: {content_length}")
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            logger.info(f"Request body: {post_data}")
+            
             data = json.loads(post_data)
             poll_id = data.get('pollId')
             force = data.get('force', False)
             
+            logger.info(f"Parsed request: pollId={poll_id}, force={force}")
+            
             if not poll_id:
+                logger.warning("Missing required parameter: pollId")
                 self.send_response(400)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -124,19 +131,32 @@ class handler(BaseHTTPRequestHandler):
             logger.info(f"Triggering GAC update for poll: {poll_id}")
             
             # Run the GAC update for the specific poll
-            result = main(poll_id=poll_id, force=force)
+            try:
+                result = main(poll_id=poll_id, force=force)
+                logger.info(f"GAC update completed with result: {result}")
+                
+                # Send success response
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "message": f"GAC update triggered for poll: {poll_id}",
+                    "result": result
+                }).encode())
+            except Exception as e:
+                logger.error(f"Error in main function: {str(e)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "error": f"Error processing GAC update: {str(e)}"
+                }).encode())
             
-            # Send success response
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({
-                "success": True,
-                "message": f"GAC update triggered for poll: {poll_id}",
-                "result": result
-            }).encode())
-            
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error: {str(e)}")
             self.send_response(400)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
@@ -144,7 +164,9 @@ class handler(BaseHTTPRequestHandler):
                 "error": "Invalid JSON in request body"
             }).encode())
         except Exception as e:
-            logger.error(f"Error processing GAC update: {str(e)}")
+            logger.error(f"Unexpected error in do_POST: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.end_headers()

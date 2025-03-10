@@ -18,8 +18,10 @@ export async function triggerGacUpdate(pollId: string) {
     // In development, use the local server
     // In production, use the Vercel-deployed service
     const consensusServiceUrl = isDevelopment
-      ? "http://localhost:3001"
+      ? "http://localhost:6000"  // Make sure this matches the port in local_server.py
       : process.env.CONSENSUS_SERVICE_URL || "https://osccai-consensus-service.vercel.app";
+    
+    console.log(`Triggering GAC update for poll ${pollId} at ${consensusServiceUrl}/api/update-gac-scores`);
     
     // Call the consensus service to trigger a GAC update
     const response = await fetch(`${consensusServiceUrl}/api/update-gac-scores`, {
@@ -37,10 +39,23 @@ export async function triggerGacUpdate(pollId: string) {
       }),
     });
 
+    console.log(`Response status: ${response.status}`);
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+      let errorData;
+      try {
+        const textResponse = await response.text();
+        console.log(`Error response text: ${textResponse}`);
+        errorData = JSON.parse(textResponse);
+      } catch (parseError) {
+        console.error("Failed to parse error response:", parseError);
+        errorData = { error: "Failed to parse error response" };
+      }
       throw new Error(`Failed to trigger GAC update: ${JSON.stringify(errorData)}`);
     }
+
+    const responseData = await response.json();
+    console.log("GAC update successful:", responseData);
 
     // Revalidate the admin model page to show updated data
     revalidatePath(`/admin/models/[id]`);
