@@ -72,6 +72,12 @@ export default function PrinciplesZone({
     [updateModelData],
   );
 
+  // Update local state when props change (important for refreshes)
+  useEffect(() => {
+    setRequireAuth(modelData.requireAuth);
+    setAllowContributions(modelData.allowContributions);
+  }, [modelData.requireAuth, modelData.allowContributions]);
+
   const addPrinciple = () => {
     const newPrinciple: PrincipleData = {
       id: `new-${Date.now()}`,
@@ -83,9 +89,33 @@ export default function PrinciplesZone({
   };
 
   const updatePrinciple = (id: string, value: string) => {
+    // Clean and validate the text value
+    const cleanedValue = value.trim();
+
+    // If value is too short (like just "2"), add some context to it or show a warning
+    if (cleanedValue.length < 3) {
+      // Option 1: Warn the user but still allow the short input
+      console.warn("Very short principle detected:", cleanedValue);
+
+      // Option 2: Add context to make it more meaningful
+      // const enhancedValue = `Principle: ${cleanedValue}`;
+      // setPrinciples((prevPrinciples) => {
+      //   const newPrinciples = prevPrinciples.map((p) =>
+      //     p.id === id ? { ...p, text: enhancedValue, isEditing: false } : p,
+      //   );
+      //   const formattedPrinciples = newPrinciples.map(({ id, text }) => ({
+      //     id,
+      //     text,
+      //   }));
+      //   debouncedUpdateModelData({ principles: formattedPrinciples });
+      //   return newPrinciples;
+      // });
+      // return;
+    }
+
     setPrinciples((prevPrinciples) => {
       const newPrinciples = prevPrinciples.map((p) =>
-        p.id === id ? { ...p, text: value.trim(), isEditing: false } : p,
+        p.id === id ? { ...p, text: cleanedValue, isEditing: false } : p,
       );
 
       const formattedPrinciples = newPrinciples.map(({ id, text }) => ({
@@ -129,7 +159,25 @@ export default function PrinciplesZone({
     } else {
       setAllowContributions(value);
     }
-    debouncedUpdateModelData({ [field]: value });
+
+    // Include the current principles along with the toggle changes
+    // to prevent the backend from deleting all principles
+    const updatedData = {
+      principles: principles
+        .filter((p) => !p.isLoading)
+        .map((p) => ({
+          id: p.id,
+          text: p.text,
+          gacScore: 0, // Default score if not available
+        })),
+      // Always include both toggle values to ensure both are persisted
+      requireAuth: field === "requireAuth" ? value : requireAuth,
+      allowContributions:
+        field === "allowContributions" ? value : allowContributions,
+    };
+
+    console.log(`Updating ${field} to ${value}`, updatedData);
+    debouncedUpdateModelData(updatedData);
   };
 
   const handleGeneratePrinciples = async () => {

@@ -60,6 +60,22 @@ const Principle: React.FC<PrincipleProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmedText = editedText.trim();
+
+    // Add validation for very short inputs
+    if (trimmedText.length < 3) {
+      // Option 1: Show an alert and don't submit
+      alert("Principle text should be at least 3 characters long.");
+      return;
+
+      // Option 2: Auto-append text to make it more meaningful
+      // const enhancedText = `Principle: ${trimmedText}`;
+      // if (enhancedText !== "") {
+      //   onUpdate(enhancedText);
+      //   setIsEditing(false);
+      // }
+      // return;
+    }
+
     if (trimmedText !== "") {
       onUpdate(trimmedText);
       setIsEditing(false);

@@ -170,42 +170,13 @@ export default function CommunityModelFlow({
         try {
           console.log("Fetching model data for ID:", modelId);
 
-          // First check localStorage for cached data
-          const cachedData = localStorage.getItem(`model_data_${modelId}`);
-          let parsedCachedData = null;
-
-          if (cachedData) {
-            try {
-              parsedCachedData = JSON.parse(cachedData);
-              console.log("Found cached model data:", parsedCachedData);
-
-              // If we have valid cached data and it matches the current modelId, use it
-              if (parsedCachedData && parsedCachedData.uid === modelId) {
-                setModelData(parsedCachedData);
-                setActiveZones([
-                  "about",
-                  "principles",
-                  "poll",
-                  "communityModel",
-                  "advanced",
-                ]);
-                handleHashChange();
-                setIsLoading(false);
-                setIsPageLoading(false);
-                return; // Exit early if we have valid cached data
-              }
-            } catch (error) {
-              console.error("Error parsing cached model data:", error);
-            }
-          }
-
-          // If we don't have valid cached data, fetch from server
+          // Fetch fresh data from server instead of relying on potentially stale cache
           const fetchedModelData = await getCommunityModel(modelId);
           console.log("Loaded model data from server:", fetchedModelData);
 
           if (fetchedModelData) {
-            // Preserve any existing data that might not be in the fetched data
-            const newData = {
+            // Create a complete model data object from the fetched data
+            const newData: ExtendedAboutZoneData = {
               uid: fetchedModelData.uid,
               name: fetchedModelData.name || "Default Name",
               bio: fetchedModelData.bio || "",
@@ -228,20 +199,22 @@ export default function CommunityModelFlow({
                 fetchedModelData.advancedOptionsEnabled || false,
               autoCreateConstitution:
                 fetchedModelData.autoCreateConstitution || false,
-              apiKeys: [],
-              owner: fetchedModelData.owner,
+              // Handle optional/custom properties
+              apiKeys: (fetchedModelData as any).apiKeys || [],
+              owner: {
+                uid: fetchedModelData.owner.uid,
+                name: fetchedModelData.owner.name,
+                clerkUserId: fetchedModelData.owner.clerkUserId || "",
+              },
             };
 
-            console.log("Updated model data:", newData);
-            setModelData(newData as ExtendedAboutZoneData);
-
-            // Cache the model data in localStorage
+            // Update cache with this fresh data
             localStorage.setItem(
               `model_data_${modelId}`,
               JSON.stringify(newData),
             );
 
-            // After setting the model data, check for hash and set active zones
+            setModelData(newData);
             setActiveZones([
               "about",
               "principles",
@@ -372,14 +345,31 @@ export default function CommunityModelFlow({
             }))
           : [];
 
+        // Include toggle settings when updating principles
         await updateCommunityModel(modelId, {
           principles: updatedPrinciples,
+          requireAuth:
+            data.requireAuth !== undefined
+              ? data.requireAuth
+              : modelData?.requireAuth,
+          allowContributions:
+            data.allowContributions !== undefined
+              ? data.allowContributions
+              : modelData?.allowContributions,
         });
 
         // Update the model data in state
         const updatedData = {
           ...modelData,
           principles: updatedPrinciples,
+          requireAuth:
+            data.requireAuth !== undefined
+              ? data.requireAuth
+              : modelData?.requireAuth,
+          allowContributions:
+            data.allowContributions !== undefined
+              ? data.allowContributions
+              : modelData?.allowContributions,
         } as ExtendedAboutZoneData;
 
         setModelData(updatedData);
@@ -432,12 +422,27 @@ export default function CommunityModelFlow({
 
     try {
       setSavingStatus((prev) => ({ ...prev, [zone]: "saving" }));
-      await updateCommunityModel(modelId, data);
+
+      // Preserve existing principles if they're not included in the update
+      // This prevents accidental deletion of principles when updating other fields
+      let dataToUpdate = { ...data };
+
+      // If we're not specifically updating principles and the current modelData has principles,
+      // ensure we include them in the update to prevent deletion
+      if (!data.principles && modelData?.principles && zone !== "principles") {
+        dataToUpdate.principles = modelData.principles.map((p) => ({
+          id: p.id,
+          text: p.text,
+          gacScore: p.gacScore ?? 0,
+        }));
+      }
+
+      await updateCommunityModel(modelId, dataToUpdate);
 
       // Update the model data in state
       const updatedData = {
         ...modelData,
-        ...data,
+        ...dataToUpdate,
       } as ExtendedAboutZoneData;
 
       setModelData(updatedData);
@@ -454,7 +459,7 @@ export default function CommunityModelFlow({
         2000,
       );
     } catch (error) {
-      console.error("Error saving community model:", error);
+      console.error(`Error saving ${zone}:`, error);
       setSavingStatus((prev) => ({ ...prev, [zone]: "idle" }));
     }
   };
