@@ -17,19 +17,19 @@ export default function UpdateGacButton({ pollId }: UpdateGacButtonProps) {
   const handleClick = async () => {
     setIsLoading(true);
     setResult(null);
-    
+
     try {
       const response = await triggerGacUpdate(pollId);
       setResult(response);
     } catch (error) {
-      setResult({ 
-        success: false, 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      setResult({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     } finally {
       setIsLoading(false);
     }
-    
+
     // Clear result message after 5 seconds
     setTimeout(() => {
       setResult(null);
@@ -42,26 +42,24 @@ export default function UpdateGacButton({ pollId }: UpdateGacButtonProps) {
         onClick={handleClick}
         disabled={isLoading}
         className={`px-3 py-1 text-xs rounded ${
-          isLoading 
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+          isLoading
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
             : "bg-blue-600 text-white hover:bg-blue-700"
         }`}
         title="Recalculate consensus scores for this poll"
       >
         {isLoading ? "Updating..." : "Update GAC"}
       </button>
-      
+
       {result && (
-        <span 
+        <span
           className={`ml-2 text-xs ${
             result.success ? "text-green-600" : "text-red-600"
           }`}
         >
-          {result.success 
-            ? "✓ Updated" 
-            : `✗ ${result.error || "Failed"}`}
+          {result.success ? "✓ Updated" : `✗ ${result.error || "Failed"}`}
         </span>
       )}
     </div>
   );
-} 
+}
