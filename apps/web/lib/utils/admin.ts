@@ -18,7 +18,8 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
     where: { clerkUserId },
   });
 
-  return owner?.isAdmin || false;
+  // The schema has isAdmin but TypeScript doesn't recognize it
+  return Boolean(owner && (owner as any).isAdmin);
 }
 
 /**
@@ -81,7 +82,19 @@ export async function getCommunityModelAsAdmin(modelId: string) {
       },
       activeConstitution: true,
       constitutions: true,
-      polls: true,
+      polls: {
+        include: {
+          statements: {
+            include: {
+              votes: {
+                select: {
+                  participantId: true,
+                },
+              },
+            },
+          },
+        },
+      },
       apiKeys: true,
     },
   });

@@ -68,6 +68,10 @@ export default async function AdminModelViewPage({
                 <p>{model.name}</p>
               </div>
               <div>
+                <h3 className="text-sm font-medium text-gray-500">Model ID</h3>
+                <p className="font-mono text-xs">{model.uid}</p>
+              </div>
+              <div>
                 <h3 className="text-sm font-medium text-gray-500">Goal</h3>
                 <p>{model.goal || "No goal set"}</p>
               </div>
@@ -116,31 +120,69 @@ export default async function AdminModelViewPage({
                   <thead>
                     <tr className="border-b">
                       <th className="py-2 px-4 text-left">Title</th>
+                      <th className="py-2 px-4 text-left">Poll ID</th>
                       <th className="py-2 px-4 text-left">Published</th>
                       <th className="py-2 px-4 text-left">Created</th>
+                      <th className="py-2 px-4 text-left">Last Consensus</th>
+                      <th className="py-2 px-4 text-left">Participants</th>
+                      <th className="py-2 px-4 text-left">Statements</th>
+                      <th className="py-2 px-4 text-left">Votes</th>
                       <th className="py-2 px-4 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {model.polls.map((poll) => (
-                      <tr key={poll.uid} className="border-b">
-                        <td className="py-2 px-4">{poll.title}</td>
-                        <td className="py-2 px-4">
-                          {poll.published ? "Yes" : "No"}
-                        </td>
-                        <td className="py-2 px-4">
-                          {new Date(poll.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="py-2 px-4">
-                          <Link
-                            href={`/polls/${poll.uid}`}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                    {model.polls.map((poll) => {
+                      // Calculate the participant count
+                      const participantCount = new Set(
+                        poll.statements.flatMap((statement) =>
+                          statement.votes.map((vote) => vote.participantId)
+                        )
+                      ).size;
+                      
+                      // Calculate the total votes count
+                      const votesCount = poll.statements.reduce(
+                        (total, statement) => total + statement.votes.length,
+                        0
+                      );
+                      
+                      // Find the most recent lastCalculatedAt
+                      const lastCalculatedDates = poll.statements
+                        .map((statement) => statement.lastCalculatedAt)
+                        .filter((date): date is Date => date !== null);
+                      
+                      const lastConsensus = lastCalculatedDates.length > 0
+                        ? new Date(Math.max(...lastCalculatedDates.map(date => date.getTime())))
+                        : null;
+                      
+                      return (
+                        <tr key={poll.uid} className="border-b">
+                          <td className="py-2 px-4">{poll.title}</td>
+                          <td className="py-2 px-4 font-mono text-xs">{poll.uid}</td>
+                          <td className="py-2 px-4">
+                            {poll.published ? "Yes" : "No"}
+                          </td>
+                          <td className="py-2 px-4">
+                            {new Date(poll.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="py-2 px-4">
+                            {lastConsensus 
+                              ? lastConsensus.toLocaleString() 
+                              : "Never"}
+                          </td>
+                          <td className="py-2 px-4">{participantCount}</td>
+                          <td className="py-2 px-4">{poll.statements.length}</td>
+                          <td className="py-2 px-4">{votesCount}</td>
+                          <td className="py-2 px-4">
+                            <Link
+                              href={`/polls/${poll.uid}`}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
