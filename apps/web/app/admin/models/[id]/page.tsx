@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AdminModeIndicator } from "@/lib/components/AdminComponents";
 import EventLogViewer from "@/lib/components/EventLogViewer";
 import { ResourceType } from "@/lib/types/events";
+import UpdateGacButton from "@/lib/components/admin/UpdateGacButton";
 
 export default async function AdminModelViewPage({
   params,
@@ -234,12 +235,15 @@ export default async function AdminModelViewPage({
                       <td className="py-2 px-4">{poll.statements.length}</td>
                       <td className="py-2 px-4">{votesCount}</td>
                       <td className="py-2 px-4">
-                        <Link
-                          href={`/polls/${poll.uid}`}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          View
-                        </Link>
+                        <div className="flex space-x-2">
+                          <Link
+                            href={`/polls/${poll.uid}`}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            View
+                          </Link>
+                          <UpdateGacButton pollId={poll.uid} />
+                        </div>
                       </td>
                     </tr>
                   );
