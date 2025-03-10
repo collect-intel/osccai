@@ -12,55 +12,71 @@ export async function triggerGacUpdate(pollId: string) {
   await requireAdmin();
 
   try {
-    // Determine the consensus service URL based on environment
-    const isDevelopment = process.env.NODE_ENV === "development";
+    // Get the consensus service URL from environment variables
+    const consensusServiceUrl = process.env.CONSENSUS_SERVICE_URL;
     
-    // In development, use the local server
-    // In production, use the Vercel-deployed service
-    const consensusServiceUrl = isDevelopment
-      ? "http://localhost:6000"  // Make sure this matches the port in local_server.py
-      : process.env.CONSENSUS_SERVICE_URL || "https://osccai-consensus-service.vercel.app";
+    if (!consensusServiceUrl) {
+      throw new Error("CONSENSUS_SERVICE_URL environment variable is not set");
+    }
     
     console.log(`Triggering GAC update for poll ${pollId} at ${consensusServiceUrl}/api/update-gac-scores`);
     
-    // Call the consensus service to trigger a GAC update
-    const response = await fetch(`${consensusServiceUrl}/api/update-gac-scores`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Add an API key or other authentication if needed
-        ...(process.env.CONSENSUS_SERVICE_API_KEY && {
-          "X-API-Key": process.env.CONSENSUS_SERVICE_API_KEY,
+    // Add a timeout to the fetch request to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    try {
+      // Call the consensus service to trigger a GAC update
+      const response = await fetch(`${consensusServiceUrl}/api/update-gac-scores`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Add an API key or other authentication if needed
+          ...(process.env.CONSENSUS_SERVICE_API_KEY && {
+            "X-API-Key": process.env.CONSENSUS_SERVICE_API_KEY,
+          }),
+        },
+        body: JSON.stringify({
+          pollId,
+          force: true, // Force recalculation even if no new votes
         }),
-      },
-      body: JSON.stringify({
-        pollId,
-        force: true, // Force recalculation even if no new votes
-      }),
-    });
+        signal: controller.signal,
+      });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
 
-    console.log(`Response status: ${response.status}`);
-    
-    if (!response.ok) {
-      let errorData;
-      try {
-        const textResponse = await response.text();
-        console.log(`Error response text: ${textResponse}`);
-        errorData = JSON.parse(textResponse);
-      } catch (parseError) {
-        console.error("Failed to parse error response:", parseError);
-        errorData = { error: "Failed to parse error response" };
+      console.log(`Response status: ${response.status}`);
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          const textResponse = await response.text();
+          console.log(`Error response text: ${textResponse}`);
+          errorData = JSON.parse(textResponse);
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError);
+          errorData = { error: "Failed to parse error response" };
+        }
+        throw new Error(`Failed to trigger GAC update: ${JSON.stringify(errorData)}`);
       }
-      throw new Error(`Failed to trigger GAC update: ${JSON.stringify(errorData)}`);
+
+      const responseData = await response.json();
+      console.log("GAC update successful:", responseData);
+
+      // Revalidate the admin model page to show updated data
+      revalidatePath(`/admin/models/[id]`);
+      
+      return { success: true };
+    } catch (fetchError: any) {
+      if (fetchError.name === 'AbortError') {
+        console.error("Fetch request timed out after 30 seconds");
+        throw new Error("Request to consensus service timed out. The service might be busy or unavailable.");
+      }
+      throw fetchError;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const responseData = await response.json();
-    console.log("GAC update successful:", responseData);
-
-    // Revalidate the admin model page to show updated data
-    revalidatePath(`/admin/models/[id]`);
-    
-    return { success: true };
   } catch (error) {
     console.error("Error triggering GAC update:", error);
     return { 

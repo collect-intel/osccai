@@ -5,7 +5,7 @@ import json
 import os
 import sys
 import traceback
-from api.update_gac_scores import handler as GacHandler
+from api.update_gac_scores import handler as GacHandler, main as gac_main
 import logging
 
 PORT = 6000 # You can change this to any available port
@@ -36,11 +36,48 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 post_data = self.rfile.read(content_length).decode('utf-8')
                 logger.info(f"Request body: {post_data}")
                 
-                # Use the handler from update_gac_scores.py
-                logger.info("Forwarding to GacHandler.do_POST()")
-                gac_handler = GacHandler(self.request, self.client_address, self.server)
-                gac_handler.do_POST()
-                logger.info("GacHandler.do_POST() completed")
+                # Parse the JSON data
+                try:
+                    data = json.loads(post_data)
+                    poll_id = data.get('pollId')
+                    force = data.get('force', False)
+                    
+                    if not poll_id:
+                        logger.warning("Missing required parameter: pollId")
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": "Missing required parameter: pollId"
+                        }).encode())
+                        return
+                    
+                    logger.info(f"Calling gac_main with poll_id={poll_id}, force={force}")
+                    
+                    # Call the main function directly
+                    result = gac_main(poll_id=poll_id, force=force)
+                    
+                    logger.info(f"GAC update completed with result: {result}")
+                    
+                    # Send success response
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": True,
+                        "message": f"GAC update triggered for poll: {poll_id}",
+                        "result": result
+                    }).encode())
+                    
+                except json.JSONDecodeError as e:
+                    logger.error(f"JSON decode error: {str(e)}")
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": "Invalid JSON in request body"
+                    }).encode())
+                    
             except Exception as e:
                 logger.error(f"Error in do_POST: {str(e)}")
                 logger.error(traceback.format_exc())
@@ -64,10 +101,22 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         # Also handle GET requests to the same endpoint
         if self.path == "/api/update-gac-scores":
             try:
-                logger.info("Forwarding to GacHandler.do_GET()")
-                gac_handler = GacHandler(self.request, self.client_address, self.server)
-                gac_handler.do_GET()
-                logger.info("GacHandler.do_GET() completed")
+                # Call the main function directly without parameters to process all polls
+                logger.info("Calling gac_main without parameters to process all polls")
+                result = gac_main()
+                
+                logger.info(f"GAC update completed with result: {result}")
+                
+                # Send success response
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "message": "GAC update triggered for all polls",
+                    "result": result
+                }).encode())
+                
             except Exception as e:
                 logger.error(f"Error in do_GET: {str(e)}")
                 logger.error(traceback.format_exc())
