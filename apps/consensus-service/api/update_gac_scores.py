@@ -24,7 +24,7 @@ except (ImportError, ValueError):
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
 
-VERSION = "1.1.0"  # Update this when making changes
+VERSION = "1.2.0"  # Update this when making changes
 
 def setup_logging():
     """
@@ -309,11 +309,12 @@ async def check_and_create_constitution(cursor, poll_id, pre_update_statements):
 
 def main(poll_id=None, dry_run=False, force=False):
     """
-    Main function to update GAC scores.
+    Main function to update GAC scores for a specific poll or all polls with changes.
+    
     Args:
-        poll_id: Optional specific poll to process
-        dry_run: If True, only show calculations without modifying data
-        force: If True, process all polls regardless of changes
+        poll_id: Optional specific poll ID to process
+        dry_run: If True, don't actually update the database
+        force: If True, process even if no new votes
     """
     print(f"DEBUG: main() started with poll_id={poll_id}, dry_run={dry_run}, force={force}")
     
@@ -387,11 +388,27 @@ def main(poll_id=None, dry_run=False, force=False):
                             logger.info(f"  - GAC Score: {score}")
                             logger.info(f"  - Is Constitutionable: {is_const}")
                 else:
-                    update_statements(cursor, conn, statements, gac_scores, votes)
+                    changed_statements = update_statements(cursor, conn, statements, gac_scores, votes)
                     logger.info(f"Updated GAC scores for poll ID: {poll_id}")
+                    logger.info(f"Changed statements: {len(changed_statements)} statements had score changes")
                     
-                    # Check if we need to create a new constitution
-                    asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements))
+                    # Get community model ID for the poll
+                    model_id, _ = get_community_model_id(cursor, poll_id)
+                    if model_id:
+                        # Only send webhook if there are changed statements or if we need to check for constitution
+                        if changed_statements or check_constitution:
+                            # Send webhook to notify about changes
+                            logger.info(f"Sending webhook for model {model_id} with {len(changed_statements)} changed statements")
+                            webhook_success = asyncio.run(send_webhook(model_id, poll_id, changed_statements))
+                            logger.info(f"Webhook delivery {'succeeded' if webhook_success else 'failed'}")
+                        else:
+                            logger.info(f"No webhook sent - no changed statements and constitution check not needed")
+                    else:
+                        logger.warning(f"No model ID found for poll {poll_id}, cannot send webhook")
+                    
+                    # Check if we need to create a constitution
+                    if check_constitution:
+                        asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements))
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")
@@ -811,6 +828,9 @@ def calculate_gac_scores(vote_matrix, clusters):
 def update_statements(cursor, conn, statements, gac_scores, votes):
     # Create a set of statement IDs that have votes
     statements_with_votes = set(vote['statementId'] for vote in votes)
+    
+    # Track statements with changed GAC scores
+    changed_statements = []
 
     for statement in statements:
         statement_id = statement['uid']
@@ -818,13 +838,30 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
             if statement_id in gac_scores:
                 gac_score_data = gac_scores[statement_id]
                 is_const = is_constitutionable(gac_score_data)
+                
+                # Get current GAC score before update
+                cursor.execute("""
+                    SELECT "gacScore" FROM "Statement" WHERE uid = %s;
+                """, (statement_id,))
+                result = cursor.fetchone()
+                old_score = result[0] if result else None
+                new_score = gac_score_data['score']
+                
+                # Only track changes if the score actually changed
+                if old_score != new_score:
+                    changed_statements.append({
+                        'statementId': statement_id,
+                        'oldScore': old_score,
+                        'newScore': new_score
+                    })
+                
                 cursor.execute("""
                     UPDATE "Statement"
                     SET "gacScore" = %s,
                         "lastCalculatedAt" = NOW(),
                         "isConstitutionable" = %s
                     WHERE uid = %s;
-                """, (gac_score_data['score'], is_const, statement_id))
+                """, (new_score, is_const, statement_id))
         else:
             # For statements without votes, ensure gacScore and lastCalculatedAt remain null
             cursor.execute("""
@@ -835,6 +872,9 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                 WHERE uid = %s;
             """, (statement_id,))
     conn.commit()
+    
+    # Return the list of statements with changed GAC scores
+    return changed_statements
 
 def is_constitutionable(gac_data):
     """

@@ -5,6 +5,11 @@ export interface WebhookPayload {
   modelId: string;
   pollId: string;
   timestamp: string;
+  changedStatements?: Array<{
+    statementId: string;
+    oldScore: number | null;
+    newScore: number;
+  }>;
 }
 
 export interface WebhookVerificationResult {
