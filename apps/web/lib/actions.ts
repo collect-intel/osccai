@@ -545,28 +545,11 @@ async function updateVoteCounts(
     updateData.disagreeCount = { increment: 1 };
   if (newVote === VoteValue.PASS) updateData.passCount = { increment: 1 };
 
-  // Fetch the statement to get the old GAC score
-  const statement = await prisma.statement.findUnique({
-    where: { uid: statementId },
-    select: { gacScore: true },
-  });
-
-  const oldScore = statement?.gacScore ?? undefined;
-
   // Update the statement
-  const updatedStatement = await prisma.statement.update({
+  await prisma.statement.update({
     where: { uid: statementId },
     data: updateData,
   });
-
-  // If GAC score has changed, log it
-  if (updatedStatement.gacScore !== oldScore) {
-    logGacScoreUpdated(
-      updatedStatement,
-      oldScore,
-      updatedStatement.gacScore || 0,
-    );
-  }
 }
 
 async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
@@ -577,28 +560,11 @@ async function incrementVoteCount(statementId: string, voteValue: VoteValue) {
     updateData.disagreeCount = { increment: 1 };
   if (voteValue === VoteValue.PASS) updateData.passCount = { increment: 1 };
 
-  // Fetch the statement to get the old GAC score
-  const statement = await prisma.statement.findUnique({
-    where: { uid: statementId },
-    select: { gacScore: true },
-  });
-
-  const oldScore = statement?.gacScore ?? undefined;
-
   // Update the statement
-  const updatedStatement = await prisma.statement.update({
+  await prisma.statement.update({
     where: { uid: statementId },
     data: updateData,
   });
-
-  // If GAC score has changed, log it
-  if (updatedStatement.gacScore !== oldScore) {
-    logGacScoreUpdated(
-      updatedStatement,
-      oldScore,
-      updatedStatement.gacScore || 0,
-    );
-  }
 }
 
 export async function generateCsv(pollId: string): Promise<string> {
