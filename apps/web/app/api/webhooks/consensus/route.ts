@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
               // Convert null to undefined to match the expected type
               const oldScore = change.oldScore === null ? undefined : change.oldScore;
               
-              // Log the GAC score update
-              logGacScoreUpdated(
+              // Log the GAC score update - now awaiting the async function
+              await logGacScoreUpdated(
                 statement,
                 oldScore,
                 change.newScore

@@ -349,11 +349,11 @@ export async function logVoteCast(
  * @param oldScore Previous GAC score value
  * @param newScore New GAC score value
  */
-export function logGacScoreUpdated(
+export async function logGacScoreUpdated(
   statement: Statement,
   oldScore: number | undefined,
   newScore: number,
-): void {
+): Promise<void> {
   try {
     // Validate statement data
     if (!statement || !statement.uid || !statement.pollId) {
@@ -367,14 +367,17 @@ export function logGacScoreUpdated(
       newScore,
     };
 
-    // Make a synchronous call to logSystemEvent
-    logSystemEvent({
+    // Use createEventParams to ensure communityModelId is included
+    const eventParams = await createEventParams({
       eventType: EventType.GAC_SCORE_UPDATED,
       resourceType: ResourceType.STATEMENT,
       resourceId: statement.uid,
       actor: SYSTEM_ACTOR,
       metadata,
     });
+
+    // Log the event with the communityModelId
+    await logSystemEvent(eventParams);
   } catch (error) {
     console.error("Failed to log GAC score update:", error);
   }
