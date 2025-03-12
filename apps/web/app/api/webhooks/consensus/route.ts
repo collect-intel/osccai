@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyWebhook } from "@/lib/utils/server/webhooks";
 import { createAndActivateConstitution } from "@/lib/actions";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Received webhook from consensus service");
+
     // Get raw body and signature
     const rawBody = await request.text();
     const signature = request.headers.get("X-Webhook-Signature");
+
+    console.log(`Webhook signature: ${signature?.substring(0, 10)}...`);
+    console.log(`Webhook body length: ${rawBody.length} characters`);
 
     // Verify webhook
     const verificationResult = verifyWebhook(signature, rawBody);
@@ -19,12 +25,18 @@ export async function POST(request: NextRequest) {
     }
 
     const { payload } = verificationResult;
+    console.log(`Webhook verified successfully. Event type: ${payload.event}`);
 
     // Handle different event types
     switch (payload.event) {
       case "statements_changed":
-        // Create and activate new constitution
-        await createAndActivateConstitution(payload.modelId);
+        console.log(
+          `Processing statements_changed event for model ${payload.modelId}`,
+        );
+        // Create and activate new constitution with bypassAuth option
+        await createAndActivateConstitution(payload.modelId, {
+          bypassAuth: true,
+        });
         break;
       default:
         console.warn(`Unknown webhook event type: ${payload.event}`);

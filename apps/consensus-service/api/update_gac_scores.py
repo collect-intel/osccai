@@ -12,12 +12,20 @@ import pandas as pd
 import math
 import aiohttp
 import asyncio
-from webhook_utils import send_webhook
+import uuid
+
+# Handle imports for both direct execution and package import
+try:
+    # Try relative import first (for when used as a package)
+    from .webhook_utils import send_webhook
+except (ImportError, ValueError):
+    # Fall back to direct import (for when run as script)
+    from webhook_utils import send_webhook
 
 # Set pandas option for future-proof behavior with downcasting
 pd.set_option('future.no_silent_downcasting', True)
 
-VERSION = "1.1.0"  # Update this when making changes
+VERSION = "1.2.0"  # Update this when making changes
 
 def setup_logging():
     """
@@ -88,31 +96,125 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'Error updating GAC scores')
         return
+    
+    def do_POST(self):
+        logger.info("Handling POST request in update_gac_scores.py")
+        
+        try:
+            # Get request body
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                logger.info(f"Content length: {content_length}")
+                post_data = self.rfile.read(content_length).decode('utf-8')
+                logger.info(f"Request body: {post_data}")
+                
+                data = json.loads(post_data)
+                poll_id = data.get('pollId')
+                force = data.get('force', False)
+                
+                logger.info(f"Parsed request: pollId={poll_id}, force={force}")
+                
+                if not poll_id:
+                    logger.warning("Missing required parameter: pollId")
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": "Missing required parameter: pollId"
+                    }).encode())
+                    return
+                
+                logger.info(f"Triggering GAC update for poll: {poll_id}")
+                
+                # Run the GAC update for the specific poll
+                try:
+                    result = main(poll_id=poll_id, force=force)
+                    logger.info(f"GAC update completed with result: {result}")
+                    
+                    # Send success response
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": True,
+                        "message": f"GAC update triggered for poll: {poll_id}",
+                        "result": result
+                    }).encode())
+                except Exception as e:
+                    logger.error(f"Error in main function: {str(e)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": f"Error processing GAC update: {str(e)}"
+                    }).encode())
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error: {str(e)}")
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "error": "Invalid JSON in request body"
+                }).encode())
+            except Exception as e:
+                logger.error(f"Unexpected error in do_POST: {str(e)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "error": f"Internal server error: {str(e)}"
+                }).encode())
+        except Exception as e:
+            logger.error(f"Top-level exception in do_POST: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            try:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "error": f"Server error: {str(e)}"
+                }).encode())
+            except:
+                logger.error("Failed to send error response")
 
 def create_connection():
     # Reload DATABASE_URL at runtime
     DATABASE_URL = os.getenv("DATABASE_URL")
     
     if not DATABASE_URL:
-        raise ValueError("DATABASE_URL environment variable is not set")
+        error_msg = "DATABASE_URL environment variable is not set"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
     
     try:
         url = urlparse(DATABASE_URL)
-        db_info = dict(
-            user=url.username,
-            password=url.password,
-            host=url.hostname,
-            port=url.port or 5432,
-            database='postgres'  # Explicitly set for Supabase
+        logger.info(f"Connecting to database at {url.hostname}")
+        
+        # Extract connection parameters
+        dbname = url.path[1:]  # Remove leading slash
+        user = url.username
+        password = url.password
+        host = url.hostname
+        port = url.port or 5432  # Default PostgreSQL port
+        
+        # Connect to the database
+        conn = pg8000.connect(
+            database=dbname,
+            user=user,
+            password=password,
+            host=host,
+            port=port
         )
-        
-        # Remove None values
-        db_info = {k: v for k, v in db_info.items() if v is not None}
-        
-        conn = pg8000.connect(**db_info)
+        logger.info("Database connection successful")
         return conn
     except Exception as e:
-        logger.error(f"Failed to parse DATABASE_URL: {e}")
+        logger.error(f"Database connection error: {str(e)}")
         raise
 
 def verify_poll_exists(cursor, poll_id):
@@ -153,13 +255,8 @@ def get_constitutionable_statements(cursor, poll_id):
     """, (poll_id,))
     return {row[0] for row in cursor.fetchall()}
 
-async def check_and_create_constitution(cursor, poll_id, pre_update_statements):
+async def check_and_create_constitution(cursor, poll_id, pre_update_statements, model_id):
     """Check if constitution needs to be created and create if necessary."""
-    model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
-    
-    if not model_id or not auto_create_enabled:
-        return
-        
     # Get post-update constitutionable statements
     post_update_statements = get_constitutionable_statements(cursor, poll_id)
     
@@ -179,36 +276,56 @@ async def check_and_create_constitution(cursor, poll_id, pre_update_statements):
 
 def main(poll_id=None, dry_run=False, force=False):
     """
-    Main function to update GAC scores.
+    Main function to update GAC scores for a specific poll or all polls with changes.
+    
     Args:
-        poll_id: Optional specific poll to process
-        dry_run: If True, only show calculations without modifying data
-        force: If True, process all polls regardless of changes
+        poll_id: Optional specific poll ID to process
+        dry_run: If True, don't actually update the database
+        force: If True, process even if no new votes
     """
-    logger.info(f"Starting update-gac-scores.py script version {VERSION}")
-    logger.info(f"Mode: {'Dry Run' if dry_run else 'Normal'}")
-    logger.info(f"Force Update: {force}")
-    logger.info(f"Target: {'Specific Poll: ' + poll_id if poll_id else 'All Polls' if force else 'Modified Polls'}")
-
+    # Set up logging
+    setup_logging()
+    logger.info(f"Starting GAC score update (version {VERSION})")
+    logger.info(f"Parameters: poll_id={poll_id}, dry_run={dry_run}, force={force}")
+    
     try:
+        # Create database connection
         conn = create_connection()
         cursor = conn.cursor()
-        logger.info("Connected to the database successfully")
-
+        
+        # Verify poll exists if specified
         if poll_id:
-            # Verify poll exists and is valid
-            verify_poll_exists(cursor, poll_id)
-            polls = [{'uid': poll_id}]
-            logger.info(f"Processing specific poll: {poll_id}")
+            logger.info(f"Verifying poll exists: {poll_id}")
+            if not verify_poll_exists(cursor, poll_id):
+                error_msg = f"Poll with ID {poll_id} not found"
+                logger.error(error_msg)
+                return {"error": error_msg}
+        
+        # Get polls to process
+        polls_to_process = []
+        if poll_id:
+            logger.info(f"Using specified poll: {poll_id}")
+            polls_to_process = [poll_id]
         else:
-            # Fetch all polls or only modified polls based on force flag
-            polls = fetch_all_polls(cursor) if force else fetch_polls_with_changes(cursor)
-            logger.info(f"Fetched {len(polls)} polls to process")
-
+            # If force flag is set, fetch all polls regardless of vote changes
+            if force:
+                logger.info("Force flag set, fetching all polls regardless of vote changes")
+                polls_to_process = fetch_all_polls(cursor)
+            else:
+                logger.info("Fetching polls with recent vote changes")
+                polls_to_process = fetch_polls_with_changes(cursor)
+            
+        if not polls_to_process:
+            msg = "No polls need GAC score updates"
+            logger.info(msg)
+            return {"message": msg}
+            
+        logger.info(f"Processing {len(polls_to_process)} polls")
+        
         # Process each poll
-        for poll in polls:
+        for current_poll_id in polls_to_process:
             try:
-                poll_id = poll['uid']
+                poll_id = current_poll_id
                 logger.info(f"Processing poll ID: {poll_id}")
                 
                 # Get pre-update constitutionable statements
@@ -224,6 +341,9 @@ def main(poll_id=None, dry_run=False, force=False):
                 gac_scores = process_votes(participants, statements, votes)
                 logger.info(f"Calculated GAC scores for poll ID: {poll_id}")
 
+                # Get community model ID for the poll before updating statements
+                model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
+                
                 if dry_run:
                     # Log what would have been updated in dry run mode
                     for statement in statements:
@@ -236,11 +356,28 @@ def main(poll_id=None, dry_run=False, force=False):
                             logger.info(f"  - GAC Score: {score}")
                             logger.info(f"  - Is Constitutionable: {is_const}")
                 else:
-                    update_statements(cursor, conn, statements, gac_scores, votes)
+                    # Pass model_id to update_statements to avoid redundant database queries
+                    changed_statements = update_statements(cursor, conn, statements, gac_scores, votes, model_id)
                     logger.info(f"Updated GAC scores for poll ID: {poll_id}")
-                    
-                    # Check if we need to create a new constitution
-                    asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements))
+                    logger.info(f"Changed statements: {len(changed_statements)} statements had score changes")
+
+                    # Check if we need to create a constitution
+                    # We no longer send GAC score updates via webhook, only constitution creation triggers
+                    if model_id and auto_create_enabled:
+                        # Get pre-update constitutionable statements
+                        pre_update_statements = get_constitutionable_statements(cursor, poll_id)
+                        # Get post-update constitutionable statements
+                        post_update_statements = get_constitutionable_statements(cursor, poll_id)
+                        
+                        # If there's a difference in the sets
+                        if pre_update_statements != post_update_statements:
+                            logger.info(f"Constitutionable statements changed for poll {poll_id}")
+                            logger.info(f"Pre-update: {pre_update_statements}")
+                            logger.info(f"Post-update: {post_update_statements}")
+                            
+                            # Send webhook to trigger constitution creation only
+                            webhook_success = asyncio.run(send_webhook(model_id, poll_id))
+                            logger.info(f"Constitution creation webhook delivery {'succeeded' if webhook_success else 'failed'}")
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")
@@ -657,9 +794,12 @@ def calculate_gac_scores(vote_matrix, clusters):
         
     return gac_scores
 
-def update_statements(cursor, conn, statements, gac_scores, votes):
+def update_statements(cursor, conn, statements, gac_scores, votes, model_id):
     # Create a set of statement IDs that have votes
     statements_with_votes = set(vote['statementId'] for vote in votes)
+    
+    # Track statements with changed GAC scores
+    changed_statements = []
 
     for statement in statements:
         statement_id = statement['uid']
@@ -667,13 +807,34 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
             if statement_id in gac_scores:
                 gac_score_data = gac_scores[statement_id]
                 is_const = is_constitutionable(gac_score_data)
+                
+                # Get current GAC score before update
+                cursor.execute("""
+                    SELECT "gacScore" FROM "Statement" WHERE uid = %s;
+                """, (statement_id,))
+                result = cursor.fetchone()
+                old_score = result[0] if result else None
+                new_score = gac_score_data['score']
+                
+                # Only track changes if the score actually changed
+                if old_score != new_score:
+                    changed_statements.append({
+                        'statementId': statement_id,
+                        'oldScore': old_score,
+                        'newScore': new_score
+                    })
+                    
+                    # Create SystemEvent record directly in the database
+                    # Pass the model_id to avoid redundant database query                    
+                    create_system_event(cursor, conn, statement_id, statement['pollId'], old_score, new_score, model_id)
+                
                 cursor.execute("""
                     UPDATE "Statement"
                     SET "gacScore" = %s,
                         "lastCalculatedAt" = NOW(),
                         "isConstitutionable" = %s
                     WHERE uid = %s;
-                """, (gac_score_data['score'], is_const, statement_id))
+                """, (new_score, is_const, statement_id))
         else:
             # For statements without votes, ensure gacScore and lastCalculatedAt remain null
             cursor.execute("""
@@ -684,6 +845,9 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                 WHERE uid = %s;
             """, (statement_id,))
     conn.commit()
+    
+    # Return the list of statements with changed GAC scores
+    return changed_statements
 
 def is_constitutionable(gac_data):
     """
@@ -747,6 +911,65 @@ def fetch_all_polls(cursor):
     columns = [col[0] for col in cursor.description]
     polls = [dict(zip(columns, row)) for row in cursor.fetchall()]
     return polls
+
+def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_score, community_model_id):
+    """
+    Create a SystemEvent record directly in the database for GAC score updates.
+    
+    This function directly creates GAC_SCORE_UPDATED events in the database rather than
+    relying on the webhook system. This architectural decision simplifies the flow and
+    reduces potential points of failure, while being appropriate for a proof-of-concept
+    application that doesn't require commercial-grade separation of concerns.
+    
+    Args:
+        cursor: Database cursor
+        conn: Database connection
+        statement_id: ID of the statement with updated GAC score
+        poll_id: ID of the poll containing the statement
+        old_score: Previous GAC score value (can be None)
+        new_score: New GAC score value
+        community_model_id: Optional model ID to avoid redundant database query
+    """
+    try:
+        # Create a unique ID for the event
+        event_id = f"clg{uuid.uuid4().hex[:21]}"  # Format similar to cuid but using uuid4
+        
+        # Create event metadata
+        metadata = json.dumps({
+            "pollId": poll_id,
+            "oldScore": old_score,
+            "newScore": new_score
+        })
+        
+        # Insert the SystemEvent record - Fix column names to match Prisma schema
+        cursor.execute("""
+            INSERT INTO "SystemEvent" (
+                "uid", "eventType", "resourceType", "resourceId", 
+                "communityModelId", "actorId", "actorName", "isAdminAction", 
+                "metadata", "createdAt"
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW() AT TIME ZONE 'UTC')
+        """, (
+            event_id,
+            "GAC_SCORE_UPDATED",
+            "Statement",
+            statement_id,
+            community_model_id,
+            "system",
+            "Automated Process",
+            True,
+            metadata
+        ))
+        
+        logger.info(f"Created GAC_SCORE_UPDATED SystemEvent for statement {statement_id}")
+    except Exception as e:
+        logger.error(f"Failed to create SystemEvent: {e}")
+        # Add transaction rollback to prevent cascading errors
+        try:
+            conn.rollback()
+            logger.info("Transaction rolled back after SystemEvent creation error")
+        except Exception as rollback_error:
+            logger.error(f"Failed to rollback transaction: {rollback_error}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Update GAC scores for statements')

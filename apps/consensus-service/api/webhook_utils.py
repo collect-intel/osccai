@@ -17,20 +17,37 @@ def create_signature(payload: dict, secret: str) -> str:
         hashlib.sha256
     ).hexdigest()
 
-async def send_webhook(model_id: str, poll_id: str) -> bool:
+async def send_webhook(model_id: str, poll_id: str, changed_statements: list = None) -> bool:
     """
     Send webhook to notify about changes in constitutionable statements.
     Returns True if webhook was successfully delivered.
+    
+    Args:
+        model_id: The community model ID
+        poll_id: The poll ID
+        changed_statements: Deprecated parameter, kept for backward compatibility
+    
+    Note:
+        This webhook is now ONLY used for triggering constitution creation.
+        GAC score update events are created directly in the database by update_gac_scores.py.
     """
     webhook_url = os.getenv('WEBHOOK_URL')
     webhook_secret = os.getenv('WEBHOOK_SECRET')
+    
+    logger.info(f"Preparing to send constitution creation webhook for model {model_id}, poll {poll_id}")
+    logger.info(f"WEBHOOK_URL is {'set' if webhook_url else 'NOT SET'}")
+    logger.info(f"WEBHOOK_SECRET is {'set' if webhook_secret else 'NOT SET'}")
     
     if not webhook_url or not webhook_secret:
         logger.error("Missing required environment variables: WEBHOOK_URL or WEBHOOK_SECRET")
         return False
         
+    # We now only use the statements_changed event type
+    event_type = "statements_changed"
+    logger.info(f"Using event type: {event_type}")
+    
     payload = {
-        "event": "statements_changed",
+        "event": event_type,
         "modelId": model_id,
         "pollId": poll_id,
         "timestamp": datetime.utcnow().isoformat()
@@ -39,6 +56,7 @@ async def send_webhook(model_id: str, poll_id: str) -> bool:
     try:
         # Create signature
         signature = create_signature(payload, webhook_secret)
+        logger.info(f"Created signature: {signature[:10]}...")
         
         # Prepare headers
         headers = {
@@ -57,7 +75,7 @@ async def send_webhook(model_id: str, poll_id: str) -> bool:
                         timeout=10  # 10 second timeout
                     ) as response:
                         if response.status == 200:
-                            logger.info(f"Webhook delivered successfully for model {model_id}")
+                            logger.info(f"Constitution creation webhook delivered successfully for model {model_id}")
                             return True
                         else:
                             error_data = await response.json()

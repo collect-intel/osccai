@@ -6,7 +6,11 @@ export enum EventType {
   MODEL_SETTING_CHANGE = "MODEL_SETTING_CHANGE",
   STATEMENT_ADDED = "STATEMENT_ADDED",
   VOTE_CAST = "VOTE_CAST",
+
+  // GAC_SCORE_UPDATED events are created both by the web app and directly
+  // by the consensus-service Python script for efficiency
   GAC_SCORE_UPDATED = "GAC_SCORE_UPDATED",
+
   POLL_CREATED = "POLL_CREATED",
   POLL_UPDATED = "POLL_UPDATED",
   CONSTITUTION_GENERATED = "CONSTITUTION_GENERATED",

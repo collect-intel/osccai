@@ -38,6 +38,9 @@ pnpm consensus-service gac:local:dry
 # Show GAC calculations for specific poll in local DB (no data changes)
 pnpm consensus-service gac:local:poll:dry "your-poll-id"
 
+# Start a local server for testing admin UI functionality
+pnpm consensus-service serve:local
+
 # Show GAC calculations for specific poll in prod DB (no data changes)
 pnpm consensus-service gac:prod:poll:dry "your-poll-id"
 ```

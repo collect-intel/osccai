@@ -345,15 +345,21 @@ export async function logVoteCast(
  * Logs when a GAC score is updated
  * Typically called after vote calculations
  *
+ * NOTE: This function is primarily used by the web app for manual GAC score updates.
+ * For automated GAC score updates, the consensus-service creates SystemEvent records directly
+ * in the database for efficiency and reliability reasons. This architectural decision
+ * simplifies the flow and reduces potential points of failure, while being appropriate
+ * for a proof-of-concept application.
+ *
  * @param statement The statement with the updated score
  * @param oldScore Previous GAC score value
  * @param newScore New GAC score value
  */
-export function logGacScoreUpdated(
+export async function logGacScoreUpdated(
   statement: Statement,
   oldScore: number | undefined,
   newScore: number,
-): void {
+): Promise<void> {
   try {
     // Validate statement data
     if (!statement || !statement.uid || !statement.pollId) {
@@ -367,14 +373,17 @@ export function logGacScoreUpdated(
       newScore,
     };
 
-    // Make a synchronous call to logSystemEvent
-    logSystemEvent({
+    // Use createEventParams to ensure communityModelId is included
+    const eventParams = await createEventParams({
       eventType: EventType.GAC_SCORE_UPDATED,
       resourceType: ResourceType.STATEMENT,
       resourceId: statement.uid,
       actor: SYSTEM_ACTOR,
       metadata,
     });
+
+    // Log the event with the communityModelId
+    await logSystemEvent(eventParams);
   } catch (error) {
     console.error("Failed to log GAC score update:", error);
   }
