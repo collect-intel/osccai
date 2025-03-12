@@ -12,6 +12,7 @@ import pandas as pd
 import math
 import aiohttp
 import asyncio
+import uuid
 
 # Handle imports for both direct execution and package import
 try:
@@ -359,20 +360,27 @@ def main(poll_id=None, dry_run=False, force=False):
                     # Get community model ID for the poll
                     model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
                     if model_id:
-                        # Only send webhook if there are changed statements
-                        if changed_statements:
-                            # Send webhook to notify about changes
-                            logger.info(f"Sending webhook for model {model_id} with {len(changed_statements)} changed statements")
-                            webhook_success = asyncio.run(send_webhook(model_id, poll_id, changed_statements))
-                            logger.info(f"Webhook delivery {'succeeded' if webhook_success else 'failed'}")
+                        # Check if we need to create a constitution
+                        # We no longer send GAC score updates via webhook, only constitution creation triggers
+                        if auto_create_enabled:
+                            # Get pre-update constitutionable statements
+                            pre_update_statements = get_constitutionable_statements(cursor, poll_id)
+                            # Get post-update constitutionable statements
+                            post_update_statements = get_constitutionable_statements(cursor, poll_id)
+                            
+                            # If there's a difference in the sets
+                            if pre_update_statements != post_update_statements:
+                                logger.info(f"Constitutionable statements changed for poll {poll_id}")
+                                logger.info(f"Pre-update: {pre_update_statements}")
+                                logger.info(f"Post-update: {post_update_statements}")
+                                
+                                # Send webhook to trigger constitution creation only
+                                webhook_success = asyncio.run(send_webhook(model_id, poll_id))
+                                logger.info(f"Constitution creation webhook delivery {'succeeded' if webhook_success else 'failed'}")
                         else:
-                            logger.info(f"No webhook sent - no changed statements")
+                            logger.warning(f"No model ID found for poll {poll_id}, cannot trigger constitution creation")
                     else:
-                        logger.warning(f"No model ID found for poll {poll_id}, cannot send webhook")
-                    
-                    # Check if we need to create a constitution
-                    if model_id and auto_create_enabled:
-                        asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements, model_id))
+                        logger.warning(f"No model ID found for poll {poll_id}, cannot trigger constitution creation")
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")
@@ -818,6 +826,10 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                         'oldScore': old_score,
                         'newScore': new_score
                     })
+                    
+                    # Create SystemEvent record directly in the database
+                    # This replaces the previous webhook-based event creation
+                    create_system_event(cursor, conn, statement_id, statement['pollId'], old_score, new_score)
                 
                 cursor.execute("""
                     UPDATE "Statement"
@@ -902,6 +914,69 @@ def fetch_all_polls(cursor):
     columns = [col[0] for col in cursor.description]
     polls = [dict(zip(columns, row)) for row in cursor.fetchall()]
     return polls
+
+def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_score):
+    """
+    Create a SystemEvent record directly in the database for GAC score updates.
+    
+    This function directly creates GAC_SCORE_UPDATED events in the database rather than
+    relying on the webhook system. This architectural decision simplifies the flow and
+    reduces potential points of failure, while being appropriate for a proof-of-concept
+    application that doesn't require commercial-grade separation of concerns.
+    
+    Args:
+        cursor: Database cursor
+        conn: Database connection
+        statement_id: ID of the statement with updated GAC score
+        poll_id: ID of the poll containing the statement
+        old_score: Previous GAC score value (can be None)
+        new_score: New GAC score value
+    """
+    try:
+        # Get communityModelId from the poll
+        cursor.execute("""
+            SELECT "communityModelId" FROM "Poll" WHERE uid = %s;
+        """, (poll_id,))
+        result = cursor.fetchone()
+        if not result:
+            logger.warning(f"Could not find communityModelId for poll {poll_id}")
+            return
+            
+        community_model_id = result[0]
+        
+        # Create a unique ID for the event
+        event_id = f"clg{uuid.uuid4().hex[:21]}"  # Format similar to cuid but using uuid4
+        
+        # Create event metadata
+        metadata = json.dumps({
+            "pollId": poll_id,
+            "oldScore": old_score,
+            "newScore": new_score
+        })
+        
+        # Insert the SystemEvent record
+        cursor.execute("""
+            INSERT INTO "SystemEvent" (
+                uid, eventType, resourceType, resourceId, 
+                communityModelId, actorId, actorName, isAdminAction, 
+                metadata, "createdAt"
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        """, (
+            event_id,
+            "GAC_SCORE_UPDATED",
+            "Statement",
+            statement_id,
+            community_model_id,
+            "system",
+            "Automated Process",
+            True,
+            metadata
+        ))
+        
+        logger.info(f"Created GAC_SCORE_UPDATED SystemEvent for statement {statement_id}")
+    except Exception as e:
+        logger.error(f"Failed to create SystemEvent: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Update GAC scores for statements')

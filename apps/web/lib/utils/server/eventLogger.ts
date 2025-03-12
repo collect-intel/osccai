@@ -345,6 +345,12 @@ export async function logVoteCast(
  * Logs when a GAC score is updated
  * Typically called after vote calculations
  *
+ * NOTE: This function is primarily used by the web app for manual GAC score updates.
+ * For automated GAC score updates, the consensus-service creates SystemEvent records directly
+ * in the database for efficiency and reliability reasons. This architectural decision
+ * simplifies the flow and reduces potential points of failure, while being appropriate
+ * for a proof-of-concept application.
+ *
  * @param statement The statement with the updated score
  * @param oldScore Previous GAC score value
  * @param newScore New GAC score value

@@ -19,26 +19,22 @@ def create_signature(payload: dict, secret: str) -> str:
 
 async def send_webhook(model_id: str, poll_id: str, changed_statements: list = None) -> bool:
     """
-    Send webhook to notify about changes in GAC scores or constitutionable statements.
+    Send webhook to notify about changes in constitutionable statements.
     Returns True if webhook was successfully delivered.
     
     Args:
         model_id: The community model ID
         poll_id: The poll ID
-        changed_statements: Optional list of statements with changed GAC scores
+        changed_statements: Deprecated parameter, kept for backward compatibility
     
-    Event types:
-        - "gac_scores_updated": Sent when GAC scores have been updated. Includes detailed 
-          information about which statements changed and their old/new scores. This triggers
-          both SystemEvent creation for each changed statement AND constitution creation if needed.
-        
-        - "statements_changed": Sent when only checking for constitution creation is needed,
-          without detailed GAC score change information. This only triggers constitution creation.
+    Note:
+        This webhook is now ONLY used for triggering constitution creation.
+        GAC score update events are created directly in the database by update_gac_scores.py.
     """
     webhook_url = os.getenv('WEBHOOK_URL')
     webhook_secret = os.getenv('WEBHOOK_SECRET')
     
-    logger.info(f"Preparing to send webhook for model {model_id}, poll {poll_id}")
+    logger.info(f"Preparing to send constitution creation webhook for model {model_id}, poll {poll_id}")
     logger.info(f"WEBHOOK_URL is {'set' if webhook_url else 'NOT SET'}")
     logger.info(f"WEBHOOK_SECRET is {'set' if webhook_secret else 'NOT SET'}")
     
@@ -46,8 +42,8 @@ async def send_webhook(model_id: str, poll_id: str, changed_statements: list = N
         logger.error("Missing required environment variables: WEBHOOK_URL or WEBHOOK_SECRET")
         return False
         
-    # Determine event type based on whether we have GAC score changes
-    event_type = "gac_scores_updated" if changed_statements else "statements_changed"
+    # We now only use the statements_changed event type
+    event_type = "statements_changed"
     logger.info(f"Using event type: {event_type}")
     
     payload = {
@@ -56,11 +52,6 @@ async def send_webhook(model_id: str, poll_id: str, changed_statements: list = N
         "pollId": poll_id,
         "timestamp": datetime.utcnow().isoformat()
     }
-    
-    # Include changed statements data if provided
-    if changed_statements:
-        payload["changedStatements"] = changed_statements
-        logger.info(f"Including {len(changed_statements)} changed statements in payload")
     
     try:
         # Create signature
@@ -84,7 +75,7 @@ async def send_webhook(model_id: str, poll_id: str, changed_statements: list = N
                         timeout=10  # 10 second timeout
                     ) as response:
                         if response.status == 200:
-                            logger.info(f"Webhook delivered successfully for model {model_id}")
+                            logger.info(f"Constitution creation webhook delivered successfully for model {model_id}")
                             return True
                         else:
                             error_data = await response.json()
