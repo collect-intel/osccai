@@ -8,6 +8,7 @@ import { AdminModeIndicator } from "@/lib/components/AdminComponents";
 import EventLogViewer from "@/lib/components/EventLogViewer";
 import { ResourceType } from "@/lib/types/events";
 import UpdateGacButton from "@/lib/components/admin/UpdateGacButton";
+import AdminActivityLog from "@/lib/components/admin/AdminActivityLog";
 
 export default async function AdminModelViewPage({
   params,
@@ -254,16 +255,7 @@ export default async function AdminModelViewPage({
         )}
       </div>
 
-      <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Activity Log</h2>
-        <div className="mt-2">
-          <EventLogViewer
-            communityModelId={model.uid}
-            limit={20}
-            compact={true}
-          />
-        </div>
-      </div>
+      <AdminActivityLog modelId={model.uid} />
     </div>
   );
 }
