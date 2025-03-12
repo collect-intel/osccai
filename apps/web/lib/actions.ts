@@ -860,19 +860,47 @@ export async function unpublishModel(formData: FormData) {
 
 export async function createConstitution(
   communityModelId: string,
+  options?: { bypassAuth?: boolean }
 ): Promise<Constitution> {
-  // Get the current user
-  const { userId: clerkUserId } = auth();
-  if (!clerkUserId) {
-    throw new Error("User not authenticated");
-  }
+  let owner;
+  
+  // Get the current user if not bypassing auth
+  if (!options?.bypassAuth) {
+    const { userId: clerkUserId } = auth();
+    if (!clerkUserId) {
+      throw new Error("User not authenticated");
+    }
 
-  const owner = await prisma.communityModelOwner.findUnique({
-    where: { clerkUserId },
-  });
+    owner = await prisma.communityModelOwner.findUnique({
+      where: { clerkUserId },
+    });
 
-  if (!owner) {
-    throw new Error("Owner not found");
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+  } else {
+    // For system actions, find the model owner
+    const communityModel = await prisma.communityModel.findUnique({
+      where: { uid: communityModelId },
+      include: { owner: true },
+    });
+    
+    if (!communityModel) {
+      throw new Error("Community model not found");
+    }
+    
+    owner = communityModel.owner;
+    
+    if (!owner) {
+      // Fallback to any owner if needed
+      owner = await prisma.communityModelOwner.findFirst({
+        where: { communityModels: { some: { uid: communityModelId } } }
+      });
+      
+      if (!owner) {
+        throw new Error("No owner found for this model");
+      }
+    }
   }
 
   const communityModel = await prisma.communityModel.findUnique({
@@ -945,19 +973,47 @@ export async function createConstitution(
 export async function setActiveConstitution(
   communityModelId: string,
   constitutionId: string,
+  options?: { bypassAuth?: boolean }
 ): Promise<void> {
-  // Get the current user
-  const { userId: clerkUserId } = auth();
-  if (!clerkUserId) {
-    throw new Error("User not authenticated");
-  }
+  let owner;
+  
+  // Get the current user if not bypassing auth
+  if (!options?.bypassAuth) {
+    const { userId: clerkUserId } = auth();
+    if (!clerkUserId) {
+      throw new Error("User not authenticated");
+    }
 
-  const owner = await prisma.communityModelOwner.findUnique({
-    where: { clerkUserId },
-  });
+    owner = await prisma.communityModelOwner.findUnique({
+      where: { clerkUserId },
+    });
 
-  if (!owner) {
-    throw new Error("Owner not found");
+    if (!owner) {
+      throw new Error("Owner not found");
+    }
+  } else {
+    // For system actions, find the model owner
+    const communityModel = await prisma.communityModel.findUnique({
+      where: { uid: communityModelId },
+      include: { owner: true },
+    });
+    
+    if (!communityModel) {
+      throw new Error("Community model not found");
+    }
+    
+    owner = communityModel.owner;
+    
+    if (!owner) {
+      // Fallback to any owner if needed
+      owner = await prisma.communityModelOwner.findFirst({
+        where: { communityModels: { some: { uid: communityModelId } } }
+      });
+      
+      if (!owner) {
+        throw new Error("No owner found for this model");
+      }
+    }
   }
 
   // Update the community model with the active constitution
@@ -1564,8 +1620,9 @@ export async function checkPollCompletion(
 
 export async function createAndActivateConstitution(
   modelId: string,
+  options?: { bypassAuth?: boolean }
 ): Promise<Constitution> {
-  const constitution = await createConstitution(modelId);
-  await setActiveConstitution(modelId, constitution.uid);
+  const constitution = await createConstitution(modelId, options);
+  await setActiveConstitution(modelId, constitution.uid, options);
   return constitution;
 }

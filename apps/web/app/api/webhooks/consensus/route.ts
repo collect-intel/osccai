@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     switch (payload.event) {
       case "statements_changed":
         console.log(`Processing statements_changed event for model ${payload.modelId}`);
-        // Create and activate new constitution
-        await createAndActivateConstitution(payload.modelId);
+        // Create and activate new constitution with bypassAuth option
+        await createAndActivateConstitution(payload.modelId, { bypassAuth: true });
         break;
       case "gac_scores_updated":
         console.log(`Processing gac_scores_updated event for model ${payload.modelId}`);
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
           console.warn(`No changedStatements found in payload for gac_scores_updated event`);
         }
         
-        // Also check if we need to create a new constitution
-        await createAndActivateConstitution(payload.modelId);
+        // Also check if we need to create a new constitution with bypassAuth option
+        await createAndActivateConstitution(payload.modelId, { bypassAuth: true });
         break;
       default:
         console.warn(`Unknown webhook event type: ${payload.event}`);
