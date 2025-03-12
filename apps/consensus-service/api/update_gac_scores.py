@@ -341,6 +341,9 @@ def main(poll_id=None, dry_run=False, force=False):
                 gac_scores = process_votes(participants, statements, votes)
                 logger.info(f"Calculated GAC scores for poll ID: {poll_id}")
 
+                # Get community model ID for the poll before updating statements
+                model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
+                
                 if dry_run:
                     # Log what would have been updated in dry run mode
                     for statement in statements:
@@ -353,12 +356,11 @@ def main(poll_id=None, dry_run=False, force=False):
                             logger.info(f"  - GAC Score: {score}")
                             logger.info(f"  - Is Constitutionable: {is_const}")
                 else:
-                    changed_statements = update_statements(cursor, conn, statements, gac_scores, votes)
+                    # Pass model_id to update_statements to avoid redundant database queries
+                    changed_statements = update_statements(cursor, conn, statements, gac_scores, votes, model_id)
                     logger.info(f"Updated GAC scores for poll ID: {poll_id}")
                     logger.info(f"Changed statements: {len(changed_statements)} statements had score changes")
                     
-                    # Get community model ID for the poll
-                    model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
                     if model_id:
                         # Check if we need to create a constitution
                         # We no longer send GAC score updates via webhook, only constitution creation triggers
@@ -797,7 +799,7 @@ def calculate_gac_scores(vote_matrix, clusters):
         
     return gac_scores
 
-def update_statements(cursor, conn, statements, gac_scores, votes):
+def update_statements(cursor, conn, statements, gac_scores, votes, model_id):
     # Create a set of statement IDs that have votes
     statements_with_votes = set(vote['statementId'] for vote in votes)
     
@@ -828,8 +830,8 @@ def update_statements(cursor, conn, statements, gac_scores, votes):
                     })
                     
                     # Create SystemEvent record directly in the database
-                    # This replaces the previous webhook-based event creation
-                    create_system_event(cursor, conn, statement_id, statement['pollId'], old_score, new_score)
+                    # Pass the model_id to avoid redundant database query                    
+                    create_system_event(cursor, conn, statement_id, statement['pollId'], old_score, new_score, model_id)
                 
                 cursor.execute("""
                     UPDATE "Statement"
@@ -915,7 +917,7 @@ def fetch_all_polls(cursor):
     polls = [dict(zip(columns, row)) for row in cursor.fetchall()]
     return polls
 
-def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_score):
+def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_score, community_model_id):
     """
     Create a SystemEvent record directly in the database for GAC score updates.
     
@@ -931,19 +933,9 @@ def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_scor
         poll_id: ID of the poll containing the statement
         old_score: Previous GAC score value (can be None)
         new_score: New GAC score value
+        community_model_id: Optional model ID to avoid redundant database query
     """
     try:
-        # Get communityModelId from the poll
-        cursor.execute("""
-            SELECT "communityModelId" FROM "Poll" WHERE uid = %s;
-        """, (poll_id,))
-        result = cursor.fetchone()
-        if not result:
-            logger.warning(f"Could not find communityModelId for poll {poll_id}")
-            return
-            
-        community_model_id = result[0]
-        
         # Create a unique ID for the event
         event_id = f"clg{uuid.uuid4().hex[:21]}"  # Format similar to cuid but using uuid4
         
