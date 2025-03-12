@@ -6,11 +6,11 @@ import { prisma } from "@/lib/db";
 export async function POST(request: NextRequest) {
   try {
     console.log("Received webhook from consensus service");
-    
+
     // Get raw body and signature
     const rawBody = await request.text();
     const signature = request.headers.get("X-Webhook-Signature");
-    
+
     console.log(`Webhook signature: ${signature?.substring(0, 10)}...`);
     console.log(`Webhook body length: ${rawBody.length} characters`);
 
@@ -30,9 +30,13 @@ export async function POST(request: NextRequest) {
     // Handle different event types
     switch (payload.event) {
       case "statements_changed":
-        console.log(`Processing statements_changed event for model ${payload.modelId}`);
+        console.log(
+          `Processing statements_changed event for model ${payload.modelId}`,
+        );
         // Create and activate new constitution with bypassAuth option
-        await createAndActivateConstitution(payload.modelId, { bypassAuth: true });
+        await createAndActivateConstitution(payload.modelId, {
+          bypassAuth: true,
+        });
         break;
       default:
         console.warn(`Unknown webhook event type: ${payload.event}`);

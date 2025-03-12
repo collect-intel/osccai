@@ -860,10 +860,10 @@ export async function unpublishModel(formData: FormData) {
 
 export async function createConstitution(
   communityModelId: string,
-  options?: { bypassAuth?: boolean }
+  options?: { bypassAuth?: boolean },
 ): Promise<Constitution> {
   let owner;
-  
+
   // Get the current user if not bypassing auth
   if (!options?.bypassAuth) {
     const { userId: clerkUserId } = auth();
@@ -884,19 +884,19 @@ export async function createConstitution(
       where: { uid: communityModelId },
       include: { owner: true },
     });
-    
+
     if (!communityModel) {
       throw new Error("Community model not found");
     }
-    
+
     owner = communityModel.owner;
-    
+
     if (!owner) {
       // Fallback to any owner if needed
       owner = await prisma.communityModelOwner.findFirst({
-        where: { communityModels: { some: { uid: communityModelId } } }
+        where: { communityModels: { some: { uid: communityModelId } } },
       });
-      
+
       if (!owner) {
         throw new Error("No owner found for this model");
       }
@@ -973,10 +973,10 @@ export async function createConstitution(
 export async function setActiveConstitution(
   communityModelId: string,
   constitutionId: string,
-  options?: { bypassAuth?: boolean }
+  options?: { bypassAuth?: boolean },
 ): Promise<void> {
   let owner;
-  
+
   // Get the current user if not bypassing auth
   if (!options?.bypassAuth) {
     const { userId: clerkUserId } = auth();
@@ -997,19 +997,19 @@ export async function setActiveConstitution(
       where: { uid: communityModelId },
       include: { owner: true },
     });
-    
+
     if (!communityModel) {
       throw new Error("Community model not found");
     }
-    
+
     owner = communityModel.owner;
-    
+
     if (!owner) {
       // Fallback to any owner if needed
       owner = await prisma.communityModelOwner.findFirst({
-        where: { communityModels: { some: { uid: communityModelId } } }
+        where: { communityModels: { some: { uid: communityModelId } } },
       });
-      
+
       if (!owner) {
         throw new Error("No owner found for this model");
       }
@@ -1620,7 +1620,7 @@ export async function checkPollCompletion(
 
 export async function createAndActivateConstitution(
   modelId: string,
-  options?: { bypassAuth?: boolean }
+  options?: { bypassAuth?: boolean },
 ): Promise<Constitution> {
   const constitution = await createConstitution(modelId, options);
   await setActiveConstitution(modelId, constitution.uid, options);
