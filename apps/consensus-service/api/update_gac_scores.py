@@ -360,29 +360,24 @@ def main(poll_id=None, dry_run=False, force=False):
                     changed_statements = update_statements(cursor, conn, statements, gac_scores, votes, model_id)
                     logger.info(f"Updated GAC scores for poll ID: {poll_id}")
                     logger.info(f"Changed statements: {len(changed_statements)} statements had score changes")
-                    
-                    if model_id:
-                        # Check if we need to create a constitution
-                        # We no longer send GAC score updates via webhook, only constitution creation triggers
-                        if auto_create_enabled:
-                            # Get pre-update constitutionable statements
-                            pre_update_statements = get_constitutionable_statements(cursor, poll_id)
-                            # Get post-update constitutionable statements
-                            post_update_statements = get_constitutionable_statements(cursor, poll_id)
+
+                    # Check if we need to create a constitution
+                    # We no longer send GAC score updates via webhook, only constitution creation triggers
+                    if model_id and auto_create_enabled:
+                        # Get pre-update constitutionable statements
+                        pre_update_statements = get_constitutionable_statements(cursor, poll_id)
+                        # Get post-update constitutionable statements
+                        post_update_statements = get_constitutionable_statements(cursor, poll_id)
+                        
+                        # If there's a difference in the sets
+                        if pre_update_statements != post_update_statements:
+                            logger.info(f"Constitutionable statements changed for poll {poll_id}")
+                            logger.info(f"Pre-update: {pre_update_statements}")
+                            logger.info(f"Post-update: {post_update_statements}")
                             
-                            # If there's a difference in the sets
-                            if pre_update_statements != post_update_statements:
-                                logger.info(f"Constitutionable statements changed for poll {poll_id}")
-                                logger.info(f"Pre-update: {pre_update_statements}")
-                                logger.info(f"Post-update: {post_update_statements}")
-                                
-                                # Send webhook to trigger constitution creation only
-                                webhook_success = asyncio.run(send_webhook(model_id, poll_id))
-                                logger.info(f"Constitution creation webhook delivery {'succeeded' if webhook_success else 'failed'}")
-                        else:
-                            logger.warning(f"No model ID found for poll {poll_id}, cannot trigger constitution creation")
-                    else:
-                        logger.warning(f"No model ID found for poll {poll_id}, cannot trigger constitution creation")
+                            # Send webhook to trigger constitution creation only
+                            webhook_success = asyncio.run(send_webhook(model_id, poll_id))
+                            logger.info(f"Constitution creation webhook delivery {'succeeded' if webhook_success else 'failed'}")
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")
@@ -946,12 +941,12 @@ def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_scor
             "newScore": new_score
         })
         
-        # Insert the SystemEvent record
+        # Insert the SystemEvent record - Fix column names to match Prisma schema
         cursor.execute("""
             INSERT INTO "SystemEvent" (
-                uid, eventType, resourceType, resourceId, 
-                communityModelId, actorId, actorName, isAdminAction, 
-                metadata, "createdAt"
+                "uid", "eventType", "resourceType", "resourceId", 
+                "communityModelId", "actorId", "actorName", "isAdminAction", 
+                "metadata", "createdAt"
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         """, (
@@ -969,6 +964,12 @@ def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_scor
         logger.info(f"Created GAC_SCORE_UPDATED SystemEvent for statement {statement_id}")
     except Exception as e:
         logger.error(f"Failed to create SystemEvent: {e}")
+        # Add transaction rollback to prevent cascading errors
+        try:
+            conn.rollback()
+            logger.info("Transaction rolled back after SystemEvent creation error")
+        except Exception as rollback_error:
+            logger.error(f"Failed to rollback transaction: {rollback_error}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Update GAC scores for statements')
