@@ -7,12 +7,15 @@ interface UpdateGacButtonProps {
   pollId: string;
 }
 
+// Add this interface to define the response type
+interface GacUpdateResponse {
+  success: boolean;
+  error?: string;
+}
+
 export default function UpdateGacButton({ pollId }: UpdateGacButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{
-    success?: boolean;
-    error?: string;
-  } | null>(null);
+  const [result, setResult] = useState<GacUpdateResponse | null>(null);
 
   const handleClick = async () => {
     setIsLoading(true);
@@ -20,7 +23,7 @@ export default function UpdateGacButton({ pollId }: UpdateGacButtonProps) {
 
     try {
       const response = await triggerGacUpdate(pollId);
-      setResult(response);
+      setResult(response as GacUpdateResponse);
     } catch (error) {
       setResult({
         success: false,
