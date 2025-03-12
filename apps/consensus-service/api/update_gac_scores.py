@@ -254,13 +254,8 @@ def get_constitutionable_statements(cursor, poll_id):
     """, (poll_id,))
     return {row[0] for row in cursor.fetchall()}
 
-async def check_and_create_constitution(cursor, poll_id, pre_update_statements):
+async def check_and_create_constitution(cursor, poll_id, pre_update_statements, model_id):
     """Check if constitution needs to be created and create if necessary."""
-    model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
-    
-    if not model_id or not auto_create_enabled:
-        return
-        
     # Get post-update constitutionable statements
     post_update_statements = get_constitutionable_statements(cursor, poll_id)
     
@@ -376,8 +371,8 @@ def main(poll_id=None, dry_run=False, force=False):
                         logger.warning(f"No model ID found for poll {poll_id}, cannot send webhook")
                     
                     # Check if we need to create a constitution
-                    if auto_create_enabled:
-                        asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements))
+                    if model_id and auto_create_enabled:
+                        asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements, model_id))
 
             except Exception as e:
                 logger.error(f"Error processing poll ID {poll_id}: {e}")
