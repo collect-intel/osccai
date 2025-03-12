@@ -19,13 +19,21 @@ def create_signature(payload: dict, secret: str) -> str:
 
 async def send_webhook(model_id: str, poll_id: str, changed_statements: list = None) -> bool:
     """
-    Send webhook to notify about changes in constitutionable statements.
+    Send webhook to notify about changes in GAC scores or constitutionable statements.
     Returns True if webhook was successfully delivered.
     
     Args:
         model_id: The community model ID
         poll_id: The poll ID
         changed_statements: Optional list of statements with changed GAC scores
+    
+    Event types:
+        - "gac_scores_updated": Sent when GAC scores have been updated. Includes detailed 
+          information about which statements changed and their old/new scores. This triggers
+          both SystemEvent creation for each changed statement AND constitution creation if needed.
+        
+        - "statements_changed": Sent when only checking for constitution creation is needed,
+          without detailed GAC score change information. This only triggers constitution creation.
     """
     webhook_url = os.getenv('WEBHOOK_URL')
     webhook_secret = os.getenv('WEBHOOK_SECRET')

@@ -97,34 +97,16 @@ class handler(BaseHTTPRequestHandler):
         return
     
     def do_POST(self):
-        # Check for API key if configured
-        print("DEBUG: Starting do_POST in update_gac_scores.py")
         logger.info("Handling POST request in update_gac_scores.py")
         
         try:
-            print("DEBUG: Checking API key")
-            api_key = os.environ.get('API_KEY')
-            if api_key:
-                request_key = self.headers.get('X-API-Key')
-                if not request_key or request_key != api_key:
-                    logger.warning("Unauthorized: Invalid or missing API key")
-                    self.send_response(401)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({
-                        "error": "Unauthorized: Invalid or missing API key"
-                    }).encode())
-                    return
-
             # Get request body
-            print("DEBUG: Reading request body")
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
                 logger.info(f"Content length: {content_length}")
                 post_data = self.rfile.read(content_length).decode('utf-8')
                 logger.info(f"Request body: {post_data}")
                 
-                print("DEBUG: Parsing JSON")
                 data = json.loads(post_data)
                 poll_id = data.get('pollId')
                 force = data.get('force', False)
@@ -144,15 +126,11 @@ class handler(BaseHTTPRequestHandler):
                 logger.info(f"Triggering GAC update for poll: {poll_id}")
                 
                 # Run the GAC update for the specific poll
-                print("DEBUG: About to call main() function")
                 try:
-                    print(f"DEBUG: Calling main(poll_id={poll_id}, force={force})")
                     result = main(poll_id=poll_id, force=force)
-                    print(f"DEBUG: main() returned: {result}")
                     logger.info(f"GAC update completed with result: {result}")
                     
                     # Send success response
-                    print("DEBUG: Sending success response")
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
@@ -161,9 +139,7 @@ class handler(BaseHTTPRequestHandler):
                         "message": f"GAC update triggered for poll: {poll_id}",
                         "result": result
                     }).encode())
-                    print("DEBUG: Response sent")
                 except Exception as e:
-                    print(f"DEBUG: Error in main function: {str(e)}")
                     logger.error(f"Error in main function: {str(e)}")
                     import traceback
                     logger.error(traceback.format_exc())
@@ -175,7 +151,6 @@ class handler(BaseHTTPRequestHandler):
                     }).encode())
                 
             except json.JSONDecodeError as e:
-                print(f"DEBUG: JSON decode error: {str(e)}")
                 logger.error(f"JSON decode error: {str(e)}")
                 self.send_response(400)
                 self.send_header('Content-type', 'application/json')
@@ -184,7 +159,6 @@ class handler(BaseHTTPRequestHandler):
                     "error": "Invalid JSON in request body"
                 }).encode())
             except Exception as e:
-                print(f"DEBUG: Unexpected error in do_POST: {str(e)}")
                 logger.error(f"Unexpected error in do_POST: {str(e)}")
                 import traceback
                 logger.error(traceback.format_exc())
@@ -195,7 +169,6 @@ class handler(BaseHTTPRequestHandler):
                     "error": f"Internal server error: {str(e)}"
                 }).encode())
         except Exception as e:
-            print(f"DEBUG: Top-level exception in do_POST: {str(e)}")
             logger.error(f"Top-level exception in do_POST: {str(e)}")
             import traceback
             logger.error(traceback.format_exc())
@@ -207,22 +180,20 @@ class handler(BaseHTTPRequestHandler):
                     "error": f"Server error: {str(e)}"
                 }).encode())
             except:
-                print("DEBUG: Failed to send error response")
+                logger.error("Failed to send error response")
 
 def create_connection():
     # Reload DATABASE_URL at runtime
     DATABASE_URL = os.getenv("DATABASE_URL")
     
-    print(f"DEBUG: DATABASE_URL is {'set' if DATABASE_URL else 'NOT SET'}")
-    
     if not DATABASE_URL:
         error_msg = "DATABASE_URL environment variable is not set"
-        print(f"DEBUG: {error_msg}")
+        logger.error(error_msg)
         raise ValueError(error_msg)
     
     try:
         url = urlparse(DATABASE_URL)
-        print(f"DEBUG: Parsed DATABASE_URL, connecting to {url.hostname}")
+        logger.info(f"Connecting to database at {url.hostname}")
         
         # Extract connection parameters
         dbname = url.path[1:]  # Remove leading slash
@@ -239,10 +210,10 @@ def create_connection():
             host=host,
             port=port
         )
-        print("DEBUG: Database connection successful")
+        logger.info("Database connection successful")
         return conn
     except Exception as e:
-        print(f"DEBUG: Database connection error: {str(e)}")
+        logger.error(f"Database connection error: {str(e)}")
         raise
 
 def verify_poll_exists(cursor, poll_id):
@@ -316,8 +287,6 @@ def main(poll_id=None, dry_run=False, force=False):
         dry_run: If True, don't actually update the database
         force: If True, process even if no new votes
     """
-    print(f"DEBUG: main() started with poll_id={poll_id}, dry_run={dry_run}, force={force}")
-    
     # Set up logging
     setup_logging()
     logger.info(f"Starting GAC score update (version {VERSION})")
@@ -325,40 +294,40 @@ def main(poll_id=None, dry_run=False, force=False):
     
     try:
         # Create database connection
-        print("DEBUG: Creating database connection")
         conn = create_connection()
         cursor = conn.cursor()
         
         # Verify poll exists if specified
         if poll_id:
-            print(f"DEBUG: Verifying poll exists: {poll_id}")
+            logger.info(f"Verifying poll exists: {poll_id}")
             if not verify_poll_exists(cursor, poll_id):
                 error_msg = f"Poll with ID {poll_id} not found"
                 logger.error(error_msg)
-                print(f"DEBUG: {error_msg}")
                 return {"error": error_msg}
         
         # Get polls to process
         polls_to_process = []
         if poll_id:
-            print(f"DEBUG: Using specified poll: {poll_id}")
+            logger.info(f"Using specified poll: {poll_id}")
             polls_to_process = [poll_id]
         else:
-            print("DEBUG: Fetching polls with changes")
-            polls_to_process = fetch_polls_with_changes(cursor)
+            # If force flag is set, fetch all polls regardless of vote changes
+            if force:
+                logger.info("Force flag set, fetching all polls regardless of vote changes")
+                polls_to_process = fetch_all_polls(cursor)
+            else:
+                logger.info("Fetching polls with recent vote changes")
+                polls_to_process = fetch_polls_with_changes(cursor)
             
         if not polls_to_process:
             msg = "No polls need GAC score updates"
             logger.info(msg)
-            print(f"DEBUG: {msg}")
             return {"message": msg}
             
         logger.info(f"Processing {len(polls_to_process)} polls")
-        print(f"DEBUG: Processing {len(polls_to_process)} polls: {polls_to_process}")
         
         # Process each poll
         for current_poll_id in polls_to_process:
-            print(f"DEBUG: Processing poll {current_poll_id}")
             try:
                 poll_id = current_poll_id
                 logger.info(f"Processing poll ID: {poll_id}")
@@ -393,21 +362,21 @@ def main(poll_id=None, dry_run=False, force=False):
                     logger.info(f"Changed statements: {len(changed_statements)} statements had score changes")
                     
                     # Get community model ID for the poll
-                    model_id, _ = get_community_model_id(cursor, poll_id)
+                    model_id, auto_create_enabled = get_community_model_id(cursor, poll_id)
                     if model_id:
-                        # Only send webhook if there are changed statements or if we need to check for constitution
-                        if changed_statements or check_constitution:
+                        # Only send webhook if there are changed statements
+                        if changed_statements:
                             # Send webhook to notify about changes
                             logger.info(f"Sending webhook for model {model_id} with {len(changed_statements)} changed statements")
                             webhook_success = asyncio.run(send_webhook(model_id, poll_id, changed_statements))
                             logger.info(f"Webhook delivery {'succeeded' if webhook_success else 'failed'}")
                         else:
-                            logger.info(f"No webhook sent - no changed statements and constitution check not needed")
+                            logger.info(f"No webhook sent - no changed statements")
                     else:
                         logger.warning(f"No model ID found for poll {poll_id}, cannot send webhook")
                     
                     # Check if we need to create a constitution
-                    if check_constitution:
+                    if auto_create_enabled:
                         asyncio.run(check_and_create_constitution(cursor, poll_id, pre_update_statements))
 
             except Exception as e:
