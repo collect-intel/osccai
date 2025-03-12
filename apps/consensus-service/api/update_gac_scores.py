@@ -948,7 +948,7 @@ def create_system_event(cursor, conn, statement_id, poll_id, old_score, new_scor
                 "communityModelId", "actorId", "actorName", "isAdminAction", 
                 "metadata", "createdAt"
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW() AT TIME ZONE 'UTC')
         """, (
             event_id,
             "GAC_SCORE_UPDATED",
