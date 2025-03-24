@@ -136,13 +136,17 @@ export async function getCommunityModel(modelId: string): Promise<{
   // Check if user is admin
   const isAdmin = await isCurrentUserAdmin();
 
-  // If user is admin, allow access to any model
+  // If user is admin, OR if the model is published, allow access to any model
   // Otherwise, only allow access to models owned by the user
   const model = await prisma.communityModel.findUnique({
     where: {
       uid: modelId,
-      ...(isAdmin ? {} : { ownerId: dbUser.uid }),
       deleted: false,
+      OR: [
+        { published: true },
+        { ownerId: dbUser?.uid },
+        ...(isAdmin ? [{}] : []),
+      ],
     },
     include: {
       owner: {
